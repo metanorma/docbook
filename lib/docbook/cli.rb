@@ -16,16 +16,29 @@ module Docbook
       write_output(output, options[:output], :single_file)
     end
 
-    desc "validate INPUT", "Validate DocBook XML well-formedness"
+    SCHEMAS_DIR = File.expand_path("schemas", __dir__)
+
+    desc "validate INPUT", "Validate DocBook XML"
+    option :schema, type: :boolean, default: true, desc: "Validate against DocBook 5 RELAX NG schema"
+    option :wellformed, type: :boolean, default: false, desc: "Check well-formedness only (no schema)"
     def validate(input)
       xml_string = File.read(input)
       doc = Nokogiri::XML(xml_string)
-      if doc.errors.empty?
-        puts "#{input}: valid"
-      else
+
+      if doc.errors.any?
         doc.errors.each { |e| warn "#{input}: #{e}" }
         exit 1
       end
+
+      if options[:schema] && !options[:wellformed]
+        errors = validate_schema(doc, input)
+        if errors.any?
+          errors.each { |e| warn "#{input}: #{e}" }
+          exit 1
+        end
+      end
+
+      puts "#{input}: valid"
     end
 
     desc "to-html INPUT", "Convert DocBook XML to HTML"
@@ -94,6 +107,21 @@ module Docbook
 
     def parse_input(xml_string)
       Docbook::Document.from_xml(xml_string)
+    end
+
+    def validate_schema(doc, input)
+      schema_file = if input_xinclude?(doc)
+                      File.join(SCHEMAS_DIR, "docbookxi.rng")
+                    else
+                      File.join(SCHEMAS_DIR, "docbook.rng")
+                    end
+      rng = File.read(schema_file)
+      schema = Nokogiri::XML::RelaxNG(rng)
+      schema.validate(doc)
+    end
+
+    def input_xinclude?(doc)
+      doc.root.namespace_definitions.any? { |ns| ns.href == "http://www.w3.org/2001/XInclude" }
     end
 
     def write_output(content, output_path, output_type)
