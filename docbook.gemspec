@@ -39,6 +39,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor"
   spec.add_dependency "liquid", "~> 5.0"
   spec.add_dependency "marcel"
-
-  spec.add_development_dependency "canon"
 end

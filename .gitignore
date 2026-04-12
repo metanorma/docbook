@@ -22,3 +22,6 @@ frontend/dist/
 
 # IDE
 .idea/
+
+Gemfile.lock
+
