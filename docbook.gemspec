@@ -27,6 +27,9 @@ Gem::Specification.new do |spec|
         f.start_with?(*%w[bin/ Gemfile .gitignore .rspec spec/ .github/ .rubocop.yml])
     end
   end
+  # Include frontend dist assets (built locally, not committed to git)
+  Dir.glob("frontend/dist/*").each { |f| spec.files << f }
+  Dir.glob("frontend/src/**/*").each { |f| spec.files << f }
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]

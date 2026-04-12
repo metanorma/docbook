@@ -1,0 +1,253 @@
+/* Tailwind-like utility classes and custom styles */
+/* Google Fonts loaded via <link> in HTML for file:// compatibility */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.font-serif {
+  font-family: 'Merriweather', Georgia, serif;
+}
+
+body.font-sans {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Dark mode */
+.dark {
+  color-scheme: dark;
+}
+
+/* Print styles */
+@media print {
+  .lg\:translate-x-0, #sidebar, #sidebar-toggle, .sticky {
+    display: none !important;
+  }
+}
+
+/* TOC active highlighting */
+.toc-active {
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.dark .toc-active {
+  color: #60a5fa;
+  background: #1e3a5f;
+}
+
+/* Bibliography styling */
+.db-bibentry {
+  padding-left: 2em;
+  text-indent: -2em;
+  margin-bottom: 0.5em;
+}
+
+/* Changelog release styling */
+.db-changelog-release {
+  border-left: 3px solid #60a5fa;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+}
+
+.dark .db-changelog-release {
+  border-left-color: #3b82f6;
+}
+
+/* Appendix styling */
+.db-appendix-wrap {
+  border-left: 4px solid #8b5cf6;
+  padding-left: 1rem;
+  margin-left: -1rem;
+}
+
+.dark .db-appendix-wrap {
+  border-left-color: #a78bfa;
+}
+
+/* Preface styling */
+.db-preface-wrap {
+  border-left: 4px solid #22c55e;
+  padding-left: 1rem;
+  margin-left: -1rem;
+}
+
+.dark .db-preface-wrap {
+  border-left-color: #16a34a;
+}
+
+/* Search highlight */
+mark.bg-yellow-200,
+mark.bg-yellow-600 {
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Alpine.js cloak */
+[x-cloak] {
+  display: none !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Content typography */
+.db-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.db-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.db-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.db-content p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+
+.db-content ul,
+.db-content ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.db-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+.db-content code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.875em;
+  background: #f1f5f9;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.dark .db-content code {
+  background: #374151;
+}
+
+.db-content pre {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.875rem;
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.dark .db-content pre {
+  background: #1f2937;
+}
+
+.db-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.dark .db-content a {
+  color: #60a5fa;
+}
+
+.db-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark .db-content img {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.db-content blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #6b7280;
+}
+
+.dark .db-content blockquote {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+}
+
+.db-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.db-content th,
+.db-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.dark .db-content th,
+.dark .db-content td {
+  border-color: #374151;
+}
+
+.db-content th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.dark .db-content th {
+  background: #1f2937;
+}
