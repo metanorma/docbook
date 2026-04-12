@@ -1,0 +1,373 @@
+---
+layout: default
+title: Element Coverage
+parent: Features
+nav_order: 6
+---
+
+# Element Coverage
+
+The Metanorma DocBook gem provides comprehensive support for DocBook XML elements through 157 typed element classes. All element classes are implemented as `Lutaml::Model::Serializable` subclasses, providing type-safe parsing, serialization, and traversal.
+
+## Element Classes by Category
+
+### Structural (30)
+
+Core document structure elements that define the document hierarchy.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Article` | Top-level article document
+| `Book` | Top-level book document
+| `Set` | Collection of books
+| `Part` | Major division within a book
+| `Chapter` | Chapter within a part or book
+| `Section` | Generic nested section
+| `Sect1`--`Sect5` | Numbered section levels 1--5
+| `SimpleSect` | Untitled/minor section
+| `Appendix` | Appendix division
+| `Preface` | Front matter preface
+| `Dedication` | Dedication page
+| `Acknowledgements` | Acknowledgements page
+| `Colophon` | Publication data (publisher, typeface, etc.)
+| `Topic` | Standalone topic fragment
+| `Reference` | Reference page collection
+| `RefEntry` | Individual reference page
+| `RefSection` | Section within a reference entry
+| `RefSect1`--`RefSect3` | Numbered reference section levels
+| `Index` | Generated index
+| `SetIndex` | Index for a set of books
+| `Toc` | Table of contents
+|===
+
+### Metadata (18)
+
+Elements that carry document and element metadata.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Info` | Container for bibliographic metadata
+| `Title` | Element title
+| `Subtitle` | Element subtitle
+| `Author` | Author information
+| `PersonName` | Structured personal name
+| `FirstName` | Given name
+| `Surname` | Family name
+| `Honorific` | Title prefix (Dr., Prof., etc.)
+| `Copyright` | Copyright statement
+| `Year` | Copyright year
+| `Holder` | Copyright holder
+| `LegalNotice` | Legal notice
+| `ReleaseInfo` | Release information
+| `PubDate` | Publication date
+| `Date` | Generic date
+| `ProductName` | Product name
+| `ProductNumber` | Product number/identifier
+| `Version` | Version number
+|===
+
+### Block (3)
+
+Paragraph-level block elements.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Para` | Standard paragraph with mixed inline content
+| `FormalPara` | Paragraph with a title
+| `SimPara` | Simple paragraph (no inline markup)
+|===
+
+All three produce HTML output blocks. `Para` generates `paragraph` blocks with inline children. `FormalPara` generates `paragraph` blocks with a `strong` child for the title.
+
+### Lists (6)
+
+List structures for ordered, unordered, and definition lists.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `OrderedList` | `ordered_list` | Numbered list
+| `ItemizedList` | `itemized_list` | Bulleted list
+| `VariableList` | `definition_list` | Term/description pairs
+| `ListItem` | `list_item` | Single list item
+| `VarListEntry` | (internal) | Variable list entry container
+| `Term` | (inline) | Term being defined
+|===
+
+All list types produce HTML output. `OrderedList` and `ItemizedList` contain `list_item` children. `VariableList` produces alternating `definition_term` and `definition_description` children.
+
+### Links (3)
+
+Cross-reference and hyperlink elements.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Link` | `link` | External or internal hyperlink
+| `Xref` | `xref` | Cross-reference resolved to target title
+| `Uri` | `link` | Uniform Resource Identifier
+|===
+
+`Xref` elements are resolved using `XrefResolver` to display the target section's title as the link text.
+
+### Inline (24)
+
+Inline elements used within paragraphs and other mixed-content contexts.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Emphasis` | `emphasis`, `strong`, `italic` | Emphasized text (role-based)
+| `Code` | `codetext` | Inline code
+| `Literal` | `codetext` | Literal text
+| `Filename` | `codetext` | File name
+| `ClassName` | `codetext` | Class name
+| `Function` | `codetext` | Function name
+| `Parameter` | `codetext` | Parameter name
+| `Variable` | `codetext` | Variable name
+| `Type` | `codetext` | Type name
+| `Tag` | `codetext` | Markup tag (rendered as `<tag>`)
+| `Att` | `codetext` | Attribute name
+| `BuildTarget` | `codetext` | Build target
+| `Dir` | `codetext` | Directory name
+| `Replaceable` | `codetext` | Replaceable content
+| `Quote` | `text` | Quoted text
+| `Citation` | `citation` | Citation reference
+| `Citetitle` | `citation` or `citation_link` | Title of cited work
+| `CiteRefEntry` | (inline) | Citation to reference entry
+| `FirstTerm` | `emphasis` | First occurrence of a term
+| `Glossterm` | `emphasis` | Glossary term reference
+| `ForeignPhrase` | (text) | Foreign language phrase
+| `Phrase` | (text) | Generic phrase
+| `Property` | `codetext` | Property name
+| `UserInput` | `codetext` | User-typed input
+|===
+
+### Media (11)
+
+Image, video, audio, and figure elements.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `MediaObject` | `image` | Container for media objects
+| `ImageObject` | (internal) | Image container with `ImageData`
+| `ImageData` | (internal) | Image reference with `fileref`
+| `Figure` | `image` | Formal figure with title
+| `InformalFigure` | `image` | Untitled figure
+| `InlineMediaObject` | `inline_image` | Inline image within text
+| `ProgramListing` | `code` | Source code listing with language
+| `Screen` | `code` | Screen output listing
+| `TextObject` | `paragraph` | Text description fallback
+| `AudioObject` | (parsed) | Audio media reference
+| `VideoObject` | (parsed) | Video media reference
+|===
+
+Images produce HTML output with base64-embedded (single file) or file-path (directory) `src` values. `ProgramListing` and `Screen` produce `code` blocks with optional `language` for Prism.js syntax highlighting.
+
+### Tables (8)
+
+CALS/OASIS table model elements.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Table` | Formal table with title
+| `TGroup` | Column group within a table
+| `THead` | Table header rows
+| `TBody` | Table body rows
+| `TFoot` | Table footer rows
+| `Row` | Table row
+| `Entry` | Table cell
+| `EntryTbl` | Nested sub-table within a cell
+|===
+
+### Admonitions (6)
+
+Warning and note elements. All six produce HTML output blocks.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Note` | `note` | Informational note
+| `Warning` | `warning` | Warning message
+| `Caution` | `caution` | Caution message
+| `Important` | `important` | Important information
+| `Tip` | `tip` | Helpful tip
+| `Danger` | `danger` | Danger warning
+|===
+
+Admonitions can contain paragraphs, code listings, screens, and literal layouts as children.
+
+### Bibliography (5)
+
+Bibliographic reference elements.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Bibliography` | (structural) | Bibliography section
+| `Bibliomixed` | `bibliography_entry` | Formatted bibliography entry
+| `Biblioref` | `biblioref` | Inline bibliography reference
+| `OrgName` | `biblio_orgname` | Organization name
+| `PublisherName` | `biblio_publishername` | Publisher name
+|===
+
+`Bibliomixed` entries produce rich output with abbreviations, author names, citation titles, dates, and links.
+
+### Glossary (5)
+
+Glossary definition elements.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Glossary` | (structural) | Glossary section
+| `GlossEntry` | `definition_list` | Glossary entry with term and definition
+| `GlossDef` | (internal) | Definition content
+| `GlossSee` | (parsed) | "See" cross-reference
+| `GlossSeeAlso` | (parsed) | "See also" cross-reference
+|===
+
+### Index (9)
+
+Index-related elements.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Index` | Index section (structural)
+| `IndexDiv` | Division within the index
+| `IndexEntry` | Raw index entry
+| `IndexTerm` | Index term with primary/secondary/tertiary
+| `Primary` | Primary term text
+| `Secondary` | Secondary term text
+| `Tertiary` | Tertiary term text
+| `See` | "See" cross-reference
+| `SeeAlso` | "See also" cross-reference
+|===
+
+Index terms are collected by `IndexCollector` and processed by `IndexGenerator` to produce the generated index.
+
+### TOC (3)
+
+Table of contents elements.
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Toc` | Table of contents container
+| `TocDiv` | Division within the TOC
+| `TocEntry` | Single TOC entry
+|===
+
+### Footnotes (2)
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Footnote` | Inline footnote content
+| `FootnoteRef` | Reference to a footnote
+|===
+
+### Callouts (2)
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Callout` | Callout description
+| `CalloutList` | List of callout descriptions
+|===
+
+### Examples (3)
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `Example` | `example` | Titled example with content
+| `InformalExample` | `example_output` | Untitled example
+| `Equation` | (parsed) | Mathematical equation
+|===
+
+### Procedures (3)
+
+[cols="1,3"]
+|===
+| Element | Description
+
+| `Procedure` | Ordered sequence of steps
+| `Step` | Single step in a procedure
+| `SubSteps` | Nested sub-steps
+|===
+
+### RefEntry (7)
+
+Reference page elements within `Reference` documents.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `RefMeta` | `reference_meta` | Reference metadata (title, miscinfo)
+| `RefNamediv` | (internal) | Name and purpose container
+| `RefName` | `reference_name` | Entry name (headword)
+| `RefPurpose` | `reference_definition` | Short description/purpose
+| `RefEntryTitle` | (internal) | Reference entry title
+| `RefMiscInfo` | `reference_meta` | Miscellaneous metadata
+| `FieldSynopsis` | (parsed) | Field/method signature
+|===
+
+### Other (6)
+
+Miscellaneous block elements.
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `BlockQuote` | `blockquote` | Extended quotation with attribution
+| `Quotation` | (parsed) | Inline quotation
+| `Attribution` | (text) | Quote attribution
+| `MsgSet` | (parsed) | Message set
+| `Msg` | (parsed) | Individual message
+| `Msgexplan` | (parsed) | Message explanation
+| `LiteralLayout` | `code` | Preformatted text
+| `Address` | (parsed) | Postal address
+| `Annotation` | (parsed) | Annotation
+| `SideBar` | (parsed) | Sidebar content
+| `Remark` | (parsed) | Editorial remark
+|===
+
+## Elements Producing HTML Output
+
+The following elements are directly rendered as HTML `ContentBlock` types during the output build:
+
+- **Blocks**: `Para`, `FormalPara`, `ProgramListing`, `Screen`, `LiteralLayout`, `BlockQuote`, `SimpleSect`
+- **Lists**: `OrderedList`, `ItemizedList`, `VariableList`
+- **Media**: `MediaObject`, `Figure`, `InformalFigure`, `InlineMediaObject`, `TextObject`
+- **Admonitions**: `Note`, `Warning`, `Caution`, `Important`, `Tip`, `Danger`
+- **Examples**: `Example`, `InformalExample`
+- **Glossary**: `GlossEntry`
+- **Bibliography**: `Bibliomixed`
+- **Index**: `IndexDiv`
+- **Reference**: `RefEntry` (with all sub-elements)
+- **Inline**: `Emphasis`, `Link`, `Xref`, `Code`, `Literal`, `Filename`, `ClassName`, `Function`, `Parameter`, `Variable`, `Type`, `Tag`, `Att`, `BuildTarget`, `Dir`, `Replaceable`, `Quote`, `Citetitle`, `Biblioref`, `FirstTerm`, `Glossterm`, `UserInput`, `InlineMediaObject`

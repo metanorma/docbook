@@ -1,0 +1,12 @@
+---
+layout: default
+title: Guides
+nav_order: 7
+has_children: true
+---
+
+# Guides
+
+This section contains task-oriented tutorials that walk you through
+common scenarios step by step. Each guide is self-contained and
+includes complete examples you can run immediately.

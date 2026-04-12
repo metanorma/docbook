@@ -1,0 +1,73 @@
+---
+layout: default
+title: CLI Reference
+parent: Interfaces
+nav_order: 1
+has_children: true
+---
+
+== CLI Reference
+
+The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides four commands for working with DocBook XML files.
+
+=== Global Behavior
+
+The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry point). All commands follow a consistent pattern:
+
+* Accept an `INPUT` file path as the primary argument
+* Support common options like `--output` / `-o` for specifying output destinations
+* Exit with code 0 on success and code 1 on failure
+* Print error messages to stderr and informational messages to stdout
+
+=== Command Summary
+
+[cols="2,1,5",options="header"]
+|===
+| Command | Since | Description
+
+| `format` | 0.1.0 | Reformat and prettify DocBook XML with consistent indentation
+| `validate` | 0.1.0 | Check XML well-formedness of a DocBook file
+| `to-html` | 0.1.0 | Convert DocBook XML to a self-contained HTML document or a directory with assets
+| `roundtrip` | 0.1.0 | Round-trip test one or more XML files (parse, serialize, re-parse) for regression testing
+|===
+
+=== Getting Help
+
+Each command has built-in help accessible via `docbook help COMMAND`:
+
+[source,bash]
+----
+$ docbook help to-html
+Commands:
+  docbook to-html INPUT  # Convert DocBook XML to HTML
+
+Options:
+  -o, --output=OUTPUT          # Output file or directory
+      --xinclude=XINCLUDE      # Resolve XIncludes before processing
+                               # Default: true
+      --output_type=OUTPUT_TYPE  # Output type: single_file or directory
+                               # Default: single_file
+----
+
+=== Detailed Command Documentation
+
+Select a command below for detailed usage instructions, options, and examples:
+
+* <<format-command,format>> -- Reformat DocBook XML
+* <<validate-command,validate>> -- Validate XML well-formedness
+* <<to-html-command,to-html>> -- Convert to HTML
+* <<roundtrip-command,roundtrip>> -- Round-trip test
+
+=== Exit Codes
+
+All commands follow standard Unix conventions:
+
+[cols="1,4"]
+|===
+| Code | Meaning
+
+| `0` | Success
+| `1` | Failure (validation errors, parse errors, file not found, etc.)
+|===
+
+The CLI sets `exit_on_failure?` to `true`, so any unhandled exception will cause a non-zero exit.

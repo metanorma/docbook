@@ -1,0 +1,202 @@
+---
+layout: default
+title: Parsing Documents
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 1
+---
+
+== Parsing Documents
+
+The `Docbook::Document` class is the primary entry point for parsing DocBook XML into typed Ruby objects.
+
+=== Basic Parsing
+
+Use `Document.from_xml` to parse an XML string:
+
+[source,ruby]
+----
+require "docbook"
+
+xml = <<~XML
+  <article xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="sample">
+    <info>
+      <title>Sample Article</title>
+    </info>
+    <section xml:id="intro">
+      <title>Introduction</title>
+      <para>Hello, DocBook world.</para>
+    </section>
+  </article>
+XML
+
+document = Docbook::Document.from_xml(xml)
+# => #<Docbook::Elements::Article:0x0000...>
+----
+
+The method returns an instance of the appropriate element class based on the root element name. In this case, it returns a `Docbook::Elements::Article` because the root element is `<article>`.
+
+=== Supported Root Elements
+
+`Document.from_xml` automatically detects the root element and selects the correct parser. The gem supports 39 root element types:
+
+[cols="3,3,3"]
+|===
+| Structural | Sectioning | Reference
+
+| `article` | `section` | `refentry`
+| `book` | `sect1` | `reference`
+| `chapter` | `sect2` | `refsection`
+| `appendix` | `sect3` | `refsect1`
+| `preface` | `sect4` | `refsect2`
+| `part` | `sect5` | `refsect3`
+| `set` | `simplesect` |
+| `topic` | `para` |
+|===
+
+[cols="3,3,3"]
+|===
+| Front Matter | Back Matter | Other
+
+| `dedication` | `bibliography` | `index`
+| `acknowledgements` | `glossary` | `setindex`
+| `colophon` | | `toc`
+|===
+
+=== Checking Root Element Support
+
+Before parsing, you can check whether a specific root element is supported:
+
+[source,ruby]
+----
+# Check if a root element name is supported
+Docbook::Document.supports?("article")   # => true
+Docbook::Document.supports?("html")      # => false
+
+# List all supported root element names
+Docbook::Document.supported_root_elements
+# => ["article", "book", "chapter", "appendix", "preface", "part",
+#     "section", "refentry", "bibliography", "glossary", "set",
+#     "reference", "topic", "dedication", "acknowledgements",
+#     "colophon", "index", "toc", "sect1", "sect2", "sect3",
+#     "sect4", "sect5", "refsection", "refsect1", "refsect2",
+#     "refsect3", "setindex", "para", "simplesect"]
+----
+
+=== Error Handling
+
+Parsing errors raise `Docbook::Error`:
+
+[source,ruby]
+----
+# Empty XML
+Docbook::Document.from_xml("")
+# => raises Docbook::Error: "Empty or invalid XML document"
+
+# Unsupported root element
+Docbook::Document.from_xml("<html><body>Not DocBook</body></html>")
+# => raises Docbook::Error: "Unsupported DocBook root element: html"
+----
+
+Always wrap parsing in a rescue block for robust applications:
+
+[source,ruby]
+----
+begin
+  document = Docbook::Document.from_xml(xml_string)
+rescue Docbook::Error => e
+  warn "Failed to parse document: #{e.message}"
+  exit 1
+end
+----
+
+=== Accessing Parsed Elements
+
+Once parsed, the returned object is a fully populated element model. The available attributes depend on the element type:
+
+[source,ruby]
+----
+# Parse a book
+document = Docbook::Document.from_xml(book_xml)
+# document is a Docbook::Elements::Book
+
+document.xml_id           # => "my-book" (the xml:id attribute)
+document.version          # => "5.0"
+document.info             # => #<Docbook::Elements::Info:...>
+document.info.title       # => #<Docbook::Elements::Title:...>
+document.info.title.content  # => "My Book Title"
+document.chapter          # => [#<Docbook::Elements::Chapter:...>, ...]
+document.appendix         # => [#<Docbook::Elements::Appendix:...>, ...]
+document.part             # => [#<Docbook::Elements::Part:...>, ...]
+document.preface          # => [#<Docbook::Elements::Preface:...>, ...]
+----
+
+[source,ruby]
+----
+# Parse an article
+document = Docbook::Document.from_xml(article_xml)
+# document is a Docbook::Elements::Article
+
+document.info.title.content  # => "Article Title"
+document.section             # => [#<Docbook::Elements::Section:...>, ...]
+document.section.first.title # => #<Docbook::Elements::Title:...>
+document.section.first.title.content  # => "Introduction"
+----
+
+=== Mixed Content Traversal
+
+Many DocBook elements support *mixed content* -- a mixture of text strings and child elements. The `each_mixed_content` method yields each child node in document order:
+
+[source,ruby]
+----
+section = document.section.first
+section.each_mixed_content do |node|
+  case node
+  when String
+    # Raw text content between elements
+    puts "Text: #{node}"
+  when Docbook::Elements::Para
+    puts "Paragraph: #{node.content}"
+  when Docbook::Elements::MediaObject
+    puts "Media object"
+  when Docbook::Elements::ProgramListing
+    puts "Code listing: #{node.content}"
+  when Docbook::Elements::OrderedList
+    puts "Ordered list"
+  # ... many more element types
+  end
+end
+----
+
+This is the primary mechanism for traversing element content in the HTML generation pipeline. The `each_mixed_content` method yields both `String` instances (for text nodes) and typed element objects (for child elements).
+
+=== File-Based Parsing
+
+A complete file-based parsing workflow:
+
+[source,ruby]
+----
+require "docbook"
+
+# Read the file
+xml_string = File.read("book.xml")
+
+# Optionally resolve XIncludes first
+resolved_xml = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+
+# Parse
+document = Docbook::Document.from_xml(resolved_xml.to_xml)
+
+# Work with the parsed document
+puts "Title: #{document.info&.title&.content}"
+puts "Chapters: #{document.chapter&.size || 0}"
+document.chapter&.each do |chapter|
+  puts "  - #{chapter.title&.content}"
+end
+----
+
+=== See Also
+
+* *<<html-output,HTML Output>>* -- Convert parsed documents to HTML
+* *<<xinclude,XInclude Resolution>>* -- Resolve XIncludes before parsing
+* *<<xref-resolution,XRef Resolution>>* -- Build cross-reference maps from parsed documents

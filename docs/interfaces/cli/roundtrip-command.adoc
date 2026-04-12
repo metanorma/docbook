@@ -1,0 +1,125 @@
+---
+layout: default
+title: roundtrip
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 4
+---
+
+== roundtrip
+
+Round-trip test one or more DocBook XML files by parsing them, serializing back to XML, and re-parsing the result.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook roundtrip INPUT...
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT...` | One or more paths to DocBook XML files (required, at least one)
+|===
+
+=== Behavior
+
+The `roundtrip` command performs the following steps for each input file:
+
+1. Read the file as a string
+2. Parse it into a DocBook element model using `Docbook::Document.from_xml`
+3. Serialize the model back to XML with an XML declaration
+4. Re-parse the serialized output
+
+If both parse operations succeed, the file passes. If any step raises an exception, the file fails.
+
+The command processes all input files and reports the total number of failures. It exits with code 1 if any file fails.
+
+=== Exit Codes
+
+[cols="1,4"]
+|===
+| Code | Condition
+
+| `0` | All files round-tripped successfully
+| `1` | One or more files failed the round-trip test
+|===
+
+=== Examples
+
+==== Test a single file
+
+[source,bash]
+----
+$ docbook roundtrip article.xml
+article.xml: OK
+----
+
+==== Test multiple files
+
+[source,bash]
+----
+$ docbook roundtrip article.xml book.xml chapter.xml
+article.xml: OK
+book.xml: OK
+chapter.xml: OK
+----
+
+==== Failure case
+
+When a file cannot survive the round trip, the error message is shown:
+
+[source,bash]
+----
+$ docbook roundtrip good.xml bad.xml
+good.xml: OK
+bad.xml: FAIL - Unsupported DocBook root element: html
+2 files, 1 failures
+$ echo $?
+1
+----
+
+==== Test all XML files in a project
+
+[source,bash]
+----
+$ docbook roundtrip spec/fixtures/*.xml
+----
+
+=== Use Cases
+
+* *Regression testing* -- Verify that changes to the gem's parsing or serialization code do not break existing documents
+* *CI integration* -- Run round-trip tests on a corpus of DocBook files as part of your test suite
+* *Debugging* -- Identify documents that the gem cannot parse or serialize correctly
+* *Quality assurance* -- Ensure that the parse/serialize cycle is lossless for your document set
+
+=== How It Works
+
+The round-trip test exercises the full parse-serialize pipeline:
+
+[source,ruby]
+----
+# Simplified logic of the roundtrip command
+xml_string = File.read(input)
+parsed = Docbook::Document.from_xml(xml_string)
+output = parsed.to_xml(declaration: true, encoding: "utf-8")
+reparsed = Docbook::Document.from_xml(output)
+# If both parses succeed, the file passes
+----
+
+Note that the round-trip test does *not* compare the original and serialized XML strings character by character. It only verifies that both the original and the serialized output can be successfully parsed. Whitespace, attribute ordering, and namespace declarations may differ between the original and serialized forms.
+
+=== Limitations
+
+* Does not check for semantic equivalence between original and round-tripped content
+* Does not resolve XIncludes before testing
+* Does not validate against the DocBook schema
+
+=== See Also
+
+* <<validate-command,validate>> -- Check XML well-formedness
+* <<format-command,format>> -- Reformat DocBook XML

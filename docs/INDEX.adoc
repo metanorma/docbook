@@ -1,0 +1,67 @@
+---
+layout: default
+title: Home
+nav_order: 1
+description: "Metanorma DocBook: Parse, transform, and generate HTML from DocBook 5 XML"
+permalink: /
+---
+= Metanorma DocBook Documentation
+:toc: macro
+:toclevels: 2
+
+[.lead]
+Metanorma DocBook is a Ruby gem for parsing, accessing, and converting DocBook 5 XML documents to interactive HTML.
+
+toc::[]
+
+== Welcome
+
+Metanorma DocBook helps you:
+
+* **Parse** DocBook 5 XML into Ruby object models using 149 element classes
+* **Convert** DocBook to self-contained HTML with a Vue 3 interactive reader
+* **Resolve** XIncludes with text fragid extensions (`search=`, `line=`, `char=`)
+* **Validate** and **format** DocBook XML from the command line
+
+== Quick Navigation
+
+=== By Your Role
+
+**Developer**::
+Start with link:getting-started/ruby-api/[Ruby API] to integrate DocBook parsing into your applications.
+
+**Technical Writer**::
+Start with link:guides/converting-book/[Converting a Book] to convert DocBook documents to HTML.
+
+**DevOps**::
+Start with link:interfaces/cli/[CLI Reference] for command-line usage in pipelines.
+
+=== By Task
+
+**Convert DocBook to HTML**::
+link:getting-started/quick-start/#to-html[Quick Start: to-html] | link:interfaces/cli/to-html-command[CLI: to-html] | link:interfaces/ruby-api/html-output[Ruby API: HTML Output]
+
+**Resolve XIncludes**::
+link:features/xinclude/text-includes[Text Includes] | link:features/xinclude/fragid-schemes[fragid Schemes] | link:interfaces/ruby-api/xinclude[Ruby API]
+
+**Format and validate XML**::
+link:interfaces/cli/format-command[format] | link:interfaces/cli/validate-command[validate]
+
+=== By Document Type
+
+link:guides/converting-book[**Book**]:: Multi-part books with chapters, appendices, glossary, and index
+link:guides/converting-article[**Article**]:: Standalone articles with sections
+link:reference/supported-elements[**Reference pages**]:: RefEntry manual pages
+
+== Learning Path
+
+. *Get Started (5 minutes)* -- link:getting-started/installation[Install] and link:getting-started/quick-start[try basic commands]
+. *Learn Interfaces (15 minutes)* -- link:interfaces/cli/[CLI] or link:interfaces/ruby-api/[Ruby API]
+. *Explore Features (30 minutes)* -- link:features/html-output/[HTML output], link:features/xinclude/[XInclude], link:features/numbering[Numbering]
+. *Understand Internals (as needed)* -- link:understanding/architecture[Architecture], link:understanding/data-models[Data Models]
+
+== Getting Help
+
+**Found a bug?**:: link:https://github.com/metanorma/docbook/issues[Report an issue on GitHub]
+
+**Have a question?**:: Check link:reference/glossary[Glossary] or search this documentation

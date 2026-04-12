@@ -1,0 +1,119 @@
+---
+layout: default
+title: Glossary
+parent: Reference
+nav_order: 4
+---
+
+# Glossary
+
+This glossary defines key terms used throughout the Metanorma DocBook
+gem documentation.
+
+DocBook 5::
+An OASIS standard XML vocabulary for marking up technical documents.
+DocBook 5 uses namespaces (`http://docbook.org/ns/docbook`) and
+supports structural elements like books, articles, chapters, sections,
+and a rich set of inline and block elements.
+
+XInclude::
+A W3C standard for including external XML or text files into an XML
+document using `<xi:include>` elements. The gem's `XIncludeResolver`
+handles resolution before model parsing, supporting both XML and text
+parse modes.
+
+fragid::
+A fragment identifier extension used with XInclude text includes.
+Supports `line=` (RFC 5147 line ranges), `char=` (character ranges),
+and `search=` (pattern-based extraction) schemes for pulling specific
+portions of included text files.
+
+xml:id::
+The standard XML attribute for assigning a unique identifier to an
+element. In DocBook, `xml:id` values serve as anchors for
+cross-references (`<xref linkend="...">`) and TOC navigation.
+
+linkend::
+An attribute used by `<xref>` and other referencing elements to point
+to the `xml:id` of a target element. The `XrefResolver` builds an O(1)
+lookup map from `xml:id` values to element objects for efficient
+resolution.
+
+lutaml-model::
+A Ruby library (`Lutaml::Model::Serializable`) that provides a
+declarative DSL for mapping between XML, JSON, and Ruby objects.
+The DocBook gem uses it as the base class for all element and data
+model classes, providing automatic serialization and deserialization.
+
+ContentBlock::
+A data model class (`Docbook::Output::ContentBlock`) representing a
+single unit of content in the HTML output. Each block has a `type`
+(paragraph, code, image, etc.), optional text content, and optional
+children forming a recursive tree. The Vue SPA renders blocks
+using the `BlockRenderer` component.
+
+SectionData::
+A data model class representing a section in the table of contents
+tree. Each entry has an ID, title, type (part, chapter, section, etc.),
+and nested children. The tree is built by the HTML generator and
+serialized as part of the TOC data.
+
+NumberingBuilder::
+A stateful Ruby class that assigns section numbers using different
+schemes: Roman numerals for parts (I, II, III), Arabic numerals for
+chapters (1, 2, 3), hierarchical dotted numbers for sections (1.1,
+1.2.3), and uppercase letters for appendices (A, B, C).
+
+TOC::
+Table of contents. The gem generates a recursive `SectionData` tree
+that represents the document's logical structure. The Vue SPA renders
+this as a collapsible sidebar with expand/collapse navigation.
+
+RefEntry::
+A DocBook element type (`<refentry>`) used for man-page style reference
+documentation. It contains a `refmeta` (metadata), `refnamediv` (name
+and purpose), and `refsection` elements (description content). The gem
+renders RefEntry with specialized content block types.
+
+mixed content::
+An XML concept where an element can contain both text nodes and child
+elements interspersed. For example, `<para>Hello <emphasis>world</emphasis>
+!</para>` has mixed content. The lutaml-model `mixed_content` declaration
+and `each_mixed_content` method handle traversal of these nodes in
+document order.
+
+Vue SPA::
+A Vue 3 single-page application embedded in the generated HTML. It
+provides an interactive ebook reader with a table of contents sidebar,
+search, theme switching, and reading mode selection. The SPA reads
+document data from inline JSON or an external JSON file.
+
+single file mode::
+An output mode where all document data, CSS, and JavaScript are
+embedded into a single HTML file. The resulting file is self-contained
+and can be opened directly in a browser without a web server. JSON data
+is stored in `window.DOCBOOK_DATA`.
+
+directory mode::
+An output mode where the HTML, JSON data, and assets are written as
+separate files in an output directory. The HTML file loads CSS and JS
+from `assets/` and fetches document data from `docbook.data.json` at
+runtime. Requires a web server or local file access.
+
+Liquid template::
+The template engine (Liquid) used to generate the HTML shell. Templates
+are stored in `lib/docbook/templates/` and use partials for the document
+head and scripts. Template variables control asset inlining, and
+placeholder tokens are replaced with JSON data after rendering.
+
+FlexSearch::
+A JavaScript full-text search library used in the Vue SPA for
+client-side search. The search index is built over TOC titles and
+persisted in IndexedDB to avoid rebuilding on each page load. The
+`useSearch` composable manages the search lifecycle.
+
+Prism.js::
+A lightweight syntax highlighting library loaded from cdnjs. It
+provides language-aware code highlighting for `<programlisting>`
+blocks based on the `language` attribute. The autoloader plugin
+loads additional language grammars on demand.

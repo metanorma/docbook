@@ -1,0 +1,102 @@
+---
+layout: default
+title: Content Pipeline
+parent: Understanding
+nav_order: 2
+---
+
+# Content Pipeline
+
+The content pipeline transforms a DocBook XML document into a rendered
+HTML page with an embedded Vue SPA. Each step produces a well-defined
+intermediate representation. Understanding this pipeline is essential
+for debugging output or extending the gem.
+
+== Step 1: XML input
+
+The pipeline begins with raw XML, provided either as a file path or a
+string. The CLI reads the file and passes the string to the parsing
+layer. The XML may reference external files via XInclude or contain
+`xml:id` attributes for cross-referencing.
+
+== Step 2: XInclude resolution
+
+If XInclude processing is enabled (the default for `to-html`), the
+`XIncludeResolver` preprocesses the Nokogiri document. It iterates
+through all `xi:include` elements, fetches the referenced files, and
+replaces the include directives with the actual content. This step
+handles nested includes by re-scanning after each resolution. Text
+includes with `fragid` attributes support line-range extraction and
+search-based filtering.
+
+== Step 3: Parsing into element model
+
+`Document.from_xml` parses the (possibly resolved) XML string. It
+detects the root element name and delegates to the corresponding
+element class (for example, `Elements::Book` for `<book>`). The
+lutaml-model library maps each XML element to a typed Ruby object
+with declared attributes, collections, and mixed content.
+
+== Step 4: XRef resolution
+
+The `XrefResolver` walks the parsed element tree and builds a hash
+map of `xml:id` values to element objects. This provides O(1) lookup
+for resolving `<xref linkend="...">` references. The resolver also
+extracts the best available title text from each target element.
+
+== Step 5: Section data collection
+
+The HTML generator performs a recursive tree walk over the parsed
+document, collecting `SectionData` objects. Each `SectionData` records
+the section's ID, title, type (part, chapter, section, appendix, etc.),
+and child sections. The resulting tree mirrors the document's logical
+structure and is used for the table of contents.
+
+== Step 6: Numbering
+
+The `NumberingBuilder` assigns numbers to each section in the tree.
+It uses different numbering schemes depending on the section type:
+
+* **Parts** receive uppercase Roman numerals (I, II, III).
+* **Chapters** receive Arabic numerals scoped to their parent part
+  (1, 2, 3).
+* **Sections** receive hierarchical dotted numbers (1.1, 1.2.3).
+* **Appendices** receive uppercase letters (A, B, C).
+
+The numbering map is a simple hash of ID to formatted number string.
+
+== Step 7: Content map building
+
+For each section, the HTML generator calls `each_mixed_content` on the
+corresponding element object. This yields `String` nodes and typed
+element objects in document order. A `case` statement dispatches each
+element to a builder method that produces `ContentBlock` instances.
+Paragraphs become `paragraph` blocks with inline children; code
+listings become `code` blocks with a `language` attribute; figures
+become `image` blocks with `src` and `alt` attributes.
+
+== Step 8: Index collection and generation
+
+The `IndexCollector` traverses the element tree looking for
+`<indexterm>` elements. It collects primary, secondary, and tertiary
+terms along with their containing section IDs. The `IndexGenerator`
+then groups collected terms by first letter, producing an `Index` model
+with `IndexGroup` children, each containing sorted `IndexTerm` entries.
+
+== Step 9: Template rendering
+
+The assembled `DocbookOutput` model (containing title, TOC, content,
+and index) is serialized to JSON and inserted into a Liquid template.
+In single-file mode, the JSON replaces placeholder tokens
+(`[[DOCBOOK_DATA]]`, `[[DOCBOOK_TOC]]`, `[[DOCBOOK_CONTENT]]`,
+`[[DOCBOOK_INDEX]]`) directly in the HTML. In directory mode, the
+placeholders are set to `null` and the JSON is written to a separate
+file that the Vue SPA fetches at runtime.
+
+== Step 10: Output
+
+The final step writes the rendered HTML to disk. Single-file mode
+produces one self-contained HTML file with all data inlined. Directory
+mode creates an output directory with `index.html`, `docbook.data.json`,
+and an `assets/` directory containing `app.css` and `app.iife.js` copied
+from the frontend build.

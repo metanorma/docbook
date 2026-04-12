@@ -1,0 +1,101 @@
+---
+layout: default
+title: Interfaces
+nav_order: 3
+has_children: true
+---
+
+== Interfaces
+
+The `docbook` gem provides two complementary interfaces for working with DocBook XML:
+
+* The *command-line interface* (CLI) for quick, scriptable operations
+* The *Ruby API* for programmatic integration into Ruby applications
+
+=== Which Interface Should You Use?
+
+[cols="3,4,4"]
+|===
+| | *CLI* | *Ruby API*
+
+| *Best for* | One-off conversions, shell scripts, CI pipelines | Application integration, custom processing pipelines, batch operations
+| *Audience* | Developers, authors, automation engineers | Ruby developers building tools or services
+| *Flexibility* | Fixed set of commands and options | Full access to parsing, traversal, and output internals
+| *Setup* | Zero code -- just run `docbook` commands | Add `require "docbook"` to your project
+|===
+
+=== Interface Overview
+
+==== Command-Line Interface
+
+The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides four commands:
+
+[cols="2,5"]
+|===
+| Command | Description
+
+| `docbook validate INPUT` | Check XML well-formedness
+| `docbook to-html INPUT` | Convert DocBook XML to HTML
+| `docbook format INPUT` | Prettify (reformat) DocBook XML
+| `docbook roundtrip INPUT...` | Round-trip test for regression testing
+|===
+
+All commands accept file paths as arguments. The CLI handles XInclude resolution, cross-reference resolution, and output generation automatically.
+
+See <<cli/index,CLI Reference>> for detailed documentation of each command.
+
+==== Ruby API
+
+The Ruby API gives you fine-grained control over every stage of the DocBook processing pipeline:
+
+1. *Parsing* -- `Docbook::Document.from_xml(xml_string)` parses XML into typed Ruby objects
+2. *XInclude Resolution* -- `Docbook::XIncludeResolver` resolves `xi:include` elements before parsing
+3. *Cross-Reference Resolution* -- `Docbook::XrefResolver` builds an ID map for `xref` and `linkend` lookups
+4. *HTML Output* -- `Docbook::Output::Html` generates HTML in single-file or directory mode
+
+The core classes are:
+
+[cols="3,5"]
+|===
+| Class | Purpose
+
+| `Docbook::Document` | Entry point for parsing XML into element models
+| `Docbook::XIncludeResolver` | Resolves XInclude elements in XML documents
+| `Docbook::XrefResolver` | Builds xml:id lookup map and resolves cross-references
+| `Docbook::Output::Html` | Generates HTML from parsed document models
+|===
+
+See <<ruby-api/index,Ruby API>> for detailed documentation of each component.
+
+=== Combining Both Interfaces
+
+You can combine the CLI and Ruby API in the same project. For example, use the CLI for quick ad-hoc conversions during development, and the Ruby API when you need to embed DocBook processing into a web application or a custom publishing pipeline.
+
+A typical Ruby workflow looks like this:
+
+[source,ruby]
+----
+require "docbook"
+
+# 1. Resolve XIncludes (before parsing)
+xml_string = File.read("book.xml")
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+
+# 2. Parse into Ruby objects
+document = Docbook::Document.from_xml(resolved.to_xml)
+
+# 3. Resolve cross-references
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+# 4. Generate HTML
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("book.xml"))
+).to_html
+
+File.write("output.html", html)
+----
+
+Explore the <<cli/index,CLI Reference>> and <<ruby-api/index,Ruby API>> pages for comprehensive documentation.

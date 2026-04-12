@@ -1,0 +1,111 @@
+---
+layout: default
+title: Ruby API
+parent: Interfaces
+nav_order: 2
+has_children: true
+---
+
+== Ruby API
+
+The `docbook` gem provides a programmatic Ruby API for parsing, processing, and converting DocBook XML documents. This is the same API that powers the CLI, exposed for direct use in Ruby applications.
+
+=== Getting Started
+
+Add the gem to your project and require it:
+
+[source,ruby]
+----
+require "docbook"
+----
+
+All public classes are under the `Docbook` module namespace.
+
+=== Core Classes
+
+The Ruby API revolves around four core classes:
+
+[cols="3,5"]
+|===
+| Class | Purpose
+
+| `Docbook::Document` | Entry point for parsing XML strings into typed Ruby element models. Supports 39 root element types.
+| `Docbook::XIncludeResolver` | Resolves `xi:include` elements in XML documents. Must be called *before* parsing with `Document.from_xml`.
+| `Docbook::XrefResolver` | Builds an `xml:id` lookup map from a parsed document and resolves `xref`/`linkend` references to titles.
+| `Docbook::Output::Html` | Generates HTML from a parsed document in single-file or directory mode.
+|===
+
+=== Processing Pipeline
+
+A typical processing pipeline has four stages:
+
+[source,ruby]
+----
+require "docbook"
+
+# Stage 1: Read the XML file
+xml_string = File.read("book.xml")
+
+# Stage 2: Resolve XIncludes (optional, but usually needed)
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+
+# Stage 3: Parse into Ruby element models
+document = Docbook::Document.from_xml(resolved.to_xml)
+
+# Stage 4: Resolve cross-references
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+# Stage 5: Generate HTML
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("book.xml"))
+).to_html
+
+File.write("output.html", html)
+----
+
+[TIP]
+====
+Stages 2 and 4 are optional but recommended. XInclude resolution should happen *before* parsing because the parser needs a single, complete XML document. Cross-reference resolution should happen *after* parsing so the resolver can traverse the element tree.
+====
+
+=== Error Handling
+
+The gem defines a base error class `Docbook::Error` that is raised for invalid input:
+
+[source,ruby]
+----
+begin
+  Docbook::Document.from_xml("<invalid>not docbook</invalid>")
+rescue Docbook::Error => e
+  puts "Parse error: #{e.message}"
+  # => "Unsupported DocBook root element: invalid"
+end
+----
+
+Common error scenarios:
+
+* Empty or invalid XML -- raises `Docbook::Error, "Empty or invalid XML document"`
+* Unsupported root element -- raises `Docbook::Error, "Unsupported DocBook root element: <name>"`
+* Missing file -- raises `Errno::ENOENT` from `File.read`
+
+=== Element Models
+
+All DocBook elements are modeled as `Lutaml::Model::Serializable` subclasses under the `Docbook::Elements` namespace. These models provide:
+
+* *Typed attributes* -- Every XML element maps to a Ruby class with typed attributes (strings, collections, nested models)
+* *Mixed content* -- Elements that support mixed content (text interspersed with child elements) provide an `each_mixed_content` method for traversal
+* *XML round-tripping* -- Models can be serialized back to XML via `to_xml`
+
+For example, a `<book>` element is represented as `Docbook::Elements::Book` with attributes for `info`, `part`, `chapter`, `appendix`, `preface`, `bibliography`, `glossary`, and `index`.
+
+=== Detailed Documentation
+
+Explore each component in detail:
+
+* *<<parsing,Parsing Documents>>* -- How to parse XML and access element models
+* *<<html-output,HTML Output>>* -- Generating HTML in single-file and directory modes
+* *<<xinclude,XInclude Resolution>>* -- Resolving `xi:include` elements
+* *<<xref-resolution,XRef Resolution>>* -- Building ID maps and resolving cross-references

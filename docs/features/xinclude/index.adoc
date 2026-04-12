@@ -1,0 +1,119 @@
+---
+layout: default
+title: XInclude Resolution
+parent: Features
+nav_order: 2
+has_children: true
+---
+
+# XInclude Resolution
+
+The DocBook gem provides custom XInclude resolution for composing documents from multiple XML files. It supports the standard XInclude namespace (`http://www.w3.org/2001/XInclude`) with both XML and text parsing modes, plus advanced text filtering via `fragid` schemes.
+
+## Why a Custom Resolver?
+
+The gem implements its own XInclude resolution rather than using Nokogiri's built-in `do_xinclude`. This provides:
+
+- **Iterative resolution** -- Handles nested includes (file A includes file B which includes file C) by re-scanning the document after each resolution
+- **fragid support** -- Text includes support three filtering schemes (`search=`, `line=`, `char=`) for extracting portions of a file
+- **Robust error handling** -- Failed includes are silently skipped, allowing partial document builds
+
+## Namespace
+
+XInclude elements use the standard namespace:
+
+[source,xml]
+----
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <chapter>
+    <xi:include href="intro.xml"/>
+  </chapter>
+</book>
+----
+
+The resolver finds `xi:include` elements using XPath:
+
+[source,ruby]
+----
+XINCLUDE_NS = "http://www.w3.org/2001/XInclude"
+includes = doc.xpath("//xi:include", "xi" => XINCLUDE_NS)
+----
+
+## Iterative Resolution
+
+The resolver processes includes iteratively rather than recursively. After each include is resolved, the document is re-scanned for new `xi:include` elements:
+
+[source,ruby]
+----
+def self.resolve(doc)
+  loop do
+    includes = doc.xpath("//xi:include", "xi" => XINCLUDE_NS)
+    break if includes.empty?
+
+    resolved_any = false
+    includes.each do |inc|
+      # ... resolve each include ...
+      resolved_any = true
+      break  # re-scan after each resolve (tree changes)
+    end
+    break unless resolved_any
+  end
+  doc
+end
+----
+
+This approach handles:
+
+- **Nested includes** -- A resolved file may contain its own `xi:include` elements
+- **Self-referential text includes** -- A file can include portions of itself using `fragid`
+- **Document tree mutations** -- The break-and-rescan pattern avoids stale XPath results
+
+## Parse Modes
+
+Two parse modes are supported, controlled by the `parse` attribute on `xi:include`:
+
+[cols="1,3,3"]
+|===
+| Mode | Attribute | Description
+
+| XML | `parse="xml"` (default) | Reads the referenced file, parses it as XML, and replaces the `xi:include` element with the root element of the included document
+| Text | `parse="text"` | Reads the referenced file as plain text and replaces the `xi:include` element with a text node
+|===
+
+## Base Path Resolution
+
+Include paths are resolved relative to the including document's URL. When using `resolve_string`, the base path is set from the input file:
+
+[source,ruby]
+----
+def self.resolve_string(xml_string, base_path: nil)
+  file_uri = "file://#{File.expand_path(base_path)}"
+  doc = Nokogiri::XML(xml_string, file_uri)
+  resolve(doc)
+end
+----
+
+## CLI Integration
+
+XInclude resolution is enabled by default in the `to-html` command and disabled by default in the `format` command:
+
+[source,bash]
+----
+# XInclude enabled (default for to-html)
+docbook to-html book.xml -o output.html
+
+# Explicitly disable XInclude
+docbook to-html book.xml -o output.html --no-xinclude
+
+# XInclude disabled (default for format)
+docbook format book.xml
+
+# Enable XInclude for format
+docbook format book.xml --xinclude
+----
+
+## Child Pages
+
+- <<xml-includes,XML Includes>> -- Standard XML inclusion with namespace handling
+- <<text-includes,Text Includes>> -- Plain text inclusion for source code and verbatim content
+- <<fragid-schemes,fragid Schemes>> -- Text filtering with `search=`, `line=`, and `char=` schemes

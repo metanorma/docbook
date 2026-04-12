@@ -1,0 +1,155 @@
+---
+layout: default
+title: CLI Options
+parent: Reference
+nav_order: 1
+---
+
+# CLI Options
+
+The `docbook` command-line tool is built on Thor. It provides four
+commands: `format`, `validate`, `to-html`, and `roundtrip`.
+
+== Global behavior
+
+* The executable is `docbook` (installed to `exe/`).
+* All commands that accept `INPUT` take a file path argument.
+* The tool exits with code 0 on success and code 1 on failure.
+* Error messages are written to stderr.
+
+== format
+
+Formats and prettifies a DocBook XML file.
+
+....
+docbook format INPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--output PATH`
+| `-o`
+| stdout
+| Output file path. When omitted, the formatted XML is written to
+  standard output.
+
+| `--xinclude`
+| _(none)_
+| `false`
+| Resolve XInclude directives before formatting.
+|===
+
+The command parses the input XML, then re-serializes it with pretty
+printing (indentation) and an XML declaration with UTF-8 encoding.
+
+== validate
+
+Checks whether a DocBook XML file is well-formed.
+
+....
+docbook validate INPUT
+....
+
+This command has no options. It reads the file, parses it with
+Nokogiri, and checks for parse errors. If the document is well-formed,
+it prints `INPUT: valid`. If errors are found, each error is printed
+to stderr and the command exits with code 1.
+
+Note: this validates XML well-formedness only, not DocBook schema
+conformance.
+
+== to-html
+
+Converts a DocBook XML file to an interactive HTML page.
+
+....
+docbook to-html INPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--output PATH`
+| `-o`
+| stdout
+| Output file path (single-file mode) or output directory path
+  (directory mode).
+
+| `--xinclude`
+| _(none)_
+| `true`
+| Resolve XInclude directives before processing. Enabled by default
+  for the `to-html` command.
+
+| `--output-type TYPE`
+| _(none)_
+| `single_file`
+| Output type: `single_file` or `directory`. In single-file mode,
+  all data is inlined into one HTML file. In directory mode, JSON
+  data and assets are written as separate files.
+|===
+
+=== Single-file mode
+
+....
+docbook to-html book.xml -o output.html
+...
+
+Produces a single `output.html` file with all JSON data, CSS, and
+JavaScript embedded inline. The file can be opened directly in a
+browser without a web server.
+
+=== Directory mode
+
+....
+docbook to-html book.xml -o my-book --output-type directory
+....
+
+Creates a `my-book/` directory containing:
+
+* `index.html` -- HTML shell with Vue SPA mount point
+* `docbook.data.json` -- Full document data as JSON
+* `assets/app.css` -- Compiled stylesheet
+* `assets/app.iife.js` -- Bundled JavaScript
+
+The directory mode requires the `--output` option.
+
+== roundtrip
+
+Tests that DocBook XML files can be parsed and re-serialized
+successfully.
+
+....
+docbook roundtrip INPUT [INPUT...]
+....
+
+This command has no options. It accepts one or more file paths. For
+each file, it parses the XML, serializes it back, re-parses the output,
+and reports success or failure. At the end, it prints a summary of
+total files and failure count.
+
+== Quick reference table
+
+[cols="1,1,1"]
+|===
+| Command | Input | Output
+
+| `format`
+| File path
+| Pretty-printed XML (file or stdout)
+
+| `validate`
+| File path
+| Pass/fail status
+
+| `to-html`
+| File path
+| HTML file or directory
+
+| `roundtrip`
+| One or more file paths
+| Pass/fail status per file
+|===

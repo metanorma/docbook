@@ -1,0 +1,186 @@
+---
+layout: default
+title: HTML Output
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 2
+---
+
+== HTML Output
+
+The `Docbook::Output::Html` class generates HTML from a parsed DocBook document.
+
+=== Constructor
+
+[source,ruby]
+----
+html_generator = Docbook::Output::Html.new(
+  document,                           # Parsed DocBook element (required)
+  xref_resolver: xref_resolver,       # XrefResolver instance (optional)
+  output_mode: :single_file,          # :single_file or :directory
+  base_path: "/path/to/xml/dir",      # Base path for image resolution
+  output_path: "/path/to/output"      # Output directory (required for directory mode)
+)
+----
+
+==== Parameters
+
+[cols="2,1,5"]
+|===
+| Parameter | Required | Description
+
+| `document` | Yes | A parsed DocBook element from `Document.from_xml`
+| `xref_resolver` | No | A `Docbook::XrefResolver` instance (call `resolve!` first). Used to resolve `xref` elements to target titles.
+| `output_mode` | No | `:single_file` (default) or `:directory`. Controls how images and assets are handled.
+| `base_path` | No | Directory containing the source XML file. Used to locate images referenced by relative paths.
+| `output_path` | No | Output directory for directory mode. Required when `output_mode` is `:directory`.
+|===
+
+=== Generating HTML
+
+Call `to_html` on the generator instance to produce the HTML output:
+
+[source,ruby]
+----
+html = html_generator.to_html
+# => "<!DOCTYPE html><html>..."  (String)
+----
+
+=== Output Modes
+
+==== Single-File Mode
+
+Produces a self-contained HTML string with all assets embedded:
+
+[source,ruby]
+----
+require "docbook"
+
+xml_string = File.read("article.xml")
+document = Docbook::Document.from_xml(xml_string)
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("article.xml"))
+).to_html
+
+File.write("output.html", html)
+----
+
+In single-file mode:
+
+* CSS and JavaScript are embedded inline in the HTML
+* Images are converted to Base64 data URIs (using the `Marcel` gem for MIME type detection)
+* All content data (TOC, sections, index) is embedded in `<script>` tags as JSON
+* The resulting file is completely self-contained
+
+==== Directory Mode
+
+Produces an HTML shell plus separate data and asset files:
+
+[source,ruby]
+----
+require "docbook"
+require "fileutils"
+
+xml_string = File.read("book.xml")
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+document = Docbook::Document.from_xml(resolved.to_xml)
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+output_dir = "/var/www/html/book"
+FileUtils.mkdir_p(output_dir)
+
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :directory,
+  base_path: File.dirname(File.expand_path("book.xml")),
+  output_path: output_dir
+).to_html
+
+# The generator writes docbook.data.json to output_path automatically
+# The returned HTML string is the index.html content
+File.write(File.join(output_dir, "index.html"), html)
+----
+
+In directory mode, the `to_html` method also writes `docbook.data.json` to the `output_path` directory. The directory structure is:
+
+[source]
+----
+output_dir/
+  index.html           # HTML returned by to_html
+  docbook.data.json    # Written automatically by to_html
+----
+
+[NOTE]
+====
+The CLI's `write_output` method handles copying `app.css` and `app.iife.js` to the `assets/` subdirectory. When using the Ruby API directly, you are responsible for copying the frontend assets if you need them.
+====
+
+=== Cross-Reference Resolution
+
+The `xref_resolver` parameter is used to resolve `<xref>` elements in the document. When an `xref` element has a `linkend` attribute, the resolver looks up the target element by its `xml:id` and returns the title text:
+
+[source,ruby]
+----
+# Without xref_resolver, xref elements display the raw linkend value
+# With xref_resolver, xref elements display the target's title
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file
+).to_html
+----
+
+=== Image Handling
+
+Images are handled differently based on the output mode:
+
+* *Single-file mode:* Images are read from disk, Base64-encoded, and embedded as data URIs
+* *Directory mode:* Images reference their original file paths (relative to the output directory)
+
+The `base_path` parameter is used to locate image files on disk. The generator searches the base path and all parent directories to find referenced images. It also checks common prefixes like `resources/` and `../resources/`.
+
+=== Generated Data Structure
+
+The `to_html` method builds a structured data model internally before rendering. This model includes:
+
+[cols="2,5"]
+|===
+| Component | Description
+
+| *Title* | The document title extracted from `<info><title>` or the root element's `<title>`
+| *TOC* | Hierarchical table of contents with section IDs, titles, and types
+| *Numbering* | Computed numbering for parts (Roman), chapters (Arabic), appendices (Alpha), and sections (hierarchical)
+| *Content* | Section content organized by section ID, with blocks for paragraphs, code, images, lists, etc.
+| *Index* | Collected `indexterm` elements grouped alphabetically with see/see-also support
+|===
+
+=== Supported Content Types
+
+The HTML generator processes the following block-level content types from each section:
+
+* Paragraphs (`para`, `formalpara`)
+* Code listings (`programlisting`, `screen`, `literallayout`)
+* Images and figures (`mediaobject`, `figure`, `informalfigure`, `inlinemediaobject`)
+* Lists (`orderedlist`, `itemizedlist`, `variablelist`)
+* Admonitions (`note`, `warning`, `caution`, `important`, `tip`, `danger`)
+* Examples (`example`, `informalexample`)
+* Block quotes (`blockquote`)
+* Glossary entries (`glossentry`)
+* Bibliography entries (`bibliomixed`)
+* Reference entries (`refentry`)
+* Index sections (`index`, `setindex`)
+* Nested sections (`section`, `simplesect`)
+
+=== See Also
+
+* *<<parsing,Parsing Documents>>* -- Parse XML before generating HTML
+* *<<xref-resolution,XRef Resolution>>* -- Resolve cross-references for the HTML generator
+* *<<xinclude,XInclude Resolution>>* -- Resolve XIncludes before parsing

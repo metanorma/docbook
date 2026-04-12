@@ -1,0 +1,104 @@
+---
+layout: default
+title: validate
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 2
+---
+
+== validate
+
+Validate the well-formedness of a DocBook XML file.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook validate INPUT
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file to validate (required)
+|===
+
+=== Behavior
+
+The `validate` command reads the input file and parses it with Nokogiri's XML parser. If the file is well-formed XML, it prints a success message to stdout. If parsing errors are found, each error is printed to stderr and the command exits with code 1.
+
+[IMPORTANT]
+====
+This command checks *well-formedness* only (valid XML syntax). It does not validate against the DocBook 5 DTD or RelaxNG schema. For schema validation, use an external tool like `jing` or `xmllint --valid`.
+====
+
+=== Exit Codes
+
+[cols="1,4"]
+|===
+| Code | Condition
+
+| `0` | The file is well-formed XML (no parse errors)
+| `1` | The file contains XML parse errors
+|===
+
+=== Examples
+
+==== Valid file
+
+[source,bash]
+----
+$ docbook validate article.xml
+article.xml: valid
+----
+
+==== Invalid file
+
+When the XML contains syntax errors, each error is reported:
+
+[source,bash]
+----
+$ docbook validate broken.xml
+broken.xml: 6:14: FATAL: Opening and ending tag mismatch: section line 4 and artcle
+broken.xml: 1 file, 1 failures
+$ echo $?
+1
+----
+
+==== Validate multiple files in a script
+
+Since the command exits with code 1 on failure, it integrates well with shell scripts:
+
+[source,bash]
+----
+#!/bin/bash
+set -e
+for f in xml/*.xml; do
+  docbook validate "$f"
+done
+echo "All files are valid"
+----
+
+==== Use in CI pipelines
+
+[source,bash]
+----
+# GitHub Actions example
+- name: Validate DocBook files
+  run: |
+    find . -name '*.xml' -exec docbook validate {} \;
+----
+
+=== Limitations
+
+* *No schema validation* -- Only checks XML well-formedness, not DocBook 5 schema compliance
+* *No XInclude resolution* -- XIncludes are not resolved before validation; the raw XML is checked as-is
+* *Single file at a time* -- Only one file can be validated per invocation (use a shell loop for batches)
+
+=== See Also
+
+* <<format-command,format>> -- Reformat and prettify XML files
+* <<roundtrip-command,roundtrip>> -- Round-trip test for deeper structural validation

@@ -1,0 +1,749 @@
+---
+layout: default
+title: Supported Elements
+parent: Reference
+nav_order: 2
+---
+
+# Supported Elements
+
+The gem defines 157 element classes covering the most common DocBook 5
+elements. This reference lists all supported elements organized by
+category.
+
+== Structural elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<article>`
+| `Article`
+| Top-level document; flat section hierarchy
+
+| `<book>`
+| `Book`
+| Top-level document; part/chapter structure
+
+| `<chapter>`
+| `Chapter`
+| Book chapter container
+
+| `<part>`
+| `Part`
+| Book part container
+
+| `<section>`
+| `Section`
+| Generic recursive section
+
+| `<sect1>` -- `<sect5>`
+| `Sect1` -- `Sect5`
+| Numbered section levels 1--5
+
+| `<appendix>`
+| `Appendix`
+| Book appendix
+
+| `<preface>`
+| `Preface`
+| Book preface
+
+| `<set>`
+| `Set`
+| Collection of books
+
+| `<reference>`
+| `Reference`
+| Container for refentry elements
+
+| `<topic>`
+| `Topic`
+| Standalone topic fragment
+
+| `<dedication>`
+| `Dedication`
+| Dedication page
+
+| `<acknowledgements>`
+| `Acknowledgements`
+| Acknowledgements page
+
+| `<colophon>`
+| `Colophon`
+| Production notes
+
+| `<simplesect>`
+| `Simplesect`
+| Non-recursive titled section
+|===
+
+== RefEntry elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<refentry>`
+| `RefEntry`
+| Man-page style reference entry
+
+| `<refmeta>`
+| `RefMeta`
+| Metadata for a refentry
+
+| `<refentrytitle>`
+| `RefEntryTitle`
+| Title of the refentry
+
+| `<refmiscinfo>`
+| `RefMiscInfo`
+| Miscellaneous metadata
+
+| `<refnamediv>`
+| `RefNamediv`
+| Name and purpose section
+
+| `<refname>`
+| `RefName`
+| Name of the subject
+
+| `<refpurpose>`
+| `RefPurpose`
+| One-line description
+
+| `<refsection>`
+| `RefSection`
+| Recursive section within refentry
+
+| `<refsect1>` -- `<refsect3>`
+| `RefSect1` -- `RefSect3`
+| Numbered sections within refentry
+
+| `<fieldsynopsis>`
+| `FieldSynopsis`
+| Field or variable declaration
+|===
+
+== Metadata elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<info>`
+| `Info`
+| Bibliographic info container
+
+| `<title>`
+| `Title`
+| Element title
+
+| `<subtitle>`
+| `Subtitle`
+| Element subtitle
+
+| `<author>`
+| `Author`
+| Author with personname
+
+| `<personname>`
+| `PersonName`
+| Structured personal name
+
+| `<firstname>`
+| `FirstName`
+| Given name
+
+| `<surname>`
+| `Surname`
+| Family name
+
+| `<honorific>`
+| `Honorific`
+| Honorific prefix (Dr., Prof.)
+
+| `<copyright>`
+| `Copyright`
+| Copyright statement
+
+| `<year>`
+| `Year`
+| Copyright year
+
+| `<holder>`
+| `Holder`
+| Copyright holder
+
+| `<legalnotice>`
+| `LegalNotice`
+| Legal text
+
+| `<releaseinfo>`
+| `ReleaseInfo`
+| Release information
+
+| `<pubdate>`
+| `PubDate`
+| Publication date
+
+| `<date>`
+| `Date`
+| Generic date
+
+| `<productname>`
+| `ProductName`
+| Product name
+
+| `<productnumber>`
+| `ProductNumber`
+| Product number or SKU
+
+| `<version>`
+| `Version`
+| Version identifier
+|===
+
+== Block elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<para>`
+| `Para`
+| Paragraph with mixed inline content
+
+| `<formalpara>`
+| `FormalPara`
+| Paragraph with title
+
+| `<simpara>`
+| `SimPara`
+| Simple paragraph (no inline markup)
+
+| `<blockquote>`
+| `BlockQuote`
+| Extended quotation with attribution
+
+| `<quotation>`
+| `Quotation`
+| Inline quotation
+
+| `<attribution>`
+| `Attribution`
+| Quote attribution
+
+| `<literallayout>`
+| `LiteralLayout`
+| Preformatted text preserving whitespace
+
+| `<address>`
+| `Address`
+| Postal or email address
+
+| `<sidebar>`
+| `SideBar`
+| Sidebar text block
+
+| `<remark>`
+| `Remark`
+| Inline remark or comment
+|===
+
+== List elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<orderedlist>`
+| `OrderedList`
+| Numbered list
+
+| `<itemizedlist>`
+| `ItemizedList`
+| Bulleted list
+
+| `<variablelist>`
+| `VariableList`
+| Definition list (term/description pairs)
+
+| `<listitem>`
+| `ListItem`
+| List item container
+
+| `<varlistentry>`
+| `Varlistentry`
+| Term/description pair
+
+| `<term>`
+| `Term`
+| Definition term
+|===
+
+== Link elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<link>`
+| `Link`
+| Hyperlink (uses `xlink:href`)
+
+| `<xref>`
+| `Xref`
+| Cross-reference (uses `linkend`)
+
+| `<uri>`
+| `Uri`
+| Uniform Resource Identifier
+|===
+
+== Inline elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<emphasis>`
+| `Emphasis`
+| Emphasis (italic, bold, or styled via role)
+
+| `<property>`
+| `Property`
+| Property name
+
+| `<code>`
+| `Code`
+| Inline code
+
+| `<literal>`
+| `Literal`
+| Inline literal text
+
+| `<filename>`
+| `Filename`
+| File name
+
+| `<classname>`
+| `ClassName`
+| Class or type name
+
+| `<function>`
+| `Function`
+| Function or method name
+
+| `<parameter>`
+| `Parameter`
+| Parameter name
+
+| `<variable>`
+| `Variable`
+| Variable name
+
+| `<type>`
+| `Type`
+| Data type name
+
+| `<tag>`
+| `Tag`
+| HTML/XML tag name
+
+| `<att>`
+| `Att`
+| Attribute name
+
+| `<quote>`
+| `Quote`
+| Inline quotation
+
+| `<citation>`
+| `Citation`
+| Bibliographic citation
+
+| `<citerefentry>`
+| `CiterefEntry`
+| Citation of a refentry
+
+| `<citetitle>`
+| `Citetitle`
+| Title of a cited work
+
+| `<abbrev>`
+| `Abbrev`
+| Abbreviation
+
+| `<firstterm>`
+| `FirstTerm`
+| First occurrence of a term
+
+| `<glossterm>`
+| `Glossterm`
+| Glossary term reference
+
+| `<foreignphrase>`
+| `ForeignPhrase`
+| Foreign-language phrase
+
+| `<phrase>`
+| `Phrase`
+| Generic inline phrase
+
+| `<buildtarget>`
+| `BuildTarget`
+| Build target name
+
+| `<dir>`
+| `Dir`
+| Directory name
+
+| `<replaceable>`
+| `Replaceable`
+| Replaceable content
+|===
+
+== Media elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<mediaobject>`
+| `MediaObject`
+| Container for alternative media representations
+
+| `<inlinemediaobject>`
+| `Inlinemediaobject`
+| Inline media object
+
+| `<imageobject>`
+| `ImageObject`
+| Image representation
+
+| `<imagedata>`
+| `ImageData`
+| Image source and metadata
+
+| `<alt>`
+| `Alt`
+| Alternative text
+
+| `<textobject>`
+| `TextObject`
+| Text alternative for media
+
+| `<audioobject>`
+| `AudioObject`
+| Audio representation
+
+| `<videoobject>`
+| `VideoObject`
+| Video representation
+
+| `<figure>`
+| `Figure`
+| Formal figure with title
+
+| `<informalfigure>`
+| `InformalFigure`
+| Figure without title
+
+| `<programlisting>`
+| `ProgramListing`
+| Code listing with language attribute
+
+| `<screen>`
+| `Screen`
+| Screen output or command listing
+
+| `<computeroutput>`
+| `ComputerOutput`
+| Computer-generated text
+
+| `<userinput>`
+| `UserInput`
+| User-entered text
+|===
+
+== Table elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<table>`
+| `Table`
+| Formal table with title
+
+| `<tgroup>`
+| `TGroup`
+| Table group (column definitions)
+
+| `<thead>`
+| `THead`
+| Table header
+
+| `<tbody>`
+| `TBody`
+| Table body
+
+| `<tfoot>`
+| `TFoot`
+| Table footer
+
+| `<row>`
+| `Row`
+| Table row
+
+| `<entry>`
+| `Entry`
+| Table cell
+
+| `<entrytbl>`
+| `EntryTbl`
+| Nested sub-table within a cell
+|===
+
+== Admonition elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<note>`
+| `Note`
+| Informational note
+
+| `<warning>`
+| `Warning`
+| Warning about potential problems
+
+| `<caution>`
+| `Caution`
+| Caution about unexpected behavior
+
+| `<important>`
+| `Important`
+| Important information
+
+| `<tip>`
+| `Tip`
+| Helpful suggestion
+
+| `<danger>`
+| `Danger`
+| Danger warning about risk of harm
+|===
+
+== Bibliography elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<bibliography>`
+| `Bibliography`
+| Bibliography container
+
+| `<bibliomixed>`
+| `Bibliomixed`
+| Mixed bibliographic entry
+
+| `<biblioref>`
+| `Biblioref`
+| Bibliographic cross-reference
+
+| `<orgname>`
+| `OrgName`
+| Organization name
+
+| `<publishername>`
+| `PublisherName`
+| Publisher name
+|===
+
+== Glossary elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<glossary>`
+| `Glossary`
+| Glossary container
+
+| `<glossentry>`
+| `GlossEntry`
+| Glossary entry
+
+| `<glossdef>`
+| `GlossDef`
+| Glossary definition
+
+| `<glosssee>`
+| `GlossSee`
+| Cross-reference to another term
+
+| `<glossseealso>`
+| `GlossSeeAlso`
+| Related term reference
+|===
+
+== Index elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<index>`
+| `Index`
+| Index container
+
+| `<setindex>`
+| `SetIndex`
+| Set-level index
+
+| `<indexterm>`
+| `IndexTerm`
+| Index term marker
+
+| `<indexdiv>`
+| `IndexDiv`
+| Index division (by letter)
+
+| `<indexentry>`
+| `IndexEntry`
+| Generated index entry
+
+| `<primary>`
+| `Primary`
+| Primary index term
+
+| `<secondary>`
+| `Secondary`
+| Secondary index term
+
+| `<tertiary>`
+| `Tertiary`
+| Tertiary index term
+
+| `<see>`
+| `See`
+| See-reference in index
+
+| `<seealso>`
+| `SeeAlso`
+| See-also reference in index
+|===
+
+== TOC elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<toc>`
+| `Toc`
+| Table of contents container
+
+| `<tocdiv>`
+| `TocDiv`
+| TOC division
+
+| `<tocentry>`
+| `TocEntry`
+| TOC entry
+|===
+
+== Footnote elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<footnote>`
+| `Footnote`
+| Footnote body
+
+| `<footnoteref>`
+| `FootnoteRef`
+| Reference to a footnote
+|===
+
+== Callout elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<callout>`
+| `Callout`
+| Callout description
+
+| `<calloutlist>`
+| `CalloutList`
+| List of callouts
+|===
+
+== Example and Equation elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<example>`
+| `Example`
+| Formal example with title
+
+| `<informalexample>`
+| `InformalExample`
+| Example without title
+
+| `<equation>`
+| `Equation`
+| Mathematical equation
+|===
+
+== Procedure elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<procedure>`
+| `Procedure`
+| Step-by-step procedure
+
+| `<step>`
+| `Step`
+| Single procedure step
+
+| `<substeps>`
+| `SubSteps`
+| Nested sub-steps
+|===
+
+== Other elements
+
+[cols="1,1,3"]
+|===
+| XML Element | Ruby Class | Notes
+
+| `<msgset>`
+| `MsgSet`
+| Message set container
+
+| `<msg>`
+| `Msg`
+| Individual message
+
+| `<msgexplan>`
+| `Msgexplan`
+| Message explanation
+
+| `<annotation>`
+| `Annotation`
+| Annotation marker
+|===

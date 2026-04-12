@@ -1,0 +1,145 @@
+---
+layout: default
+title: Architecture
+parent: Understanding
+nav_order: 1
+---
+
+# Architecture
+
+The Metanorma DocBook gem is organized into distinct modules, each
+responsible for a specific phase of document processing. This page
+describes the purpose of each module and how they interact.
+
+== Module structure
+
+=== Docbook::Document
+
+The entry point for parsing. `Document.from_xml` accepts an XML string,
+detects the root element name (such as `book` or `article`), looks up
+the corresponding element class in `ROOT_ELEMENT_MAP`, and delegates
+to that class's `from_xml` method.
+
+=== Docbook::Elements
+
+Contains 157 element classes, one per supported DocBook XML element.
+Each class inherits from `Lutaml::Model::Serializable` and declares
+typed attributes and XML mappings using the lutaml-model DSL. Classes
+are autoloaded on demand from `lib/docbook/elements/`.
+
+=== Docbook::XIncludeResolver
+
+Resolves XInclude directives before model parsing. It iterates through
+`xi:include` elements in a Nokogiri document, fetching referenced files
+and replacing the include elements with the included content. Supports
+both XML and text parse modes, plus `fragid` extensions for line-range
+and search-based text extraction.
+
+=== Docbook::XrefResolver
+
+After parsing, builds an O(1) hash map of `xml:id` values to their
+corresponding element objects. The resolver walks the element tree
+recursively, collecting every element that has an `xml_id`. Callers
+then use `title_for(linkend)` to resolve cross-reference text.
+
+=== Docbook::Output::Html
+
+The HTML generation engine. It takes a parsed element tree and an
+optional `XrefResolver`, then walks the tree to produce structured
+data (TOC, content blocks, numbering, index). The final output is
+rendered through a Liquid template with inline or linked JSON data
+for the Vue SPA frontend.
+
+=== Docbook::Output::Data
+
+Defines the data model classes used by the HTML generator:
+`ContentBlock`, `SectionData`, `NumberingBuilder`, `DocbookOutput`,
+and related types. These classes hold the intermediate representation
+between the element tree and JSON serialization.
+
+=== Docbook::Models
+
+A parallel set of pre-computed models (`DocumentRoot`, `TocNode`,
+`SectionRoot`, etc.) that represent the final JSON structure consumed
+by the Vue SPA. These are separate from `Output::Data` because they
+include additional metadata like reading position and generator version.
+
+=== Docbook::CLI
+
+A Thor-based command-line interface that provides the `format`,
+`validate`, `to-html`, and `roundtrip` commands. It wires together
+the parsing, resolution, and output modules based on user options.
+
+== Data flow
+
+The following diagram shows the complete data flow from XML input to
+final HTML output:
+
+....
+                  +-----------------+
+                  |   XML Input     |
+                  | (string/file)   |
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  | XIncludeResolver |  (optional)
+                  |  resolve xi:    |
+                  |  include refs   |
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  | Document.from_xml|
+                  | Nokogiri parse   |
+                  | -> Element model |
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  | XrefResolver     |
+                  | Build O(1) ID   |
+                  | lookup hash     |
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  | Output::Html     |
+                  | Section tree    |
+                  | Numbering       |
+                  | Content blocks  |
+                  | Index collection|
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  | Liquid Template  |
+                  | Inline JSON      |
+                  | or linked JSON   |
+                  +--------+--------+
+                           |
+                           v
+                  +--------+--------+
+                  |   HTML Output   |
+                  | (single file or |
+                  |  directory)     |
+                  +-----------------+
+....
+
+In single-file mode, all JSON data and CSS/JS assets are embedded
+directly into the HTML. In directory mode, the JSON is written to
+`docbook.data.json` and assets are copied to an `assets/` subdirectory.
+
+== Element model system
+
+Every DocBook element is represented by a Ruby class that inherits from
+`Lutaml::Model::Serializable`. This provides:
+
+* **Typed attributes** via the `attribute` DSL method
+* **Mixed content** support via the `mixed_content` declaration
+* **XML serialization** via `from_xml` / `to_xml`
+* **JSON serialization** via `to_json`
+
+The `each_mixed_content` method yields child nodes (both `String` and
+element objects) in document order, which is essential for correct
+inline content rendering.

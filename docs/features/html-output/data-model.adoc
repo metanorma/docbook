@@ -1,0 +1,285 @@
+---
+layout: default
+title: Output Data Model
+parent: HTML Output
+grand_parent: Features
+nav_order: 3
+---
+
+# Output Data Model
+
+The output data model defines the JSON structure produced by the Ruby backend and consumed by the Vue 3 SPA frontend. All models are implemented as `Lutaml::Model::Serializable` classes, providing type-safe serialization to JSON.
+
+## Top-Level Model: DocbookOutput
+
+The `DocbookOutput` class is the root container for all output data:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `title` | `String` | Document title (from `Book.info.title` or `Article.info.title`)
+| `toc` | `Toc` | Table of contents tree and numbering map
+| `content` | `ContentData` | All section content as block trees
+| `index` | `Index` | Generated index data (may be empty)
+|===
+
+[source,ruby]
+----
+class DocbookOutput < Lutaml::Model::Serializable
+  attribute :title, :string
+  attribute :toc, Toc
+  attribute :content, ContentData
+  attribute :index, Index
+end
+----
+
+## TOC Model
+
+The `Toc` model contains the document structure tree and section numbering:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `sections` | `SectionData[]` | Recursive tree of document sections
+| `numbering` | `NumberingEntry[]` | Flat map of section ID to formatted number
+|===
+
+### SectionData
+
+Each node in the TOC tree is a `SectionData`:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `id` | `String` | Section's `xml:id` or generated slug
+| `title` | `String` | Section title text
+| `type` | `String` | Section type: `part`, `chapter`, `section`, `appendix`, `preface`, `glossary`, `bibliography`, `index`, `reference`
+| `number` | `String` | Formatted section number (e.g., "I", "1", "1.2.3", "A")
+| `children` | `SectionData[]` | Nested child sections
+|===
+
+### NumberingEntry
+
+A key-value pair mapping a section ID to its formatted number:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `id` | `String` | Section `xml:id`
+| `value` | `String` | Formatted number (e.g., `"I"`, `"1"`, `"1.2.3"`, `"Appendix A"`)
+|===
+
+## ContentData Model
+
+The `ContentData` model holds all section content as a collection of entries:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `entries` | `ContentEntry[]` | Array of section ID to `SectionContent` mappings
+|===
+
+### ContentEntry
+
+A key-value pair mapping a section ID to its content:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `key` | `String` | Section `xml:id`
+| `value` | `SectionContent` | The section's content blocks
+|===
+
+### SectionContent
+
+The content for a single section:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `section_id` | `String` | Section's `xml:id`
+| `blocks` | `ContentBlock[]` | Tree of content blocks
+|===
+
+## ContentBlock Model
+
+The `ContentBlock` is the core building block for all rendered content. It is a recursive structure that can represent paragraphs, images, code listings, lists, admonitions, and more:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `type` | `String` | Block type (40+ types, see below)
+| `text` | `String` | Primary text content (paragraph text, code content, title, etc.)
+| `src` | `String` | URL or path (images, links, xrefs)
+| `alt` | `String` | Alt text (images)
+| `title` | `String` | Block title (figures, examples)
+| `language` | `String` | Programming language for syntax highlighting (code blocks)
+| `className` | `String` | CSS class name (bibliography elements)
+| `children` | `ContentBlock[]` | Nested child blocks (recursive)
+|===
+
+### Block Types
+
+The `type` field determines how the block is rendered. There are over 40 block types:
+
+**Block-Level Types:**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `paragraph` | Standard paragraph with inline content in children
+| `code` | Code listing (from `programlisting`, `screen`, or `literallayout`)
+| `image` | Image block with `src` (base64 or path) and `alt` text
+| `inline_image` | Inline image within a paragraph
+| `blockquote` | Quoted text with optional attribution in `text`
+| `ordered_list` | Numbered list with `list_item` children
+| `itemized_list` | Bulleted list with `list_item` children
+| `list_item` | Single list item containing block content
+| `definition_list` | Definition list with alternating term/description children
+| `definition_term` | Term being defined
+| `definition_description` | Definition content
+| `example` | Titled example block (from `example` element)
+| `example_output` | Untitled example block (from `informalexample`)
+| `section` | Nested section with heading and child blocks
+| `heading` | Section heading text
+|===
+
+**Admonition Types:**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `note` | Note admonition
+| `warning` | Warning admonition
+| `caution` | Caution admonition
+| `important` | Important admonition
+| `tip` | Tip admonition
+| `danger` | Danger admonition
+|===
+
+**Reference Entry Types:**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `reference_entry` | Top-level reference page entry
+| `reference_badge` | Category badge (e.g., "pi", "param")
+| `reference_name` | Entry headword/name
+| `reference_definition` | Short definition/purpose
+| `reference_meta` | Metadata (miscinfo, manvolnum)
+| `description_section` | Content section within a reference entry
+|===
+
+**Inline Types (used in `paragraph` children):**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `text` | Plain text content
+| `strong` | Bold/strong text (from `emphasis role="bold"`)
+| `italic` | Italic text (from `emphasis role="italic"`)
+| `emphasis` | Emphasized text (default emphasis)
+| `codetext` | Inline code (from `code`, `literal`, `filename`, `classname`, etc.)
+| `link` | Hyperlink with `src` as URL
+| `xref` | Internal cross-reference with resolved title
+| `citation` | Citation text (from `citetitle` without href)
+| `citation_link` | Cititation with external link
+| `biblioref` | Bibliography reference with linkend
+|===
+
+**Bibliography Types:**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `bibliography_entry` | Top-level bibliography entry
+| `biblio_abbrev` | Bibliography abbreviation
+| `biblio_citetitle` | Citation title
+| `biblio_personname` | Author name
+| `biblio_firstname` | First name
+| `biblio_surname` | Surname
+| `biblio_publishername` | Publisher name
+| `biblio_pubdate` | Publication date
+| `biblio_orgname` | Organization name
+|===
+
+**Index Types:**
+
+[cols="1,3"]
+|===
+| Type | Description
+
+| `index_section` | Index section container
+| `index_letter` | Letter group within the index
+| `index_entry` | Individual index term entry
+| `index_reference` | Link to the section containing the term
+| `index_see` | "see" cross-reference
+| `index_see_also` | "see also" cross-reference
+|===
+
+## Index Model
+
+The `Index` model holds the generated back-of-book index:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `title` | `String` | Index title (typically "Index")
+| `type` | `String` | Index type filter (for typed indexes)
+| `groups` | `IndexGroup[]` | Terms grouped by first letter
+|===
+
+### IndexGroup
+
+Terms grouped under a single letter:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `letter` | `String` | Group letter ("A", "B", ..., "SYMBOLS")
+| `entries` | `IndexTerm[]` | Terms in this group
+|===
+
+### IndexTerm
+
+A single index term entry:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `primary` | `String` | Primary term text
+| `secondary` | `String` | Secondary term (optional)
+| `tertiary` | `String` | Tertiary term (optional)
+| `section_id` | `String` | `xml:id` of the section where the term appears
+| `section_title` | `String` | Title of the section for display
+| `sort_as` | `String` | Sort key (lowercased, or "SYMBOLS" for non-alpha)
+| `sees` | `String[]` | "see" cross-references
+| `see_alsos` | `String[]` | "see also" cross-references
+|===
+
+## NumberingBuilder
+
+The `NumberingBuilder` class computes section numbering during the output build. It maintains independent counters for each numbering scope:
+
+- **Parts** -- Roman numerals (I, II, III, ...) via `next_part`
+- **Chapters** -- Arabic numerals scoped per part (resets at each new part) via `next_chapter(part_index)`
+- **Sections** -- Flat sequential numbering per parent scope (1, 2, 3, ...) via `next_section(scope_id)`, combined into hierarchical dot notation (1.1, 1.2.3)
+- **Appendices** -- Alpha letters (A, B, C, ...) via `next_appendix`
+
+Preface, glossary, bibliography, and index sections are explicitly unnumbered.
