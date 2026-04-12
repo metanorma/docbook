@@ -1,0 +1,335 @@
+= DocBook
+:toc:
+:toclevels: 2
+
+== Purpose
+
+DocBook is a Ruby gem for parsing, transforming, and generating HTML from
+DocBook 5 XML documents. It provides a complete toolkit for working with
+DocBook documents including XInclude resolution, validation, formatting, and
+high-quality HTML output.
+
+Key features:
+
+* **DocBook XML Parsing**: Full support for DocBook 5 elements via lutaml-model
+* **XInclude Resolution**: Resolve XInclude references in DocBook documents
+* **HTML Output**: Generate professional HTML documentation with Vue 3 SPA
+* **CLI Tools**: Format, validate, and convert DocBook documents
+
+== Installation
+
+Add to your application Gemfile:
+
+[source,ruby]
+----
+gem 'docbook'
+----
+
+Then execute:
+
+[source,bash]
+----
+$ bundle install
+----
+
+Or install directly:
+
+[source,bash]
+----
+$ gem install docbook
+----
+
+== Quick start
+
+=== Convert DocBook XML to HTML
+
+[source,bash]
+----
+$ docbook to-html input.xml -o output.html
+----
+
+=== With XInclude resolution
+
+[source,bash]
+----
+$ docbook to-html --xinclude input.xml -o output.html
+----
+
+=== Format DocBook XML
+
+[source,bash]
+----
+$ docbook format input.xml -o output.xml
+----
+
+=== Validate DocBook XML
+
+[source,bash]
+----
+$ docbook validate input.xml
+input.xml: valid
+----
+
+=== Ruby API
+
+[source,ruby]
+----
+require 'docbook'
+
+# Parse a DocBook document
+article = Docbook::Elements::Article.from_xml(File.read('input.xml'))
+
+# Convert to HTML
+html_output = Docbook::Output::Html.new(article).to_html
+
+# Write to file
+File.write('output.html', html_output)
+----
+
+== CLI Commands
+
+=== to-html
+
+Convert DocBook XML to HTML with Vue 3 SPA output.
+
+[source,bash]
+----
+# Basic usage
+$ docbook to-html INPUT -o OUTPUT
+
+# With XInclude resolution
+$ docbook to-html --xinclude INPUT -o OUTPUT
+
+# Output to stdout
+$ docbook to-html INPUT
+----
+
+Options:
+
+* `-o, --output FILE`: Output file (default: stdout)
+* `--xinclude`: Resolve XIncludes before processing
+
+=== format
+
+Format/prettify DocBook XML documents.
+
+[source,bash]
+----
+# Basic usage
+$ docbook format INPUT -o OUTPUT
+
+# With XInclude resolution
+$ docbook format --xinclude INPUT -o OUTPUT
+----
+
+Options:
+
+* `-o, --output FILE`: Output file (default: stdout)
+* `--xinclude`: Resolve XIncludes before processing
+
+=== validate
+
+Validate DocBook XML for well-formedness.
+
+[source,bash]
+----
+$ docbook validate input.xml
+input.xml: valid
+----
+
+Returns exit code 0 if valid, exit code 1 with error messages if invalid.
+
+=== roundtrip
+
+Round-trip test DocBook XML files (parse and re-serialize).
+
+[source,bash]
+----
+$ docbook roundtrip input1.xml input2.xml
+input1.xml: OK
+input2.xml: OK
+2 files, 0 failures
+----
+
+== HTML Output Features
+
+The HTML output is a self-contained Vue 3 SPA that works with `file://` protocol
+(no server required).
+
+=== Vue 3 SPA
+
+* **Pre-compiled Vue 3**: No build step required at runtime
+* **FlexSearch**: Full-text search across all headings
+* **Collapsible TOC**: Hierarchical table of contents with expand/collapse
+* **Keyboard navigation**: Press `/` to search, `Esc` to close
+
+=== Theme Support
+
+* **Dark mode**: Toggle between light, dark, and system preference
+* **Font selection**: Sans-serif (Inter) and serif (Merriweather) options
+* **Persistent settings**: Theme and font preferences saved to localStorage
+
+=== Document Structure
+
+* **Chapter numbering**: Roman numerals for chapters (I, II, III...)
+* **Appendix numbering**: "Appendix A", "Appendix B", etc.
+* **Section numbering**: Dot notation (1.1, 1.2, 2.1...)
+* **Part organization**: Parts contain chapters, appendices, and references
+
+=== Content Types
+
+The HTML output supports rendering of:
+
+* Paragraphs and formal paragraphs
+* Ordered and unordered lists
+* Variable lists
+* Figures and media objects
+* Tables with headers and footers
+* Code blocks with syntax highlighting
+* Block quotations
+* Admonitions (note, warning, caution, important, tip, danger)
+* Bibliography and glossary
+* Procedure steps
+* Sidebars
+
+== Ruby API
+
+=== Parsing DocBook Documents
+
+[source,ruby]
+----
+require 'docbook'
+
+# Parse from file
+article = Docbook::Elements::Article.from_xml(File.read('article.xml'))
+
+# Parse book with parts
+book = Docbook::Elements::Book.from_xml(File.read('book.xml'))
+
+# Parse with XInclude resolution
+xml_string = File.read('main.xml')
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: 'main.xml')
+docbook_doc = Docbook::Document.from_xml(resolved.to_xml)
+----
+
+=== Document Types
+
+The gem automatically detects and parses:
+
+* `article` - Article documents
+* `book` - Book documents with parts, chapters, appendices
+* `chapter` - Chapter documents
+* `section` - Section documents
+* `refentry` - Reference manual pages
+
+=== HTML Output
+
+[source,ruby]
+----
+require 'docbook'
+
+# Create HTML output
+article = Docbook::Elements::Article.from_xml(File.read('input.xml'))
+html_output = Docbook::Output::Html.new(article).to_html
+
+# Write to file
+File.write('output.html', html_output)
+----
+
+=== Document Model
+
+Access document structure through the element model:
+
+[source,ruby]
+----
+book = Docbook::Elements::Book.from_xml(File.read('book.xml'))
+
+# Access book elements
+book.info.title.content  # Book title
+book.part                 # Array of parts
+book.chapter              # Array of top-level chapters
+book.appendix             # Array of appendices
+book.glossary             # Array of glossaries
+book.bibliography         # Array of bibliographies
+
+# Access part contents
+book.part.each do |part|
+  puts part.title.content
+  part.chapter.each do |chapter|
+    puts "  #{chapter.title.content}"
+  end
+end
+----
+
+== Building the Vue Frontend
+
+The HTML output uses a pre-compiled Vue 3 frontend. To rebuild after
+frontend changes:
+
+[source,bash]
+----
+cd frontend
+npm install
+npm run build
+----
+
+This generates the Vue bundle in `lib/docbook/frontend/dist/`.
+
+The bundle is automatically included when generating HTML output through the Ruby API.
+
+== Development
+
+After checking out the repo, run `bin/setup` to install dependencies:
+
+[source,bash]
+----
+bin/setup
+----
+
+Run the test suite:
+
+[source,bash]
+----
+bundle exec rake spec
+----
+
+Run specific test files:
+
+[source,bash]
+----
+bundle exec rspec spec/output/html_spec.rb
+bundle exec rspec spec/cli_spec.rb
+----
+
+== Architecture
+
+The gem follows a modular architecture:
+
+* **Parser**: Uses lutaml-model for DocBook element mapping
+* **XInclude Resolver**: Nokogiri-based XInclude processing
+* **HTML Generator**: Ruby-based HTML transformation with Vue 3 SPA
+* **CLI**: Thor-based command-line interface
+
+=== Element Classes
+
+The gem defines element classes for all major DocBook 5 elements:
+
+* **Structural**: article, book, chapter, part, section, appendix, preface
+* **Block**: para, formalpara, blockquote, literallayout
+* **Lists**: orderedlist, itemizedlist, variablelist
+* **Links**: link, xref, uri
+* **Inline**: emphasis, code, literal, filename, classname, function
+* **Media**: mediaobject, figure, table
+* **Admonitions**: note, warning, caution, important, tip, danger
+* **Bibliography**: bibliography, bibliomixed
+* **Glossary**: glossary, glossentry
+* **Metadata**: info, title, author, copyright
+
+== Contributing
+
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/metanorma/metanorma-docbook.
+
+== License
+
+Copyright Ribose. https://opensource.org/licenses/MIT[MIT License].
