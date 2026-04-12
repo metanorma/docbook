@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ docbook_title | escape }}</title>
+  {% include 'partials/head' %}
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <div id="docbook-app"></div>
+  <script>
+  window.DOCBOOK_DATA = Object.assign([[DOCBOOK_DATA]], {
+    toc: [[DOCBOOK_TOC]],
+    content: [[DOCBOOK_CONTENT]],
+    index: [[DOCBOOK_INDEX]]
+  });
+  </script>
+  {% include 'partials/scripts' %}
+</body>
+</html>
