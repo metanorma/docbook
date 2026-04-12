@@ -1,0 +1,63 @@
+---
+layout: default
+title: Features
+nav_order: 4
+has_children: true
+---
+
+# Features
+
+The Metanorma DocBook gem provides a complete pipeline for converting DocBook XML documents into modern, interactive HTML publications. It parses DocBook XML through a typed element model, resolves cross-references and XIncludes, and produces structured data consumed by a Vue 3 single-page application frontend.
+
+## Feature Overview
+
+[cols="3,4,5"]
+|===
+| Feature | Description | Details
+
+| <<html-output/index,HTML Output>>
+| Converts DocBook XML to interactive HTML with a Vue 3 SPA frontend, supporting both single-file and directory output modes.
+| Two modes: *single file* (self-contained, base64 images) and *directory* (multi-file, web-serving ready)
+
+| <<xinclude/index,XInclude Resolution>>
+| Resolves `xi:include` elements for modular document composition, supporting both XML and text parsing modes with advanced filtering.
+| Custom iterative resolver with `search=`, `line=`, and `char=` fragid schemes
+
+| <<numbering,Section Numbering>>
+| Automatic numbering of Parts (Roman), Chapters (Arabic), Sections (hierarchical), and Appendices (Alpha) with proper scoping.
+| `NumberingBuilder` with per-part chapter scoping and hierarchical dot notation
+
+| <<toc-generation,TOC Generation>>
+| Builds a recursive tree of document sections with type metadata, numbering, and navigation badges.
+| `SectionData` tree with type badges (Pt, Ch, App, Gl, Bib, Idx, Pref, Ref)
+
+| <<index-generation,Index Generation>>
+| Collects `indexterm` elements throughout the document and generates a grouped, sorted index with cross-references.
+| `IndexCollector` + `IndexGenerator` with `see`/`seealso` support and SYMBOLS grouping
+
+| <<element-coverage,Element Coverage>>
+| Comprehensive support for 157 DocBook element classes organized across 20+ categories.
+| Structural, metadata, block, list, link, inline, media, table, admonition, bibliography, glossary, index, and more
+|===
+
+## Architecture
+
+The processing pipeline follows these stages:
+
+. **Parse** -- DocBook XML is parsed into Lutaml::Model-based element classes (`Docbook::Document.from_xml`)
+. **Resolve XIncludes** -- `XIncludeResolver` replaces `xi:include` elements iteratively, handling nested includes
+. **Resolve XRefs** -- `XrefResolver` builds an O(1) lookup map of `xml:id` to element titles
+. **Build Output Data** -- `Output::Html` traverses the element tree to produce a `DocbookOutput` model containing:
+  * `Toc` -- section tree with numbering
+  * `ContentData` -- section content as `ContentBlock` trees
+  * `Index` -- grouped index entries
+. **Render** -- A Liquid template produces the HTML shell, and the Vue 3 SPA renders the content client-side
+
+## Child Pages
+
+- <<html-output/index,HTML Output>> -- Single-file and directory output modes, data model
+- <<xinclude/index,XInclude Resolution>> -- XML includes, text includes, fragid schemes
+- <<numbering,Section Numbering>> -- Roman, Arabic, hierarchical, and Alpha numbering
+- <<toc-generation,TOC Generation>> -- Table of contents tree structure and rendering
+- <<index-generation,Index Generation>> -- Index collection, grouping, and cross-references
+- <<element-coverage,Element Coverage>> -- Full list of supported DocBook element classes

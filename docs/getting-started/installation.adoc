@@ -1,0 +1,113 @@
+---
+layout: default
+title: Installation
+parent: Getting Started
+nav_order: 1
+---
+
+== Installation
+
+Install the Metanorma DocBook gem to start parsing and converting DocBook XML files.
+
+=== Requirements
+
+The gem has the following runtime requirements:
+
+[cols="1,4"]
+|===
+| Requirement | Details
+
+| *Ruby* | Version 3.2 or later (`>= 3.2.0`)
+| *Nokogiri* | XML parsing library (installed automatically as a dependency)
+| *lutaml-model* | Declarative XML-to-Ruby object mapping (`~> 0.8.0`, installed automatically)
+| *Thor* | CLI framework (installed automatically)
+| *Liquid* | Template engine for HTML generation (`~> 5.0`, installed automatically)
+| *Marcel* | MIME type detection for image embedding (installed automatically)
+|===
+
+=== Install with RubyGems
+
+The simplest way to install the gem is directly from the command line:
+
+[source,bash]
+----
+$ gem install docbook
+----
+
+This installs the `docbook` command-line tool and all required dependencies.
+
+=== Install with Bundler
+
+For Ruby projects, add the gem to your `Gemfile`:
+
+[source,ruby]
+----
+# Gemfile
+gem "docbook"
+----
+
+Then run Bundler to install:
+
+[source,bash]
+----
+$ bundle install
+----
+
+If you want to track the latest development version from the repository:
+
+[source,ruby]
+----
+# Gemfile
+gem "docbook", github: "metanorma/docbook", branch: "main"
+----
+
+=== Verify the Installation
+
+After installing, confirm that the `docbook` CLI is available:
+
+[source,bash]
+----
+$ docbook --help
+----
+
+You should see output listing the available commands:
+
+[source]
+----
+Commands:
+  docbook format INPUT       # Format/prettify DocBook XML
+  docbook help [COMMAND]     # Describe available commands or one specific command
+  docbook roundtrip INPUT... # Round-trip test DocBook XML files
+  docbook to-html INPUT      # Convert DocBook XML to HTML
+  docbook validate INPUT     # Validate DocBook XML well-formedness
+----
+
+You can also check the gem version from Ruby:
+
+[source,ruby]
+----
+require "docbook"
+puts Docbook::VERSION  # => "0.1.0"
+----
+
+=== Building from Source
+
+To build and install from the source repository:
+
+[source,bash]
+----
+$ git clone https://github.com/metanorma/docbook.git
+$ cd docbook
+$ bundle install
+$ rake install
+----
+
+This builds the gem from the current source and installs it locally. The `docbook` executable will be available in your path.
+
+=== Troubleshooting
+
+*Nokogiri compilation errors:* If Nokogiri fails to build native extensions, ensure you have the required system libraries. On macOS, `xcode-select --install` usually resolves this. On Ubuntu/Debian, install `libxml2-dev` and `libxslt1-dev`.
+
+*Ruby version mismatch:* The gem requires Ruby 3.2 or later. Check your version with `ruby --version`. Use a version manager like `rbenv` or `rvm` if you need to install a newer Ruby.
+
+Once installed, proceed to the <<quick-start>> page to start using the gem.

@@ -1,0 +1,123 @@
+---
+layout: default
+title: Liquid Templates
+parent: Advanced
+nav_order: 1
+---
+
+# Liquid Templates
+
+The HTML output is generated using the Liquid template engine. Templates
+are located in `lib/docbook/templates/`. The system uses Liquid's
+`LocalFileSystem` for partial resolution, so `{% include 'partials/head' %}`
+resolves to `templates/partials/_head.liquid`.
+
+== Template files
+
+=== document.html.liquid
+
+The main template. It produces a complete HTML5 document with:
+
+* A `<head>` section that includes the `_head` partial (fonts, Tailwind
+  CSS, Prism.js styles, and the app CSS).
+* A `<div id="docbook-app">` mount point for the Vue SPA.
+* An inline `<script>` block that defines `window.DOCBOOK_DATA` with
+  placeholder tokens for JSON data.
+* The `_scripts` partial (Prism.js and the app JavaScript).
+
+=== partials/_head.liquid
+
+Provides the document head content:
+
+* **Prism.js CSS** -- Syntax highlighting theme loaded from cdnjs.
+* **Google Fonts** -- Inter (sans-serif), Merriweather (serif), and
+  JetBrains Mono (monospace) loaded from Google Fonts CDN.
+* **Tailwind CSS** -- The Tailwind CDN script with a custom
+  configuration that sets `darkMode: 'class'` and registers the three
+  font families.
+* **Custom styles** -- Inline `<style>` block with TOC active states,
+  bibliography entry indentation, and appendix border styling.
+* **App CSS** -- Conditionally inlined or linked. When `assets_inline`
+  is true (single-file mode), the CSS is embedded in a `<style>` tag.
+  In directory mode, it is loaded from `assets/app.css`.
+
+=== partials/_scripts.liquid
+
+Provides the document scripts:
+
+* **Prism.js** -- Core library and autoloader plugin from cdnjs for
+  syntax highlighting of code blocks.
+* **App JS** -- Conditionally inlined or linked. When `assets_inline`
+  is true, the JavaScript is embedded in a `<script>` tag. In directory
+  mode, it is loaded from `assets/app.iife.js`.
+
+== Template variables
+
+The following variables are passed to the Liquid template by the Ruby
+HTML generator:
+
+[cols="1,1,4"]
+|===
+| Variable | Type | Description
+
+| `docbook_title`
+| String
+| The document title, extracted from the root element.
+
+| `base_url`
+| String
+| The base URL for asset references. `"."` in directory mode, `""`
+  in single-file mode.
+
+| `assets_inline`
+| Boolean
+| When true, CSS and JS are inlined. When false, they are linked.
+
+| `app_css`
+| String
+| The contents of `frontend/dist/app.css`.
+
+| `app_js`
+| String
+| The contents of `frontend/dist/app.iife.js`.
+|===
+
+== Placeholder tokens
+
+The main template uses four placeholder tokens that are replaced via
+Ruby string substitution (`gsub`) after Liquid rendering:
+
+`[[DOCBOOK_DATA]]`::
+Replaced with the `DocumentData` JSON (title only) in single-file mode,
+or `null /* loaded from docbook.data.json */` in directory mode.
+
+`[[DOCBOOK_TOC]]`::
+Replaced with the full TOC JSON (sections tree + numbering) in
+single-file mode, or `null` in directory mode.
+
+`[[DOCBOOK_CONTENT]]`::
+Replaced with the content data JSON (keyed by section ID) in
+single-file mode, or `null` in directory mode.
+
+`[[DOCBOOK_INDEX]]`::
+Replaced with the index data JSON (grouped by letter) in single-file
+mode, or `null` in directory mode.
+
+The use of string substitution rather than Liquid variables is
+intentional: the JSON payloads are large and may contain characters
+(like `{%`) that would conflict with Liquid's template syntax.
+
+== Output modes
+
+=== Single-file mode
+
+All data is embedded inline. The resulting HTML file is self-contained
+and can be opened directly in a browser without a web server. The
+JSON is injected into `window.DOCBOOK_DATA` using `Object.assign()`.
+
+=== Directory mode
+
+The JSON is written to `docbook.data.json`. The template placeholders
+are set to `null`, and the Vue SPA's `documentStore.loadFromWindow()`
+detects that inline data is absent and fetches the external JSON file
+instead. CSS and JS assets are linked from the `assets/` subdirectory.

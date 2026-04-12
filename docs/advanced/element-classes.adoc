@@ -1,0 +1,185 @@
+---
+layout: default
+title: Element Class Design
+parent: Advanced
+nav_order: 3
+---
+
+# Element Class Design
+
+Every supported DocBook XML element is represented by a Ruby class in
+the `Docbook::Elements` namespace. This page explains the design
+patterns and how to add new element types.
+
+== Base class
+
+All element classes inherit from `Lutaml::Model::Serializable`, which
+provides:
+
+* Automatic XML parsing and serialization via `from_xml` / `to_xml`
+* JSON serialization via `to_json`
+* Attribute declaration with type checking
+* Mixed content handling
+
+== DSL methods
+
+The lutaml-model DSL provides several methods for declaring how an
+element maps to Ruby attributes:
+
+=== attribute
+
+Declares a typed attribute on the class. Basic types include `:string`,
+`:integer`, and `:float`. Complex types reference other element classes.
+
+[source,ruby]
+----
+attribute :content, :string
+attribute :role, :string
+attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
+attribute :title, Title
+attribute :section, Section, collection: true
+----
+
+The `collection: true` option indicates that the attribute holds an
+array of values rather than a single value.
+
+=== mixed_content
+
+Declares that the element can contain a mix of text and child elements.
+This is essential for elements like `<para>` that contain both raw text
+and inline markup (`<emphasis>`, `<code>`, `<link>`, etc.).
+
+[source,ruby]
+----
+xml do
+  element "para"
+  mixed_content
+end
+----
+
+=== map_content
+
+Maps the element's text content (the text between tags) to an attribute.
+
+[source,ruby]
+----
+xml do
+  map_content to: :content
+end
+----
+
+=== map_element
+
+Maps a child XML element to a Ruby attribute. The first argument is the
+XML element name; the `to:` option specifies the Ruby attribute.
+
+[source,ruby]
+----
+xml do
+  map_element "title", to: :title
+  map_element "para", to: :para
+  map_element "section", to: :section
+end
+----
+
+=== map_attribute
+
+Maps an XML attribute to a Ruby attribute.
+
+[source,ruby]
+----
+xml do
+  map_attribute "role", to: :role
+  map_attribute "xml:id", to: :xml_id
+  map_attribute "xlink:href", to: :xlink_href
+end
+----
+
+== Mixed content traversal
+
+Elements that declare `mixed_content` support the `each_mixed_content`
+method. This method yields each child node in document order, as either
+a `String` (for text nodes) or a typed element object.
+
+[source,ruby]
+----
+element.each_mixed_content do |node|
+  case node
+  when String
+    # Handle text content
+  when Docbook::Elements::Emphasis
+    # Handle <emphasis> inline element
+  when Docbook::Elements::Link
+    # Handle <link> inline element
+  end
+end
+----
+
+This pattern is the foundation of the HTML generator's content
+rendering. The `build_inline_content` and `build_element_content`
+methods in `Output::Html` use `each_mixed_content` exclusively to
+process element children.
+
+== Adding a new element
+
+To add support for a new DocBook element:
+
+. **Create the element class** in `lib/docbook/elements/`. The file
+  name should match the element name (for example, `acknowledgements.rb`
+  for `<acknowledgements>`). Declare attributes and XML mappings.
+
+. **Add an autoload entry** in `lib/docbook/elements.rb`:
++
+[source,ruby]
+----
+autoload :NewElement, "#{__dir__}/elements/new_element"
+----
+
+. **Add the attribute to the parent element**. If `<newelement>` can
+  appear inside `<chapter>`, add it to the `Chapter` class:
++
+[source,ruby]
+----
+attribute :newelement, NewElement, collection: true
+# and in the xml block:
+map_element "newelement", to: :newelement
+----
+
+. **Add a case in the HTML generator**. In `lib/docbook/output/html.rb`,
+  add a `when` branch in the appropriate `case` statement (either
+  `build_element_content` or `build_inline_content`) to handle the new
+  element type and produce the corresponding `ContentBlock`.
+
+. **Add to ROOT_ELEMENT_MAP** if the element can be a document root.
+  In `lib/docbook/document.rb`, add an entry like:
++
+[source,ruby]
+----
+"newelement" => Elements::NewElement,
+----
+
+== ROOT_ELEMENT_MAP
+
+The `Document::ROOT_ELEMENT_MAP` constant maps XML root element names
+to their Ruby classes. This map is used by `Document.from_xml` to
+dispatch parsing. The map currently supports 37 root element types
+including `article`, `book`, `chapter`, `section`, `appendix`,
+`refentry`, `bibliography`, `glossary`, `set`, `reference`, `topic`,
+and all numbered section variants (`sect1` through `sect5`,
+`refsect1` through `refsect3`).
+
+== Collections
+
+Many attributes use `collection: true` because DocBook elements can
+appear multiple times within their parent. For example, a `<book>`
+can contain multiple `<chapter>` elements:
+
+[source,ruby]
+----
+attribute :chapter, Chapter, collection: true
+----
+
+The lutaml-model library automatically accumulates multiple XML
+elements into the array. In code, always use `Array(value)` when
+iterating over collection attributes, since they may be `nil` when
+no child elements are present.

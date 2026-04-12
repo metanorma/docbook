@@ -1,0 +1,156 @@
+---
+layout: default
+title: XRef Resolution
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 4
+---
+
+== XRef Resolution
+
+The `Docbook::XrefResolver` class builds an `xml:id` lookup map from a parsed DocBook document and provides methods to resolve cross-references (`xref` elements and `linkend` attributes) to their target titles.
+
+=== Why Resolve Cross-References
+
+DocBook uses `xml:id` attributes to identify elements and `linkend` attributes on `<xref>` elements to reference them. When generating HTML, you typically want to display the target's title text rather than the raw ID. The `XrefResolver` provides an O(1) lookup for resolving these references.
+
+=== Creating a Resolver
+
+[source,ruby]
+----
+require "docbook"
+
+# Parse the document
+xml_string = File.read("book.xml")
+document = Docbook::Document.from_xml(xml_string)
+
+# Create and resolve
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+----
+
+The `resolve!` method traverses the entire document tree, collects all elements with `xml:id` attributes, and builds a hash map. It returns `self` so you can chain calls.
+
+=== Resolving Cross-Reference Titles
+
+Use `title_for(linkend)` to look up the title text for a given `xml:id`:
+
+[source,ruby]
+----
+# Look up the title for a specific xml:id
+title = xref_resolver.title_for("intro")
+# => "Introduction"
+
+title = xref_resolver.title_for("chapter-1")
+# => "Getting Started"
+
+title = xref_resolver.title_for("nonexistent-id")
+# => nil (no element with this ID)
+----
+
+This is used internally by `Docbook::Output::Html` to resolve `<xref linkend="intro"/>` into the text "Introduction" in the generated HTML.
+
+=== Retrieving Elements by ID
+
+Use the `[]` operator to retrieve the actual element object for a given `xml:id`:
+
+[source,ruby]
+----
+# Get the element with xml:id="intro"
+element = xref_resolver["intro"]
+# => #<Docbook::Elements::Section:0x0000...>
+
+element.title.content  # => "Introduction"
+element.xml_id         # => "intro"
+----
+
+This returns the parsed element object, giving you full access to its attributes and child elements.
+
+=== How the ID Map Works
+
+The `resolve!` method recursively traverses the document tree, visiting each element and recording those that have an `xml:id` attribute. The traversal is type-aware -- it knows which child collections to visit for each element type:
+
+[cols="2,5"]
+|===
+| Element Type | Child Collections Traversed
+
+| `Book` | `part`, `chapter`, `appendix`, `preface`, `glossary`, `bibliography`, `index`
+| `Article` | `section`
+| `Part` | `chapter`, `appendix`, `reference`, `glossary`, `bibliography`, `index`
+| `Chapter`, `Appendix`, `Section`, `Preface` | `section`
+| `Reference` | `refentry`
+|===
+
+=== Title Extraction
+
+The resolver uses different strategies to extract titles depending on the element type:
+
+[cols="2,5"]
+|===
+| Element Type | Title Source
+
+| `Article`, `Book` | `info.title.content`
+| `Section`, `Chapter`, `Appendix`, `Preface`, `Part`, `Reference` | `title.content` (or `info.title.content` as fallback)
+| Other elements | `title.content` (best-effort via `rescue nil`)
+|===
+
+=== Complete Example
+
+A full workflow that parses, resolves cross-references, and generates HTML:
+
+[source,ruby]
+----
+require "docbook"
+
+# Parse the document
+xml_string = File.read("book.xml")
+document = Docbook::Document.from_xml(xml_string)
+
+# Build the cross-reference map
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+
+# Look up specific elements
+chapter_element = xref_resolver["chapter-1"]
+puts "Chapter 1: #{chapter_element.title.content}"
+# => "Chapter 1: Getting Started"
+
+# Resolve an xref to its target title
+xref_title = xref_resolver.title_for("chapter-1")
+puts "XRef target: #{xref_title}"
+# => "XRef target: Getting Started"
+
+# Now generate HTML with resolved cross-references
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("book.xml"))
+).to_html
+
+File.write("output.html", html)
+----
+
+=== Integration with HTML Output
+
+The `XrefResolver` is designed to work with `Docbook::Output::Html`. Pass the resolver to the HTML generator's constructor, and it will automatically resolve all `<xref>` elements:
+
+[source,ruby]
+----
+# Without xref_resolver: <xref linkend="intro"/> renders as "intro"
+# With xref_resolver: <xref linkend="intro"/> renders as "Introduction"
+
+html_with_xrefs = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file
+).to_html
+----
+
+=== Element Lookup Fallback
+
+When the `XrefResolver` cannot find an element by ID, the HTML generator falls back to a recursive document search via `find_in_document`. This provides a safety net for elements that may not be captured by the type-aware traversal (for example, deeply nested elements in unusual structures).
+
+=== See Also
+
+* *<<parsing,Parsing Documents>>* -- Parse XML into element models before resolving xrefs
+* *<<html-output,HTML Output>>* -- Use the resolver when generating HTML
+* *<<xinclude,XInclude Resolution>>* -- Resolve XIncludes before parsing (so included elements get their IDs registered)

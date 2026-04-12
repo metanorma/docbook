@@ -1,0 +1,188 @@
+---
+layout: default
+title: Converting an Article
+parent: Guides
+nav_order: 2
+---
+
+# Converting an Article
+
+Articles are simpler than books -- they have a flat structure with no
+parts, chapters, or appendices. This guide shows how to convert a
+DocBook article to HTML.
+
+== Article structure
+
+A DocBook article uses `<section>` elements for its hierarchy instead
+of the part/chapter structure of a book. Here is a complete example:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0"
+         xml:id="api-design">
+  <info>
+    <title>API Design Principles</title>
+    <author>
+      <personname>
+        <firstname>Alex</firstname>
+        <surname>Architect</surname>
+      </personname>
+    </author>
+    <pubdate>2025-01-15</pubdate>
+  </info>
+
+  <section xml:id="s-overview">
+    <title>Overview</title>
+    <para>This article presents key principles for designing
+      robust and maintainable APIs.</para>
+
+    <section xml:id="s-overview-goals">
+      <title>Design Goals</title>
+      <para>An API should be consistent, discoverable, and
+        resilient to change.</para>
+    </section>
+  </section>
+
+  <section xml:id="s-patterns">
+    <title>Common Patterns</title>
+
+    <para>REST APIs typically follow these patterns:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Use nouns for resource endpoints.</para>
+      </listitem>
+      <listitem>
+        <para>Return appropriate HTTP status codes.</para>
+      </listitem>
+      <listitem>
+        <para>Version your API from the start.</para>
+      </listitem>
+    </itemizedlist>
+
+    <example>
+      <title>Sample endpoint</title>
+      <programlisting language="bash">
+curl -X GET https://api.example.com/v1/users \
+  -H "Authorization: Bearer TOKEN"
+      </programlisting>
+    </example>
+  </section>
+
+  <section xml:id="s-error-handling">
+    <title>Error Handling</title>
+
+    <para>Always provide structured error responses:</para>
+
+    <programlisting language="json">
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The 'email' field is required."
+  }
+}
+    </programlisting>
+
+    <note>
+      <title>Important</title>
+      <para>Never expose internal stack traces in production
+        error responses.</para>
+    </note>
+
+    <warning>
+      <para>Returning HTML error pages from a JSON API endpoint
+        breaks client parsing.</para>
+    </warning>
+  </section>
+
+  <section xml:id="s-figure-example">
+    <title>Architecture Diagram</title>
+    <figure>
+      <title>System Architecture</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="images/architecture.png"/>
+        </imageobject>
+      </mediaobject>
+    </figure>
+  </section>
+</article>
+----
+
+== CLI conversion
+
+To convert the article to a single HTML file:
+
+....
+docbook to-html article.xml -o article.html
+....
+
+For directory output:
+
+....
+docbook to-html article.xml -o article-out --output-type directory
+....
+
+Note that XInclude resolution is enabled by default for `to-html`. If
+your article does not use XIncludes, this has no effect.
+
+== Ruby API conversion
+
+[source,ruby]
+----
+require "docbook"
+
+xml = File.read("article.xml")
+
+# Parse the article
+doc = Docbook::Document.from_xml(xml)
+
+# Resolve cross-references
+xref = Docbook::XrefResolver.new(doc).resolve!
+
+# Generate HTML (single file)
+html = Docbook::Output::Html.new(
+  doc,
+  xref_resolver: xref,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("article.xml"))
+).to_html
+
+File.write("article.html", html)
+----
+
+== What to expect in the output
+
+The article conversion produces the following:
+
+* **Title** -- The article title from `<info><title>` appears in the
+  browser tab and as the document header.
+* **Section tree** -- Each `<section>` becomes a navigable entry in the
+  TOC sidebar. Nested sections appear as children.
+* **Numbering** -- Sections receive hierarchical numbers (1, 1.1, 2,
+  2.1, etc.).
+* **Code blocks** -- `<programlisting>` elements are rendered with
+  Prism.js syntax highlighting. The `language` attribute determines the
+  highlighting language.
+* **Lists** -- `<itemizedlist>` renders as a bulleted list,
+  `<orderedlist>` as a numbered list.
+* **Admonitions** -- `<note>`, `<warning>`, `<caution>`, `<important>`,
+  and `<tip>` render as styled callout boxes.
+* **Figures** -- `<figure>` with `<mediaobject>` renders the image with
+  an optional caption.
+* **Examples** -- `<example>` renders with its title and content.
+
+== Inline content
+
+Articles support the same inline elements as books. The following
+elements are rendered correctly inside `<para>` and other block
+elements:
+
+* `<emphasis>` -- Italic or bold (based on `role` attribute)
+* `<code>` and `<literal>` -- Monospace inline code
+* `<link xlink:href="...">` -- Hyperlinks
+* `<xref linkend="...">` -- Cross-references to other sections
+* `<filename>` -- File names in monospace
+* `<quote>` -- Quoted text
+* `<citetitle>` -- Citation titles

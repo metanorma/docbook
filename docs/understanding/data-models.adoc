@@ -1,0 +1,156 @@
+---
+layout: default
+title: Data Models
+parent: Understanding
+nav_order: 3
+---
+
+# Data Models
+
+The gem uses two separate model namespaces, each serving a distinct
+purpose in the pipeline. All model classes inherit from
+`Lutaml::Model::Serializable`, which provides XML and JSON
+serialization through a declarative DSL.
+
+== Output::Data models (`Docbook::Output`)
+
+These classes are defined in `lib/docbook/output/data.rb` and are used
+by the HTML generator to build the intermediate representation that
+becomes the JSON payload for the Vue SPA.
+
+=== DocbookOutput
+
+The top-level output model. Contains `title`, `toc` (a `Toc` instance),
+`content` (a `ContentData` instance), and `index` (an `Index`
+instance). This single model encapsulates everything the Vue SPA needs
+to render the document.
+
+=== ContentBlock
+
+A recursive tree node representing a single block of content. Each
+block has a `type` (such as `:paragraph`, `:code`, `:image`), optional
+text, source URL, alt text, title, language, and CSS class name. Block
+types that can contain nested content use the `children` attribute,
+which holds an array of child `ContentBlock` instances.
+
+=== SectionData
+
+Represents a section in the table of contents tree. Each entry has an
+`id`, `title`, `type` (part, chapter, section, appendix, etc.), an
+optional `number`, and `children` (an array of nested `SectionData`
+instances).
+
+=== NumberingEntry
+
+A simple key-value pair mapping a section ID to its formatted number
+string. These are collected into an array within the `Toc` model.
+
+=== ContentData and ContentEntry
+
+`ContentData` wraps a collection of `ContentEntry` objects. Each
+`ContentEntry` maps a section ID (the `key`) to a `SectionContent`
+instance containing the section's rendered content blocks. This
+key-value structure serializes cleanly to JSON and provides O(1)
+section lookup in the Vue SPA.
+
+=== SectionContent
+
+Holds the content for a single section: a `section_id` and an array
+of `ContentBlock` instances representing the section's body.
+
+=== Toc
+
+Combines the `SectionData` tree (the recursive TOC structure) with the
+`NumberingEntry` collection (the computed numbering map).
+
+=== IndexTerm
+
+Represents a single index entry with `primary`, `secondary`, and
+`tertiary` term text, plus the `section_id` and `section_title` where
+the term appears. Also holds `sees` and `see_alsos` arrays for
+cross-references.
+
+=== IndexGroup
+
+Groups index terms under a `letter` heading. Contains an array of
+`IndexTerm` entries.
+
+=== Index
+
+The top-level index model with a `title` and an array of `IndexGroup`
+instances, one per letter of the alphabet.
+
+=== DocumentData
+
+A minimal model holding only the document `title`. Used in single-file
+mode to initialize the `DOCBOOK_DATA` JavaScript object before merging
+in the TOC, content, and index.
+
+=== NumberingBuilder
+
+A stateful builder that tracks counters for parts (Roman numerals),
+chapters (Arabic, scoped per part), sections (hierarchical, scoped per
+parent), and appendices (uppercase letters). It exposes methods like
+`next_part`, `next_chapter`, `next_section`, and `next_appendix` that
+increment the appropriate counter and return the formatted number. The
+final `numbering` hash maps section IDs to their computed numbers.
+
+== Models namespace (`Docbook::Models`)
+
+Defined in `lib/docbook/models/`, these classes represent the full
+document structure as consumed by the Vue SPA. They include additional
+metadata beyond what the output data models carry.
+
+=== DocumentRoot
+
+The top-level model for the complete document. Contains `title`,
+`metadata` (a `DocumentMetadata` instance), `toc` (an array of
+`TocNode`), `sections` (an array of `SectionRoot`), `index` (an array
+of `IndexEntry`), `numbering` (an array of `SectionNumber`), and a
+`reading_position`. Also includes `generator` and `generated_at`
+strings for debugging.
+
+=== DocumentMetadata
+
+Stores document-level information: `author`, `author_name`, `title`,
+`subtitle`, `productname`, `version`, `pubdate`, `release_info`, and
+`abstract`. All fields are strings.
+
+=== TocNode
+
+A recursive tree node for the table of contents. Each node has an `id`,
+`title`, `type`, `number`, optional `page` (for PDF navigation), and
+`children` (an array of nested `TocNode` instances).
+
+=== SectionRoot
+
+Represents a section in the pre-computed document structure. Contains
+`id`, `type`, `title`, `number`, and `children` (nested `SectionRoot`
+instances). For reference entries, it also holds a `refname` string.
+
+=== SectionNumber
+
+A simple mapping of section `id` to its computed `number` string and
+`type`. Used by the Vue SPA to display section numbers in the UI.
+
+=== IndexEntry
+
+Represents an index term with `primary`, `secondary`, `tertiary`,
+`see_also`, `section_id`, `section_title`, and a `sort_key` for
+alphabetical ordering.
+
+=== ReadingPosition
+
+Tracks the user's reading progress. Contains `section_id`,
+`percentage`, `last_read_at`, `reading_mode`, and `scroll_position`.
+This data is persisted in the Vue SPA via localStorage.
+
+== Serialization
+
+Both model namespaces serialize to JSON for the Vue SPA. The output
+data models (`Output::Data`) are what the Ruby HTML generator
+constructs and serializes. The `Models` namespace provides the
+TypeScript-compatible schema that the Vue SPA expects. In practice,
+the HTML generator uses the `Output::Data` classes directly, and the
+JSON they produce is consumed by the Pinia `documentStore` in the
+frontend.

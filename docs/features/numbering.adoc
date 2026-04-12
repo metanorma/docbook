@@ -1,0 +1,183 @@
+---
+layout: default
+title: Section Numbering
+parent: Features
+nav_order: 3
+---
+
+# Section Numbering
+
+The `NumberingBuilder` class computes formatted section numbers for all numbered document divisions. Numbering follows DocBook conventions: Roman numerals for Parts, Arabic numerals for Chapters, hierarchical dot notation for Sections, and Alpha letters for Appendices.
+
+## Numbering Schemes
+
+[cols="1,2,3"]
+|===
+| Division | Scheme | Examples
+
+| Part | Roman numerals (I, II, III, ...)
+| Part I, Part II, Part III
+
+| Chapter | Arabic numerals scoped per Part
+| 1, 2, 3 (resets at each Part)
+
+| Section | Hierarchical dot notation
+| 1.1, 1.2, 1.2.3, 2.1
+
+| Appendix | Alpha letters (A, B, C, ...)
+| Appendix A, Appendix B, Appendix C
+
+| Preface | Unnumbered
+| (no number)
+
+| Glossary | Unnumbered
+| (no number)
+
+| Bibliography | Unnumbered
+| (no number)
+
+| Index | Unnumbered
+| (no number)
+|===
+
+## NumberingBuilder Class
+
+The `NumberingBuilder` maintains independent counters for each numbering scope:
+
+[source,ruby]
+----
+class NumberingBuilder
+  def initialize
+    @numbering = {}                      # id => formatted_number_string
+    @part_counter = 0                    # Global part counter
+    @chapter_counters = {}               # part_index => chapter_counter
+    @appendix_counter = 0                # Global appendix counter
+    @section_counters = {}               # scope_id => sequential_counter
+  end
+end
+----
+
+### Part Numbering
+
+Parts use uppercase Roman numerals. The counter is global across the entire document:
+
+[source,ruby]
+----
+def next_part
+  @part_counter += 1
+  roman_numeral(@part_counter)  # "I", "II", "III", "IV", "V", ...
+end
+----
+
+Roman numerals are computed using the standard subtractive notation algorithm with mappings for 1000 (M), 900 (CM), 500 (D), 400 (CD), 100 (C), 90 (XC), 50 (L), 40 (XL), 10 (X), 9 (IX), 5 (V), 4 (IV), 1 (I).
+
+### Chapter Numbering
+
+Chapters use Arabic numerals scoped per Part. Each Part maintains its own chapter counter, which resets when a new Part begins. Chapters outside of Parts use a global counter:
+
+[source,ruby]
+----
+def next_chapter(part_index)
+  @chapter_counters[part_index] ||= 0
+  @chapter_counters[part_index] += 1
+  @chapter_counters[part_index].to_s
+end
+----
+
+This means:
+
+- Part I contains Chapters 1, 2, 3
+- Part II contains Chapters 1, 2 (reset)
+- Chapters without a Part share counter scope 0
+
+### Section Numbering
+
+Sections use flat sequential numbering per parent scope, combined into hierarchical dot notation:
+
+[source,ruby]
+----
+def next_section(scope_id)
+  @section_counters[scope_id] ||= 0
+  @section_counters[scope_id] += 1
+  @section_counters[scope_id].to_s
+end
+----
+
+The hierarchical number is built by prefixing with the parent's number:
+
+[source,ruby]
+----
+# For a section in Chapter 1:
+#   scope_id = "ch01" -> 1
+#   Child scope = "ch01_s1" -> 1.1
+#   Grandchild scope = "ch01_s1_ss1" -> 1.1.1
+
+prefix = parent_number || chapter_num
+full_num = prefix ? "#{prefix}.#{section_num}" : section_num
+----
+
+### Appendix Numbering
+
+Appendices use uppercase Alpha letters:
+
+[source,ruby]
+----
+def next_appendix
+  @appendix_counter += 1
+  alpha_numeral(@appendix_counter)  # "A", "B", "C", ..., "Z", "AA", "AB"
+end
+----
+
+The Alpha algorithm supports double-letter notation for more than 26 appendices (A through Z, then AA, AB, etc.).
+
+Appendix sections are prefixed with the appendix letter: `A.1`, `A.2`, `B.1`, etc.
+
+## Numbering Map
+
+The computed numbering is stored as a flat hash mapping section `xml:id` to formatted number string:
+
+[source,ruby]
+----
+numbering = {
+  "part1"        => "I",
+  "ch-intro"     => "1",
+  "ch-intro-s1"  => "1.1",
+  "ch-intro-s2"  => "1.2",
+  "ch-intro-s2a" => "1.2.1",
+  "part2"        => "II",
+  "ch-advanced"  => "1",     # Reset because new Part
+  "ch-advanced-s1" => "1.1",
+  "app-changes"  => "Appendix A",
+  "app-changes-s1" => "A.1",
+  "app-license"  => "Appendix B",
+}
+----
+
+This flat map is serialized as an array of `NumberingEntry` objects in the output JSON, and the Vue frontend converts it back to a `Record<string, string>` for O(1) lookup during rendering.
+
+## Unnumbered Sections
+
+The following section types are explicitly not numbered:
+
+- **Preface** -- Front matter that precedes numbered content
+- **Glossary** -- Alphabetical term list
+- **Bibliography** -- Reference list
+- **Index** -- Generated back-of-book index
+
+When the numbering traversal encounters these types, it skips numbering assignment but still recurses into their children (which may contain numbered elements in some document structures).
+
+## Integration with TOC
+
+The numbering map is computed alongside the TOC tree and stored in the `Toc` model:
+
+[source,ruby]
+----
+output = DocbookOutput.new(
+  title: extract_title,
+  toc: Toc.new(
+    sections: sections_data,
+    numbering: numbering_hash.map { |id, value| NumberingEntry.new(id: id, value: value) }
+  ),
+  # ...
+)
+----

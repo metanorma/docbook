@@ -1,0 +1,42 @@
+# Lychee Link Checker Configuration
+# For Metanorma DocBook Documentation
+
+cache = true
+max_cache_age = "1d"
+include_verbatim = true
+
+include = [
+  "_site/**/*.html",
+  ".*\\.adoc$",
+  ".*\\.md$"
+]
+
+exclude = [
+  ".git",
+  ".github",
+  "node_modules",
+  "vendor",
+  ".bundle",
+  ".sass-cache",
+  ".jekyll-cache",
+  "_site/.jekyll-cache",
+  "Gemfile.lock"
+]
+
+max_redirects = 10
+max_retries = 3
+timeout = 30
+
+accept = [
+  "100..=103",
+  "200..=299",
+  "429"
+]
+
+user_agent = "lychee/docbook-docs-link-checker"
+scheme = ["https", "http", "file"]
+include_mail = false
+max_concurrency = 10
+verbose = "warn"
+require_https = false
+index_files = ["index.html"]

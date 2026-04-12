@@ -1,0 +1,90 @@
+---
+layout: default
+title: HTML Output
+parent: Features
+nav_order: 1
+has_children: true
+---
+
+# HTML Output
+
+The HTML output system converts parsed DocBook XML into an interactive web publication. It uses a two-stage rendering approach: a Ruby-based data extraction layer that builds structured JSON data, and a Vue 3 single-page application (SPA) that renders the content client-side.
+
+## How It Works
+
+The `Docbook::Output::Html` class orchestrates the entire output pipeline:
+
+. **Section Collection** -- Traverses the document tree to build a `SectionData` hierarchy (the TOC)
+. **Numbering** -- `NumberingBuilder` assigns formatted numbers to each section
+. **Content Extraction** -- For each section, the element tree is walked to produce `ContentBlock` trees
+. **Index Collection** -- `IndexCollector` gathers all `indexterm` elements
+. **Data Assembly** -- Everything is packaged into a `DocbookOutput` model
+. **Template Rendering** -- A Liquid template produces the HTML shell with placeholders
+
+## Template System
+
+The HTML shell is generated using https://github.com/Shopify/liquid[Liquid templates] stored in `lib/docbook/templates/`. The main template (`document.html.liquid`) includes two partials:
+
+- `_head.liquid` -- Prism.js CSS for syntax highlighting, Google Fonts (Inter, Merriweather, JetBrains Mono), Tailwind CSS, and the compiled app CSS
+- `_scripts.liquid` -- Prism.js core with autoloader for additional languages, and the compiled Vue SPA JavaScript
+
+The template uses four placeholder tokens that are replaced during rendering:
+
+- `[[DOCBOOK_DATA]]` -- Document title and metadata
+- `[[DOCBOOK_TOC]]` -- TOC tree and numbering map
+- `[[DOCBOOK_CONTENT]]` -- Section content blocks
+- `[[DOCBOOK_INDEX]]` -- Generated index data
+
+## Vue 3 SPA Frontend
+
+The frontend is a Vue 3 application built with Vite and TypeScript, located in `frontend/`. It is compiled to `frontend/dist/` as a single IIFE bundle (`app.iife.js`) and a stylesheet (`app.css`).
+
+### Key Features
+
+- **Table of Contents** -- Recursive sidebar navigation with collapsible tree items, type badges (Pt, Ch, App, Gl, Bib, Idx, Pref, Ref), and section numbering
+- **Full-Text Search** -- Powered by https://github.com/nextapps-de/flexsearch[FlexSearch] with forward tokenization, persisted to IndexedDB for instant reloads
+- **Four Themes** -- Day (white), Sepia (warm amber), Night (dark gray), and OLED (pure black) -- each with proper dark mode Tailwind classes
+- **Reading Modes** -- Scroll (continuous), Page (paginated), Chapter (one chapter at a time), and Cards (reference entry cards)
+- **Syntax Highlighting** -- Prism.js with the Tomorrow Night theme and autoloader for on-demand language support
+- **Display Settings** -- Configurable font size (12-32px), font weight (300-700), line height (1.2-2.0), and margins (16-96px), persisted to localStorage
+- **Responsive Design** -- Collapsible sidebar, mobile-friendly navigation, and adaptive content width
+
+### Frontend Components
+
+[cols="1,3"]
+|===
+| Component | Purpose
+
+| `App.vue` | Root component, loads document data and initializes stores
+| `EbookContainer.vue` | Main layout container with theme application and CSS variables
+| `AppSidebar.vue` | Table of contents sidebar with recursive tree
+| `TocTreeItem.vue` | Recursive TOC item with expand/collapse and type badges
+| `ContentRenderer.vue` | Renders `ContentBlock` trees into HTML
+| `BlockRenderer.vue` | Renders individual `ContentBlock` items (paragraphs, code, lists, etc.)
+| `SectionContent.vue` | Section wrapper with heading and numbering
+| `PartSection.vue` | Part-specific rendering with Roman numeral prefix
+| `ChapterSection.vue` | Chapter-specific rendering with Arabic numeral prefix
+| `AppendixSection.vue` | Appendix-specific rendering with Alpha prefix
+| `ReferenceEntry.vue` | Reference page entry with badge, name, and description sections
+| `EbookTopBar.vue` | Top navigation bar with search and settings toggles
+| `SearchModal.vue` | Full-text search modal with FlexSearch integration
+| `SettingsPanel.vue` | Display settings panel (theme, font, size, margins)
+|===
+
+## Output Modes
+
+The gem supports two output modes, chosen by the `output_mode` parameter:
+
+### Single File Mode (`:single_file`)
+
+All assets are inlined into one self-contained HTML file. See <<single-file-mode,Single File Mode>> for details.
+
+### Directory Mode (`:directory`)
+
+A directory of files suitable for web serving. See <<directory-mode,Directory Mode>> for details.
+
+## Child Pages
+
+- <<single-file-mode,Single File Mode>> -- Self-contained HTML with base64 images
+- <<directory-mode,Directory Mode>> -- Multi-file output for web serving
+- <<data-model,Output Data Model>> -- JSON data structures and ContentBlock types

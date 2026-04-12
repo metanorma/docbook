@@ -1,0 +1,125 @@
+---
+layout: default
+title: Single File Mode
+parent: HTML Output
+grand_parent: Features
+nav_order: 1
+---
+
+# Single File Mode
+
+Single file mode (`output_mode: :single_file`) produces a single, self-contained HTML file with all assets inlined. This is the default output mode and is ideal for distributing documents that can be opened directly in any browser, including via the `file://` protocol.
+
+## How It Works
+
+When single file mode is active, the `Output::Html` class inlines every asset directly into the HTML:
+
+. **CSS** -- The compiled `app.css` from `frontend/dist/` is injected inline via a `<style>` tag
+. **JavaScript** -- The compiled `app.iife.js` from `frontend/dist/` is injected inline via a `<script>` tag
+. **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN in `_head.liquid`
+. **JSON Data** -- All document data (TOC, content, index) is serialized to JSON and injected via `[[DOCBOOK_DATA]]` placeholders, with `</script>` tags escaped to `<\/script>`
+
+The Liquid template is rendered with `assets_inline: true`, which causes the partials to inline assets rather than reference external files.
+
+## Image Embedding
+
+Images are embedded as base64 data URIs. The `process_image` method in `Output::Html` handles this:
+
+[source,ruby]
+----
+# When output_mode is :single_file, images are base64-encoded
+def process_image(fileref)
+  if @output_mode == :single_file
+    embed_image_base64(fileref)
+  else
+    find_file_path(fileref) || fileref
+  end
+end
+
+def embed_image_base64(fileref)
+  full_path = find_file_path(fileref)
+  data = File.binread(full_path)
+  mime = Marcel::MimeType.for(data)          # MIME detection via Marcel
+  encoded = Base64.strict_encode64(data)
+  "data:#{mime};base64,#{encoded}"
+end
+----
+
+The MIME type is detected automatically using the https://github.com/rails/marcel[Marcel] gem, which examines the file's magic bytes rather than relying on file extensions. This ensures correct MIME types even when file extensions are missing or incorrect.
+
+Image paths are resolved by searching the document's base path and its parent directories, trying common prefixes like `resources/` and `../resources/`. This accommodates the various directory structures used in DocBook projects.
+
+## Data Injection
+
+The template contains four placeholder tokens that are replaced with inline JSON:
+
+[source,html]
+----
+<script>
+window.DOCBOOK_DATA = Object.assign([[DOCBOOK_DATA]], {
+  toc: [[DOCBOOK_TOC]],
+  content: [[DOCBOOK_CONTENT]],
+  index: [[DOCBOOK_INDEX]]
+});
+</script>
+----
+
+In single file mode, the placeholders are replaced with actual JSON data. The Vue SPA's `documentStore` detects `window.DOCBOOK_DATA` and loads the data synchronously without any network requests.
+
+## Use Case
+
+Single file mode is designed for:
+
+- **Document distribution** -- Send a single HTML file via email or file share
+- **Offline reading** -- Works without a web server; open directly from the filesystem
+- **Archival** -- Self-contained documents with no external dependencies (except CDN fonts)
+- **Email attachments** -- One file to attach, no directory structures to manage
+
+## CLI Usage
+
+```bash
+# Default: single file mode, output to stdout
+docbook to-html document.xml
+
+# Write to a file
+docbook to-html document.xml -o output.html
+
+# Explicit single file mode
+docbook to-html document.xml -o output.html --output-type single_file
+```
+
+## Programmatic Usage
+
+[source,ruby]
+----
+require "docbook"
+
+document = Docbook::Document.from_xml(File.read("book.xml"))
+xref_resolver = Docbook::XrefResolver.new(document).resolve!
+base_path = File.dirname(File.expand_path("book.xml"))
+
+html = Docbook::Output::Html.new(
+  document,
+  xref_resolver: xref_resolver,
+  output_mode: :single_file,
+  base_path: base_path
+).to_html
+
+File.write("book.html", html)
+----
+
+## Template Rendering Details
+
+The Liquid template is rendered with these variables in single file mode:
+
+[cols="1,2,3"]
+|===
+| Variable | Value | Purpose
+
+| `docbook_title` | Document title | Page `<title>` element
+| `base_url` | `""` (empty string) | Relative URL base (not needed for single file)
+| `assets_inline` | `true` | Controls whether CSS/JS are inlined or linked
+| `app_css` | Contents of `frontend/dist/app.css` | Inlined as `<style>` tag
+| `app_js` | Contents of `frontend/dist/app.iife.js` | Inlined as `<script>` tag
+| `data_url` | Not used | Only relevant for directory mode
+|===

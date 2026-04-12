@@ -1,0 +1,193 @@
+---
+layout: default
+title: Frontend Customization
+parent: Advanced
+nav_order: 2
+---
+
+# Frontend Customization
+
+The HTML output includes a Vue 3 single-page application that provides
+an interactive ebook reader experience. This page describes the
+frontend architecture and how to customize it.
+
+== Build toolchain
+
+The frontend lives in the `frontend/` directory at the project root.
+It uses the following toolchain:
+
+* **Vue 3** (v3.4+) with the Composition API
+* **TypeScript** for type safety
+* **Vite** (v5.2+) for building
+* **Pinia** for state management
+* **FlexSearch** for client-side full-text search
+
+Build the frontend with:
+
+....
+cd frontend
+npm install
+npm run build
+....
+
+This produces two files in `frontend/dist/`:
+
+* `app.css` -- The compiled stylesheet
+* `app.iife.js` -- The bundled JavaScript (IIFE format)
+
+These files are copied into the HTML output by the Ruby generator.
+
+== Components
+
+The Vue application consists of the following components:
+
+=== EbookContainer
+
+The top-level layout component. It renders the sidebar, content area,
+and settings panel. It manages the overall layout state and applies
+theme CSS classes to the root container.
+
+=== AppSidebar
+
+The left sidebar containing the table of contents tree. It uses
+`TocTreeItem` components recursively to render the nested section
+hierarchy. Clicking a TOC entry navigates to the corresponding section.
+
+=== ContentRenderer
+
+Responsible for rendering the main document content. It looks up the
+active section's content blocks from the `documentStore` and delegates
+to `BlockRenderer` for each block.
+
+=== BlockRenderer
+
+A recursive component that renders a single `ContentBlock`. It
+switches on the block's `type` to produce the appropriate HTML:
+paragraphs, code blocks, images, lists, admonitions, and so on.
+
+=== SearchModal
+
+A full-screen search overlay powered by FlexSearch. It indexes TOC
+titles and provides instant search-as-you-type results. The search
+index is persisted in IndexedDB to avoid rebuilding on each page load.
+
+=== SettingsPanel
+
+A slide-out panel for reading preferences: theme selection, font size,
+line height, margin width, and reading mode. Settings are persisted
+in localStorage via the `useEbookStore` composable.
+
+=== TocTreeItem
+
+Renders a single entry in the table of contents tree, including its
+section number and expand/collapse toggle for nested children.
+
+=== ReferenceEntry
+
+A specialized component for rendering `<refentry>` elements (man-page
+style reference entries) with their badge, name, definition, and
+description sections.
+
+== State management
+
+=== documentStore (Pinia)
+
+The central data store. It loads document data from
+`window.DOCBOOK_DATA` (single-file mode) or fetches
+`docbook.data.json` (directory mode). It exposes computed properties
+for `title`, `sections`, `numbering`, `content`, and `index`, plus a
+`getSectionContent(id)` lookup method.
+
+=== uiStore (Pinia)
+
+Manages UI state: theme (light/dark/system), font family
+(sans/serif), sidebar visibility, search visibility, and the active
+section ID. Theme and font preferences are persisted in localStorage.
+
+== Composables
+
+=== useSearch
+
+Provides full-text search over TOC entries using FlexSearch. The
+composable builds a `Document` index with forward tokenization and
+persists the serialized index in IndexedDB. On subsequent loads, it
+attempts to restore the index from IndexedDB before rebuilding.
+
+=== useEbookStore
+
+A global singleton (not Pinia-based) that manages reading preferences:
+reading mode, font size, font weight, line height, margin, and theme.
+It uses a reactive state object with `watch`-based auto-persistence
+to localStorage. Available themes are:
+
+[cols="1,1,3"]
+|===
+| Theme | Description | Background
+
+| `day`
+| Light theme
+| White background
+
+| `sepia`
+| Warm reading theme
+| Cream/parchment background
+
+| `night`
+| Dark theme
+| Dark gray background
+
+| `oled`
+| Pure black theme
+| Black background (for OLED screens)
+|===
+
+Reading modes:
+
+[cols="1,3"]
+|===
+| Mode | Description
+
+| `scroll`
+| Continuous scrolling through all content
+
+| `page`
+| Paginated view with page-turn navigation
+
+| `chapter`
+| One chapter at a time with next/previous navigation
+
+| `reference`
+| Compact layout for reference entry pages
+|===
+
+== Fonts
+
+The frontend loads three font families from Google Fonts:
+
+[cols="1,1,2"]
+|===
+| Font | CSS family | Usage
+
+| Inter
+| `font-sans`
+| Body text, UI elements
+
+| Merriweather
+| `font-serif`
+| Reading mode serif option
+
+| JetBrains Mono
+| `font-mono`
+| Code blocks, inline code
+|===
+
+== Customizing the frontend
+
+To modify the reader's appearance or behavior:
+
+. Edit the Vue components in `frontend/src/`.
+. Run `npm run build` in the `frontend/` directory.
+. Regenerate the HTML output using the `docbook to-html` command.
+
+The Ruby generator always uses the latest built assets from
+`frontend/dist/`, so changes take effect immediately after rebuilding.

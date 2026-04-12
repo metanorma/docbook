@@ -1,0 +1,161 @@
+---
+layout: default
+title: Quick Start
+parent: Getting Started
+nav_order: 2
+---
+
+== Quick Start
+
+This page walks you through the three most common operations using the `docbook` command-line tool: validating, converting to HTML, and formatting DocBook XML files.
+
+=== Prerequisites
+
+Make sure the gem is installed and the `docbook` command is available. See <<installation>> for details.
+
+For these examples, we will use a sample DocBook 5 article file called `article.xml`:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="my-article">
+  <info>
+    <title>Getting Started with DocBook</title>
+  </info>
+  <section xml:id="intro">
+    <title>Introduction</title>
+    <para>This is a sample DocBook article demonstrating the basic features
+    of the Metanorma DocBook gem.</para>
+  </section>
+  <section xml:id="usage">
+    <title>Usage</title>
+    <para>See the <xref linkend="intro"/> for background information.</para>
+  </section>
+</article>
+----
+
+=== 1. Validate a DocBook File
+
+The `validate` command checks whether an XML file is well-formed:
+
+[source,bash]
+----
+$ docbook validate article.xml
+article.xml: valid
+----
+
+If the file contains errors, the command prints each error to stderr and exits with code 1:
+
+[source,bash]
+----
+$ docbook validate broken.xml
+broken.xml: 6:14: FATAL: Opening and ending tag mismatch: section line 4 and artcle
+broken.xml: 1 file, 1 failures
+$ echo $?
+1
+----
+
+*TIP:* The `validate` command checks XML well-formedness using Nokogiri. It does not validate against the DocBook schema (DTD or RelaxNG).
+
+=== 2. Convert to HTML
+
+The `to-html` command converts a DocBook XML file to a self-contained HTML document.
+
+==== Single-File Mode (default)
+
+[source,bash]
+----
+$ docbook to-html article.xml -o output.html
+Written to output.html
+----
+
+This produces a single HTML file with all assets (CSS, JavaScript, images) embedded inline. Images are converted to Base64 data URIs, making the file completely self-contained and portable.
+
+To write to stdout instead of a file, omit the `--output` option:
+
+[source,bash]
+----
+$ docbook to-html article.xml
+<!DOCTYPE html><html>...
+----
+
+==== Directory Mode
+
+Use `--output-type directory` to generate a multi-file output suitable for web serving:
+
+[source,bash]
+----
+$ docbook to-html article.xml -o my-book --output-type directory
+Written to my-book/index.html and assets/
+----
+
+Directory mode creates the following structure:
+
+[source]
+----
+my-book/
+  index.html          # HTML shell with Vue.js app
+  docbook.data.json   # Structured content data (TOC, sections, index)
+  assets/
+    app.css           # Stylesheet
+    app.iife.js       # Vue.js application bundle
+----
+
+==== XInclude Resolution
+
+By default, XIncludes are resolved before conversion. To disable this:
+
+[source,bash]
+----
+$ docbook to-html book.xml -o output.html --no-xinclude
+----
+
+=== 3. Format (Prettify) DocBook XML
+
+The `format` command reformats a DocBook XML file with consistent indentation:
+
+[source,bash]
+----
+$ docbook format article.xml -o formatted.xml
+Written to formatted.xml
+----
+
+The output is a properly indented XML document with an XML declaration:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="my-article">
+  <info>
+    <title>Getting Started with DocBook</title>
+  </info>
+  <section xml:id="intro">
+    <title>Introduction</title>
+    <para>This is a sample DocBook article demonstrating the basic features
+    of the Metanorma DocBook gem.</para>
+  </section>
+</article>
+----
+
+To print to stdout, omit the `--output` option:
+
+[source,bash]
+----
+$ docbook format article.xml
+----
+
+To resolve XIncludes before formatting:
+
+[source,bash]
+----
+$ docbook format book.xml --xinclude -o book-flat.xml
+Written to book-flat.xml
+----
+
+=== Next Steps
+
+Now that you can validate, convert, and format DocBook files, explore the full documentation:
+
+* *<<interfaces,Interfaces>>* -- Detailed CLI reference and Ruby API documentation
+* *<<../interfaces/cli/,CLI Reference>>* -- All commands, options, and examples
+* *<<../interfaces/ruby-api/,Ruby API>>* -- Programmatic access to parsing, XInclude resolution, cross-references, and HTML output

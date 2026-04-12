@@ -1,0 +1,34 @@
+---
+layout: default
+title: Understanding
+nav_order: 5
+has_children: true
+---
+
+# Understanding
+
+This section explains how the Metanorma DocBook gem works internally.
+It covers the architecture, data flow, and design decisions that shape
+the library.
+
+== When to read this section
+
+Read these pages when you want to do any of the following:
+
+* **Extend the gem** -- Adding new DocBook element types, custom output
+  formats, or additional template variables requires understanding the
+  module structure and element class design.
+* **Debug output** -- If the HTML output does not match your expectations,
+  the content pipeline and data model pages will help you trace where a
+  particular element is transformed or lost.
+* **Contribute** -- Contributors should understand the full pipeline from
+  XML input to rendered HTML before submitting patches.
+
+== What is covered
+
+* <<architecture, Architecture>> -- The major modules and how they fit
+  together.
+* <<content-pipeline, Content Pipeline>> -- The step-by-step data flow
+  from XML input to final output.
+* <<data-models, Data Models>> -- The Ruby classes that represent
+  parsed and computed document data.

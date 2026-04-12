@@ -1,0 +1,14 @@
+---
+layout: default
+title: Advanced
+nav_order: 6
+has_children: true
+---
+
+# Advanced
+
+This section covers advanced topics for developers who want to customize
+or extend the Metanorma DocBook gem beyond its default behavior.
+
+Topics include the Liquid template system, frontend customization, and
+the design patterns behind element classes.

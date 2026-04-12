@@ -1,0 +1,192 @@
+---
+layout: default
+title: Converting a Book
+parent: Guides
+nav_order: 1
+---
+
+# Converting a Book
+
+This guide walks through converting a complete DocBook 5 book document
+to HTML using the Metanorma DocBook gem.
+
+== Sample book structure
+
+A typical DocBook book has the following structure:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0"
+      xml:id="my-book">
+  <info>
+    <title>My Technical Book</title>
+    <author>
+      <personname>
+        <firstname>Jane</firstname>
+        <surname>Developer</surname>
+      </personname>
+    </author>
+    <copyright>
+      <year>2025</year>
+      <holder>Acme Corp</holder>
+    </copyright>
+  </info>
+
+  <preface xml:id="preface">
+    <title>Preface</title>
+    <para>This book explains how to use the DocBook conversion tool.</para>
+  </preface>
+
+  <part xml:id="part-fundamentals">
+    <title>Part I. Fundamentals</title>
+    <chapter xml:id="ch-intro">
+      <title>Introduction</title>
+      <para>Content of the introduction chapter.</para>
+      <section xml:id="ch-intro-overview">
+        <title>Overview</title>
+        <para>Detailed overview content.</para>
+      </section>
+    </chapter>
+    <chapter xml:id="ch-setup">
+      <title>Getting Started</title>
+      <para>Setup instructions here.</para>
+    </chapter>
+  </part>
+
+  <appendix xml:id="appendix-a">
+    <title>Appendix A. Additional Resources</title>
+    <para>Supplementary material.</para>
+  </appendix>
+
+  <glossary xml:id="glossary">
+    <title>Glossary</title>
+    <glossentry>
+      <glossterm>DocBook</glossterm>
+      <glossdef>
+        <para>A semantic markup language for technical documentation.</para>
+      </glossdef>
+    </glossentry>
+  </glossary>
+
+  <bibliography xml:id="bibliography">
+    <title>References</title>
+    <bibliomixed>
+      <abbrev>DocBook5</abbrev>
+      <title>DocBook 5: The Definitive Guide</title>
+    </bibliomixed>
+  </bibliography>
+
+  <index xml:id="index"/>
+</book>
+----
+
+== Step 1: Validate the input
+
+Before conversion, validate that the XML is well-formed:
+
+....
+docbook validate book.xml
+....
+
+If the file is valid, the command prints `book.xml: valid` and exits
+with code 0. If there are errors, they are printed to stderr and the
+command exits with code 1.
+
+== Step 2: Check XIncludes (if applicable)
+
+If your book uses `<xi:include>` to pull in chapters from separate
+files, verify that all referenced files exist and are well-formed XML.
+XInclude resolution is enabled by default for `to-html`.
+
+== Step 3: Convert to single-file HTML
+
+For a self-contained HTML file:
+
+....
+docbook to-html book.xml -o output.html
+....
+
+This produces `output.html` with all data, CSS, and JavaScript
+inlined. You can open it directly in any browser.
+
+== Step 4: Convert to directory output
+
+For a directory-based output with linked assets:
+
+....
+docbook to-html book.xml -o my-book --output-type directory
+....
+
+This creates a `my-book/` directory containing:
+
+* `index.html` -- The HTML shell with the Vue SPA mount point
+* `docbook.data.json` -- The full document data as JSON
+* `assets/app.css` -- The compiled stylesheet
+* `assets/app.iife.js` -- The bundled JavaScript
+
+== Step 5: Open in browser
+
+Open the HTML file or directory in a web browser. You should see:
+
+* **TOC sidebar** -- A collapsible tree showing all parts, chapters,
+  and sections with their section numbers.
+* **Section numbering** -- Parts labeled with Roman numerals (I, II),
+  chapters with Arabic numbers (1, 2), and sections with hierarchical
+  dotted numbers (1.1, 1.2.3).
+* **Chapter navigation** -- Click any TOC entry to navigate to that
+  section.
+* **Search** -- Use the search function to find sections by title.
+* **Index page** -- If the book contains `<indexterm>` elements, an
+  index section with entries grouped by letter.
+* **Settings** -- Theme, font size, reading mode, and other preferences.
+
+== Using the Ruby API
+
+You can also convert programmatically:
+
+[source,ruby]
+----
+require "docbook"
+
+xml = File.read("book.xml")
+
+# Parse
+doc = Docbook::Document.from_xml(xml)
+
+# Resolve cross-references
+xref = Docbook::XrefResolver.new(doc).resolve!
+
+# Generate HTML
+html = Docbook::Output::Html.new(
+  doc,
+  xref_resolver: xref,
+  output_mode: :single_file,
+  base_path: File.dirname(File.expand_path("book.xml"))
+).to_html
+
+File.write("output.html", html)
+----
+
+== Troubleshooting
+
+Unsupported root element::
+Ensure the XML root element is one of the 37 supported types listed
+in `Document::ROOT_ELEMENT_MAP`. The most common roots are `book`,
+`article`, and `set`.
+
+Missing images in output::
+The converter resolves image paths relative to the input file's
+directory. It also searches parent directories and common prefixes
+like `resources/`. If images are still missing, check that the
+`fileref` attribute in `<imagedata>` points to a valid file.
+
+XInclude errors::
+XInclude resolution requires that referenced files exist and are
+accessible from the input file's location. Check file paths and
+permissions.
+
+Empty output::
+If the output HTML appears empty, the document may not contain any
+recognized block elements. Ensure chapters and sections contain
+`<para>`, `<programlisting>`, or other supported block elements.

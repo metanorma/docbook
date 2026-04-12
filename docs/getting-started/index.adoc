@@ -1,0 +1,50 @@
+---
+layout: default
+title: Getting Started
+nav_order: 2
+has_children: true
+---
+
+== Getting Started
+
+Welcome to the *Metanorma DocBook* gem -- a Ruby library for parsing *DocBook 5 XML* documents and converting them to rich, interactive HTML output.
+
+DocBook 5 is an OASIS standard XML vocabulary designed for marking up technical documentation, including books, articles, reference pages, and more. The `docbook` gem provides a complete toolkit for working with DocBook XML files: parsing them into Ruby object models, resolving cross-references and XIncludes, and producing self-contained HTML documents or directory-based output ready for deployment.
+
+The gem is built on top of https://github.com/lutaml/lutaml-model[`lutaml-model`], which provides a type-safe, declarative way to define XML-to-Ruby mappings. Every DocBook element -- from `<book>` down to inline elements like `<emphasis>` and `<xref>` -- is represented as a first-class Ruby object with typed attributes.
+
+=== Prerequisites
+
+Before you begin, make sure you have the following:
+
+* *Ruby >= 3.2* installed on your system
+* *Bundler* (optional, but recommended for project integration)
+* Basic familiarity with XML and the DocBook 5 vocabulary
+
+=== What You Will Learn
+
+This section covers everything you need to start using the gem:
+
+* *<<installation,Installation>>* -- Install the gem via RubyGems or Bundler, and verify your setup.
+* *<<quick-start,Quick Start>>* -- Run your first validation, format, and HTML conversion from the command line.
+
+=== About DocBook 5 XML
+
+DocBook 5 is a semantic markup language for technical documentation. Unlike presentation-oriented formats, DocBook describes the *structure* and *meaning* of your content. A DocBook `<book>` contains chapters, sections, paragraphs, code listings, figures, tables, cross-references, and much more. This separation of content from presentation makes DocBook ideal for single-source publishing pipelines.
+
+The `docbook` gem supports 39 root element types, including the most commonly used: `<article>`, `<book>`, `<chapter>`, `<appendix>`, `<section>`, `<preface>`, `<part>`, and `<reference>`.
+
+=== What the Gem Provides
+
+[cols="2,5"]
+|===
+| Feature | Description
+
+| *CLI* | A Thor-based command-line interface with four commands: `validate`, `format`, `to-html`, and `roundtrip`.
+| *Ruby API* | Programmatic access to parsing, XInclude resolution, cross-reference resolution, and HTML generation.
+| *HTML Output* | Two output modes: a self-contained single HTML file (with embedded Base64 images) and a directory mode (with a Vue.js-powered reading experience).
+| *XInclude Support* | Full resolution of XInclude elements including nested includes, text includes, and `text+fragid` extensions.
+| *Cross-Reference Resolution* | Automatic resolution of `xml:id` references to section titles and other targets.
+|===
+
+Dive into <<installation>> to get the gem installed, then head to <<quick-start>> for hands-on examples.

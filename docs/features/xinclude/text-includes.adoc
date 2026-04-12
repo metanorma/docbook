@@ -1,0 +1,123 @@
+---
+layout: default
+title: Text Includes
+parent: XInclude Resolution
+grand_parent: Features
+nav_order: 2
+---
+
+# Text Includes
+
+Text includes (`parse="text"`) read the referenced file as plain text and insert its content as a text node. This is the standard way to include source code, configuration files, or other verbatim text content in DocBook documents.
+
+## Basic Usage
+
+[source,xml]
+----
+<chapter xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>Installation</title>
+
+  <para>Run the following command to install the gem:</para>
+
+  <screen><xi:include href="examples/install.sh" parse="text"/></screen>
+
+  <para>Then create a configuration file:</para>
+
+  <programlisting language="yaml"><xi:include href="examples/config.yaml" parse="text"/></programlisting>
+</chapter>
+----
+
+The file content is inserted verbatim as a text node, replacing the `xi:include` element. No XML parsing is performed on the included content.
+
+## How It Works
+
+[source,ruby]
+----
+def self.resolve_text_include(doc, inc, file_path, fragid)
+  content = File.read(file_path)
+  if fragid && !fragid.empty?
+    filtered = apply_fragid(content, fragid)
+    content = filtered if filtered
+  end
+  text_node = doc.create_text_node(content)
+  inc.replace(text_node)
+end
+----
+
+The process is straightforward:
+
+. **Read the file** -- The file is read as a plain string with `File.read`
+. **Apply fragid filter** -- If a `fragid` attribute is present, the content is filtered (see <<fragid-schemes,fragid Schemes>>)
+. **Create text node** -- The content is wrapped in a Nokogiri text node
+. **Replace the include** -- The `xi:include` element is replaced with the text node
+
+## Without fragid
+
+When no `fragid` attribute is present, the entire file content is included:
+
+[source,xml]
+----
+<!-- Include an entire source file -->
+<programlisting language="ruby"><xi:include href="lib/docbook.rb" parse="text"/></programlisting>
+----
+
+[source,xml]
+----
+<!-- Include a shell script -->
+<screen><xi:include href="scripts/setup.sh" parse="text"/></screen>
+----
+
+[source,xml]
+----
+<!-- Include a configuration file -->
+<programlisting language="json"><xi:include href="config.json" parse="text"/></programlisting>
+----
+
+## Common Use Cases
+
+### Source Code Listings
+
+Text includes are most commonly used to embed source code files directly in documentation, ensuring the documented code is always synchronized with the actual codebase:
+
+[source,xml]
+----
+<section>
+  <title>The Html Output Class</title>
+  <para>The main output class handles HTML generation:</para>
+  <programlisting language="ruby"><xi:include href="lib/docbook/output/html.rb" parse="text"/></programlisting>
+</section>
+----
+
+### Configuration Examples
+
+[source,xml]
+----
+<section>
+  <title>Default Configuration</title>
+  <programlisting language="yaml"><xi:include href="config/default.yaml" parse="text"/></programlisting>
+</section>
+----
+
+### Log Output and Results
+
+[source,xml]
+----
+<section>
+  <title>Expected Output</title>
+  <screen><xi:include href="test/fixtures/expected-output.txt" parse="text"/></screen>
+</section>
+----
+
+## Combined with fragid
+
+Text includes become significantly more powerful when combined with the `fragid` attribute, which allows extracting specific portions of a file rather than the entire content. This is particularly useful for:
+
+- Extracting specific functions from source files
+- Including only relevant lines from large files
+- Showing a specific section between two markers
+
+See <<fragid-schemes,fragid Schemes>> for detailed documentation of the three filtering schemes:
+
+- `search=` -- Pattern-based extraction (literal or regex)
+- `line=` -- Line number range extraction (RFC 5147)
+- `char=` -- Character offset extraction (RFC 5147)

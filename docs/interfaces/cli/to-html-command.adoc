@@ -1,0 +1,178 @@
+---
+layout: default
+title: to-html
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 3
+---
+
+== to-html
+
+Convert a DocBook XML file to an HTML document.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook to-html INPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file to convert (required)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` PATH | stdout | Output file path (single-file mode) or directory path (directory mode)
+| `--xinclude` | `true` | Resolve XInclude elements before processing
+| `--output-type` MODE | `single_file` | Output mode: `single_file` or `directory`
+|===
+
+=== Output Modes
+
+The `to-html` command supports two output modes, controlled by the `--output-type` option.
+
+==== Single-File Mode (`single_file`)
+
+Produces a single, self-contained HTML file with everything embedded inline:
+
+* CSS and JavaScript are embedded directly in the HTML
+* Images are converted to Base64 data URIs
+* All content data (TOC, sections, index) is embedded in `<script>` tags as JSON
+
+This mode is ideal for:
+
+* Distributing a single file (e.g., email attachments, downloads)
+* Offline reading with no external dependencies
+* Embedding in other HTML pages
+
+[source,bash]
+----
+$ docbook to-html book.xml -o output.html
+Written to output.html
+----
+
+==== Directory Mode (`directory`)
+
+Produces a directory with separate files:
+
+[source]
+----
+output-dir/
+  index.html           # HTML shell that loads the Vue.js reader
+  docbook.data.json    # Structured content (TOC, sections, index, numbering)
+  assets/
+    app.css            # Compiled stylesheet
+    app.iife.js        # Vue.js application bundle
+----
+
+In directory mode:
+
+* The `index.html` file contains the HTML structure and embedded CSS/JS
+* Content data is loaded from `docbook.data.json` at runtime
+* Images reference their original file paths (no Base64 embedding)
+
+This mode is ideal for:
+
+* Web serving (the directory can be deployed to any static host)
+* Large documents (JSON is loaded on demand by the Vue.js reader)
+* Interactive reading experience with table of contents navigation
+
+[source,bash]
+----
+$ docbook to-html book.xml -o my-book --output-type directory
+Written to my-book/index.html and assets/
+----
+
+[IMPORTANT]
+====
+When using `--output-type directory`, the `--output` option is *required*. The CLI will raise an error if no output path is provided.
+====
+
+=== XInclude Resolution
+
+By default, XIncludes are resolved before conversion (`--xinclude` defaults to `true`). This means any `xi:include` elements in the input file are processed and their content inlined before parsing.
+
+To skip XInclude resolution (for example, if the file does not use XIncludes or you want to process them separately):
+
+[source,bash]
+----
+$ docbook to-html book.xml -o output.html --no-xinclude
+----
+
+=== Generated Content
+
+The HTML output includes several computed features:
+
+[cols="2,5"]
+|===
+| Feature | Description
+
+| *Table of Contents* | Automatically generated from the document structure with hierarchical numbering
+| *Section Numbering* | Parts use Roman numerals (I, II, III), chapters use Arabic numbers (1, 2, 3), appendices use letters (A, B, C), sections use hierarchical numbering (1.1, 1.2.3)
+| *Cross-References* | `xref` elements are resolved to the target section's title
+| *Image Handling* | Single-file mode: Base64 data URIs. Directory mode: relative file paths
+| *Index Generation* | `indexterm` elements are collected and grouped alphabetically with see/see-also support
+|===
+
+=== Supported DocBook Elements
+
+The HTML output handles a wide range of DocBook elements, including:
+
+* *Block elements:* `para`, `section`, `chapter`, `part`, `appendix`, `preface`, `blockquote`, `programlisting`, `screen`, `literallayout`
+* *Lists:* `orderedlist`, `itemizedlist`, `variablelist`
+* *Admonitions:* `note`, `warning`, `caution`, `important`, `tip`, `danger`
+* *Media:* `mediaobject`, `inlinemediaobject`, `imageobject`, `imagedata`, `figure`, `informalfigure`
+* *Tables:* `table`, `tgroup`, `thead`, `tbody`, `row`, `entry`
+* *Inline:* `emphasis`, `link`, `xref`, `code`, `literal`, `filename`, `quote`, `citetitle`
+* *Bibliography:* `bibliomixed`, `biblioref`
+* *Glossary:* `glossentry`, `glossterm`, `glossdef`
+* *Reference pages:* `refentry`, `refnamediv`, `refsection`
+
+=== Examples
+
+==== Convert a simple article
+
+[source,bash]
+----
+$ docbook to-html article.xml -o article.html
+Written to article.html
+----
+
+==== Convert a book with XIncludes
+
+[source,bash]
+----
+$ docbook to-html book.xml -o book.html
+Written to book.html
+----
+
+==== Convert to directory for web serving
+
+[source,bash]
+----
+$ docbook to-html book.xml -o /var/www/html/book --output-type directory
+Written to /var/www/html/book/index.html and assets/
+----
+
+==== Pipe output to another command
+
+[source,bash]
+----
+$ docbook to-html article.xml | tidy -q -indent -xml > pretty.html
+----
+
+=== See Also
+
+* <<format-command,format>> -- Reformat DocBook XML
+* <<../ruby-api/html-output,Ruby API: HTML Output>> -- Programmatic HTML generation
+* <<../ruby-api/xinclude,Ruby API: XInclude Resolution>> -- XInclude processing details

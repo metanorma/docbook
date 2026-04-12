@@ -1,0 +1,162 @@
+---
+layout: default
+title: XInclude Resolution
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 3
+---
+
+== XInclude Resolution
+
+The `Docbook::XIncludeResolver` class resolves http://www.w3.org/2001/XInclude/[XInclude] elements in DocBook XML documents. XInclude resolution must happen *before* parsing with `Document.from_xml`, because the parser needs a single, complete XML document.
+
+=== Why Resolve XIncludes First
+
+DocBook documents are often modular: a book may include chapters from separate files using `<xi:include>` elements. The `Document.from_xml` parser expects a single XML document with no unresolved XIncludes. The `XIncludeResolver` expands these references to produce a merged document.
+
+=== Class Methods
+
+The resolver provides two class-level entry points:
+
+==== `resolve(doc)`
+
+Resolves XIncludes in a Nokogiri document object. Processes `xi:include` elements iteratively to handle nested includes.
+
+[source,ruby]
+----
+require "nokogiri"
+require "docbook"
+
+doc = Nokogiri::XML(File.read("book.xml"))
+Docbook::XIncludeResolver.resolve(doc)
+# => returns the same Nokogiri document with xi:include elements replaced
+----
+
+==== `resolve_string(xml_string, base_path:)`
+
+Resolves XIncludes in a raw XML string. This is the most convenient method for most use cases. The `base_path` parameter tells the resolver where to look for included files.
+
+[source,ruby]
+----
+require "docbook"
+
+xml_string = File.read("book.xml")
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+resolved.to_xml  # => merged XML string with all xi:include expanded
+----
+
+[IMPORTANT]
+====
+The `base_path` parameter should be the path to the XML file itself (not just the directory). The resolver extracts the directory from this path to resolve relative `href` attributes in `xi:include` elements.
+====
+
+=== Resolution Process
+
+The resolver processes XIncludes iteratively:
+
+1. Find all `xi:include` elements in the document
+2. For each include, resolve the `href` to a file path relative to the base directory
+3. Replace the `xi:include` element with the included content
+4. Re-scan for any new `xi:include` elements (handles nested includes)
+5. Repeat until no more `xi:include` elements remain
+
+This iterative approach ensures that deeply nested includes (file A includes file B, which includes file C) are fully resolved.
+
+=== Include Types
+
+The resolver handles two types of XIncludes:
+
+==== XML Includes (default)
+
+Standard XML includes where the `parse` attribute is omitted or set to `"xml"`. The root element of the included file replaces the `xi:include` element:
+
+[source,ruby]
+----
+# book.xml contains:
+#   <xi:include href="chapters/chapter1.xml"/>
+#
+# After resolution, the <chapter> element from chapter1.xml
+# replaces the xi:include element
+----
+
+==== Text Includes
+
+Text includes where `parse="text"`. The file contents are included as plain text:
+
+[source,ruby]
+----
+# Includes a code snippet as literal text
+# <xi:include href="code/example.rb" parse="text"/>
+----
+
+==== Text Includes with Fragid
+
+Text includes also support the `fragid` attribute for selecting a subset of the file content. This is an extension based on the DocBook xslTNG specification:
+
+* `fragid="line=START,END"` -- Select lines from START to END (RFC 5147 line scheme)
+* `fragid="char=START,END"` -- Select characters from START to END (RFC 5147 char scheme)
+* `fragid="search=#PATTERN#[;after|;before],#STOP#"` -- Select lines matching a literal pattern
+* `fragid="search=/REGEX/,/STOP/"` -- Select lines matching a regex pattern
+
+=== Complete Example
+
+A full workflow for resolving XIncludes before parsing:
+
+[source,ruby]
+----
+require "docbook"
+
+# Read the main document
+xml_string = File.read("book.xml")
+
+# Resolve all XIncludes
+resolved = Docbook::XIncludeResolver.resolve_string(
+  xml_string,
+  base_path: "book.xml"
+)
+
+# Now parse the merged document
+document = Docbook::Document.from_xml(resolved.to_xml)
+
+puts "Chapters: #{document.chapter&.size || 0}"
+document.chapter&.each do |chapter|
+  puts "  - #{chapter.title&.content}"
+end
+----
+
+=== Handling Nested Includes
+
+The resolver handles nested includes automatically. Consider this scenario:
+
+* `book.xml` includes `part1.xml`
+* `part1.xml` includes `chapter1.xml` and `chapter2.xml`
+
+After resolution, all content is merged into a single document:
+
+[source,ruby]
+----
+resolved = Docbook::XIncludeResolver.resolve_string(
+  File.read("book.xml"),
+  base_path: "book.xml"
+)
+# The resolved document contains content from book.xml,
+# part1.xml, chapter1.xml, and chapter2.xml
+----
+
+=== Error Handling
+
+The resolver is designed to be tolerant of errors:
+
+* If a referenced file does not exist, the `xi:include` element is left in place (no error raised)
+* If the resolver encounters an unexpected error during processing, it returns the original document unchanged
+* The resolver uses Nokogiri's `url` attribute to determine the base directory for relative path resolution
+
+=== Namespace Handling
+
+The resolver ensures that namespace declarations are properly preserved when merging documents. If an included file declares namespaces that are not present in the main document, the resolver adds the namespace declarations to the root element.
+
+=== See Also
+
+* *<<parsing,Parsing Documents>>* -- Parse resolved XML into element models
+* *<<xref-resolution,XRef Resolution>>* -- Resolve cross-references after parsing
+* *<<html-output,HTML Output>>* -- Generate HTML from parsed documents

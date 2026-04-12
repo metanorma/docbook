@@ -1,0 +1,197 @@
+---
+layout: default
+title: Index Generation
+parent: Features
+nav_order: 5
+---
+
+# Index Generation
+
+The index generation system collects `indexterm` elements from throughout the document, groups them by first letter, sorts them, and produces a structured index that the Vue SPA renders as a navigable back-of-book index.
+
+## Architecture
+
+Index generation uses two classes working in sequence:
+
+- **`IndexCollector`** -- Traverses the entire document tree to collect `indexterm` elements
+- **`IndexGenerator`** -- Groups collected terms by letter, sorts them, and builds the final index structure
+
+## IndexCollector
+
+The `IndexCollector` performs a recursive traversal of the document, visiting every element type that can contain `indexterm` elements.
+
+### Traversal Scope
+
+The collector traverses all major structural elements:
+
+[cols="1,2"]
+|===
+| Element | Traversed Children
+
+| `Book` | parts, chapters, appendices, prefaces, glossary, bibliography, index, setindex
+| `Part` | parts, chapters, appendices, references, prefaces, glossary, bibliography, index
+| `Article` | sections, glossary, bibliography, index
+| `Chapter` | sections, simplesects, paras, indexterms
+| `Appendix` | sections, simplesects, paras, indexterms
+| `Section` | sections, simplesects, paras, indexterms
+| `SimpleSect` | paras, indexterms
+| `RefEntry` | refsections
+| `RefSection` | paras, indexterms
+| `ListItem` | paras, simplesects, indexterms
+| `Entry` (table) | paras, indexterms
+| `Para` | mixed content (handles inline indexterms)
+|===
+
+### Term Extraction
+
+For each `indexterm` found, the collector extracts:
+
+[source,ruby]
+----
+term_info = {
+  primary: primary_text,           # Required: primary term text
+  primary_sort: sort_key,          # Sort key (lowercased or "SYMBOLS")
+  secondary: secondaries.first,    # Optional: secondary term
+  tertiary: tertiaries.first,      # Optional: tertiary term
+  sees: sees,                      # "see" cross-references
+  see_alsos: see_alsos,            # "see also" cross-references
+  type: indexterm.type,            # Optional type filter
+  section_id: section_info[:id],   # xml:id of containing section
+  section_title: section_info[:title]  # Title of containing section
+}
+----
+----
+
+### Sort Keys
+
+Sort keys determine grouping and ordering:
+
+- **Non-alphabetic terms** -- Terms starting with symbols or having `class="token"` are grouped under `SYMBOLS`
+- **Alphabetic terms** -- Leading punctuation is stripped and the text is lowercased
+
+[source,ruby]
+----
+def sort_key(text, indexterm)
+  return "SYMBOLS" if indexterm.class_value == "token" || text.start_with?("@")
+  text.gsub(/^[^a-zA-Z]+/, "").downcase
+end
+----
+----
+
+## IndexGenerator
+
+The `IndexGenerator` takes the collected terms and groups them:
+
+### Grouping by Letter
+
+Terms are grouped by the first letter of their sort key:
+
+[source,ruby]
+----
+def group_by_letter
+  result = {}
+  @index_terms.each do |term|
+    letter = letter_for(term[:primary_sort])
+    result[letter] ||= []
+    result[letter] << term
+  end
+  result
+end
+
+def letter_for(sort_key)
+  return "SYMBOLS" if sort_key == "SYMBOLS" || sort_key.start_with?("@")
+  first_char = sort_key.chars.find(&:letter?) || sort_key[0] || ""
+  first_char.upcase
+end
+----
+----
+
+### Sorting
+
+Within each letter group, terms are sorted by primary sort key and then by secondary term:
+
+[source,ruby]
+----
+def sort_entries(terms)
+  terms.sort_by { |t| [t[:primary_sort], t[:secondary].to_s] }
+end
+----
+----
+
+The `SYMBOLS` group sorts first by using `"{"` (ASCII after "Z") as its sort key:
+
+[source,ruby]
+----
+by_letter.sort_by { |letter, _| letter == "SYMBOLS" ? "{" : letter.downcase }
+----
+----
+
+## Index Model
+
+The final index is structured as:
+
+[source]
+----
+Index
+  title: "Index"
+  type: nil (or type filter)
+  groups:
+    - IndexGroup (letter: "A")
+        entries:
+          - IndexTerm (primary: "Apple", section_id: "fruit-sec", ...)
+          - IndexTerm (primary: "Application", secondary: "web", ...)
+    - IndexGroup (letter: "B")
+        entries: [...]
+    - IndexGroup (letter: "SYMBOLS")
+        entries:
+          - IndexTerm (primary: "@example", sort_as: "SYMBOLS", ...)
+----
+----
+
+## Type Filtering
+
+The DocBook `index` element supports a `type` attribute for creating multiple specialized indexes. When an `index` element has a `type`, the builder filters `indexterm` elements to only include those with a matching `type`:
+
+[source,ruby]
+----
+def build_index_content(index_element, all_index_terms)
+  index_type = index_element.type
+  filtered_terms = all_index_terms.select { |t| t[:type] == index_type }
+  # ...
+end
+----
+----
+
+## Cross-References
+
+Index terms support two cross-reference mechanisms:
+
+- **`see`** -- Directs the reader to a different primary term ("see [term]")
+- **`seealso`** -- Suggests additional related terms ("see also [term]")
+
+These are collected from `see` and `seealso` child elements within `indexterm`:
+
+[source,xml]
+----
+<indexterm>
+  <primary>cars</primary>
+  <see>automobiles</see>
+</indexterm>
+
+<indexterm>
+  <primary>automobiles</primary>
+  <secondary>electric</secondary>
+  <seealso>hybrid vehicles</seealso>
+</indexterm>
+----
+
+## Index Content Rendering
+
+The index is rendered in the Vue SPA using `ContentBlock` trees with dedicated block types:
+
+- `index_section` -- Container for an index section
+- `index_letter` -- Letter group heading with child entries
+- `index_entry` -- Individual term with primary text
+- `index_reference` -- Link to the section where the term appears
+- `index_see` -- "see" cross-reference
+- `index_see_also` -- "see also" cross-reference

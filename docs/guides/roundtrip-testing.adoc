@@ -1,0 +1,129 @@
+---
+layout: default
+title: Round-trip Testing
+parent: Guides
+nav_order: 3
+---
+
+# Round-trip Testing
+
+The `docbook roundtrip` command verifies that the element model can
+faithfully parse and re-serialize a DocBook XML document. This is
+essential for ensuring model completeness and serialization fidelity.
+
+== How round-trip testing works
+
+The round-trip test performs the following sequence:
+
+. **Parse** -- The input XML is parsed into element model objects via
+  `Document.from_xml`.
+. **Serialize** -- The model objects are serialized back to XML using
+  `to_xml` with pretty printing enabled.
+. **Re-parse** -- The serialized XML is parsed again.
+. **Compare** -- If the second parse succeeds without errors, the test
+  passes.
+
+A successful round-trip confirms that:
+
+* All elements and attributes in the input are represented in the model.
+* The XML serialization produces valid DocBook XML.
+* The serialized output can be parsed again without errors.
+
+Note that the test does not compare the original and re-serialized XML
+strings character-by-character. Differences in whitespace, attribute
+order, and namespace declarations are acceptable as long as the
+re-parsing succeeds.
+
+== Using the CLI
+
+Test one or more files:
+
+....
+docbook roundtrip book.xml
+docbook roundtrip chapter1.xml chapter2.xml chapter3.xml
+....
+
+For each file, the command prints either `filename.xml: OK` or
+`filename.xml: FAIL - error message`. At the end, it prints a summary:
+
+....
+3 files, 0 failures
+....
+
+If any file fails, the command exits with code 1.
+
+== Using in CI pipelines
+
+Round-trip testing is valuable in continuous integration. Add a step
+to your CI configuration that runs round-trip tests against a corpus
+of DocBook files:
+
+[source,yaml]
+----
+# GitHub Actions example
+- name: Round-trip test
+  run: |
+    find spec/fixtures -name '*.xml' -print0 | \
+      xargs -0 bundle exec docbook roundtrip
+----
+
+This discovers all XML fixture files and tests them in a single
+invocation. The command fails the build if any file does not
+round-trip successfully.
+
+== Ruby API
+
+You can also run round-trip tests programmatically:
+
+[source,ruby]
+----
+require "docbook"
+
+def roundtrip_test(xml_string)
+  parsed = Docbook::Document.from_xml(xml_string)
+  serialized = parsed.to_xml(declaration: true, encoding: "utf-8")
+  reparsed = Docbook::Document.from_xml(serialized)
+  true
+rescue => e
+  puts "Round-trip failed: #{e.message}"
+  false
+end
+----
+
+== Interpreting failures
+
+Round-trip failures typically indicate one of the following issues:
+
+Unsupported element::
+If the input contains an element that has no corresponding model class,
+`Document.from_xml` raises a "Unsupported root element" error. The
+solution is to add the missing element class.
+
+Missing attribute::
+If an element's XML mapping does not declare an attribute that appears
+in the input, the attribute is silently dropped during parsing. The
+re-serialized XML will lack the attribute. This usually manifests as
+a different parse result on the second pass.
+
+Broken mixed content::
+If an element declares `mixed_content` but its child element mappings
+are incomplete, some children may be lost during serialization. Check
+that all expected child elements are declared in the element class.
+
+Serialization error::
+If the model's `to_xml` produces malformed XML (for example, due to
+incorrect namespace handling), the re-parse step will fail with a
+Nokogiri parse error. The error message usually identifies the line
+and column where the problem occurs.
+
+== Testing with XIncludes
+
+Round-trip testing operates on the raw XML without resolving XIncludes.
+If you want to test XInclude resolution as well, resolve the includes
+first, then run the round-trip on the resolved document:
+
+....
+# Resolve XIncludes first, then round-trip the resolved XML
+resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
+Docbook::Document.from_xml(resolved.to_xml)
+....

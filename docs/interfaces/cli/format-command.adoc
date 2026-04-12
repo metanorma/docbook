@@ -1,0 +1,109 @@
+---
+layout: default
+title: format
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 1
+---
+
+== format
+
+Format and prettify a DocBook XML file with consistent indentation and a clean structure.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook format INPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file to format (required)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` FILE | stdout | Write formatted output to a file instead of stdout
+| `--xinclude` | `false` | Resolve XInclude elements before formatting
+|===
+
+=== Behavior
+
+The `format` command parses the input XML file and re-serializes it with:
+
+* Pretty-printed indentation
+* An XML declaration (`<?xml version="1.0" encoding="utf-8"?>`)
+* UTF-8 encoding
+
+When the `--xinclude` option is enabled, all `xi:include` elements are resolved *before* formatting. This produces a single, self-contained XML file with all included content inlined.
+
+=== Examples
+
+==== Format to a file
+
+[source,bash]
+----
+$ docbook format article.xml -o formatted.xml
+Written to formatted.xml
+----
+
+The output is a cleanly indented XML document:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <info>
+    <title>My Article</title>
+  </info>
+  <section xml:id="intro">
+    <title>Introduction</title>
+    <para>Some content here.</para>
+  </section>
+</article>
+----
+
+==== Format to stdout
+
+Omit the `--output` option to print to standard output:
+
+[source,bash]
+----
+$ docbook format article.xml
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+  ...
+</article>
+----
+
+==== Resolve XIncludes, then format
+
+Use `--xinclude` to inline all XInclude references before formatting:
+
+[source,bash]
+----
+$ docbook format book.xml --xinclude -o book-complete.xml
+Written to book-complete.xml
+----
+
+This is useful for producing a single merged file from a modular DocBook project where chapters are split across multiple files using XIncludes.
+
+=== Use Cases
+
+* *Normalize XML formatting* before committing changes to version control
+* *Resolve XIncludes* to produce a single self-contained document from a modular project
+* *Debug XML structure* by pretty-printing a compact or minified file
+
+=== See Also
+
+* <<to-html-command,to-html>> -- Convert DocBook XML to HTML (also supports `--xinclude`)
+* <<roundtrip-command,roundtrip>> -- Round-trip test to verify parse/serialize fidelity

@@ -1,0 +1,167 @@
+---
+layout: default
+title: XML Includes
+parent: XInclude Resolution
+grand_parent: Features
+nav_order: 1
+---
+
+# XML Includes
+
+XML includes (`parse="xml"`) are the default XInclude mode. The referenced file is read, parsed as XML, and its root element replaces the `xi:include` element in the including document.
+
+## Basic Usage
+
+The simplest form includes an entire XML file:
+
+[source,xml]
+----
+<!-- book.xml -->
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>My Book</title>
+  <xi:include href="chapters/introduction.xml"/>
+  <xi:include href="chapters/advanced.xml"/>
+</book>
+----
+
+[source,xml]
+----
+<!-- chapters/introduction.xml -->
+<chapter xml:id="intro">
+  <title>Introduction</title>
+  <para>This is the introduction chapter.</para>
+</chapter>
+----
+
+After resolution, the `xi:include` element is replaced with the root `<chapter>` element:
+
+[source,xml]
+----
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <title>My Book</title>
+  <chapter xml:id="intro">
+    <title>Introduction</title>
+    <para>This is the introduction chapter.</para>
+  </chapter>
+  <xi:include href="chapters/advanced.xml"/>
+</book>
+----
+
+Note that only the first include is resolved per iteration. The document is re-scanned and the second include is resolved in the next pass.
+
+## How It Works
+
+The resolution process:
+
+. **Read the file** -- The referenced file is read from disk
+. **Parse as XML** -- The file content is parsed with Nokogiri, using the file's full path as the base URL
+. **Handle namespaces** -- If the included root element has a namespace, it is registered on the main document's root element if not already present
+. **Replace the include** -- The `xi:include` element is replaced with the root element of the included document
+
+[source,ruby]
+----
+def self.resolve_xml_include(doc, inc, file_path)
+  included_xml = File.read(file_path)
+  included_doc = Nokogiri::XML(included_xml, "file://#{File.expand_path(file_path)}")
+
+  root = included_doc.root
+  # Ensure namespace is declared in target document
+  if root.namespace
+    ns = root.namespace
+    existing = doc.root.namespace_definitions.find { |n| n.href == ns.href }
+    doc.root.add_namespace_definition(ns.prefix, ns.href) unless existing
+  end
+
+  # Replace the xi:include with the root element itself
+  inc.replace(root.dup)
+end
+----
+
+## Namespace Handling
+
+When the included document uses namespaces (e.g., DocBook namespace `xmlns:db="http://docbook.org/ns/docbook"`), the resolver ensures the namespace is registered on the target document's root element. This prevents namespace conflicts and ensures the merged document is well-formed.
+
+## Base Path Resolution
+
+File paths in `href` attributes are resolved relative to the including document's location:
+
+[source,xml]
+----
+<!-- /project/book.xml -->
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <!-- Resolves to /project/chapters/ch01.xml -->
+  <xi:include href="chapters/ch01.xml"/>
+
+  <!-- Resolves to /project/shared/legal.xml -->
+  <xi:include href="shared/legal.xml"/>
+</book>
+----
+
+The base path is extracted from the document's URL:
+
+[source,ruby]
+----
+def self.base_dir_for(document)
+  url = document.url
+  return nil unless url
+  File.dirname(url.sub(%r{^file://}, ""))
+end
+----
+
+## Nested Includes
+
+Because the resolver works iteratively, nested includes are handled automatically. When a file is included that itself contains `xi:include` elements, those are resolved in subsequent iterations:
+
+[source,xml]
+----
+<!-- book.xml -->
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="part1.xml"/>
+</book>
+
+<!-- part1.xml -->
+<part>
+  <title>Part I</title>
+  <xi:include href="chapters/ch01.xml"/>
+  <xi:include href="chapters/ch02.xml"/>
+</part>
+
+<!-- chapters/ch01.xml -->
+<chapter xml:id="ch01">
+  <title>Chapter 1</title>
+  <para>Content here.</para>
+</chapter>
+----
+
+The resolution order is:
+
+. `book.xml` includes `part1.xml` -- `xi:include` replaced with `<part>` element
+. Re-scan finds two new `xi:include` elements inside the included `<part>`
+. `part1.xml`'s first include (`ch01.xml`) is resolved
+. Re-scan finds one remaining `xi:include`
+. `part1.xml`'s second include (`ch02.xml`) is resolved
+. Re-scan finds no more `xi:include` elements -- done
+
+## Common Patterns
+
+**Book with per-chapter files:**
+
+[source,xml]
+----
+<book xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="frontmatter.xml"/>
+  <xi:include href="part1.xml"/>
+  <xi:include href="part2.xml"/>
+  <xi:include href="appendices.xml"/>
+</book>
+----
+
+**Shared boilerplate:**
+
+[source,xml]
+----
+<!-- Including a common legal notice in multiple documents -->
+<preface>
+  <xi:include href="../shared/legal-notice.xml"/>
+</preface>
+----

@@ -1,0 +1,33 @@
+# Lychee ignore patterns
+# These link types are valid but lychee can't verify them
+
+# Ignore .adoc source files
+\.adoc$
+
+# Ignore .html files with inconsistent paths
+\.html$
+
+# Ignore file:// URLs
+file://
+
+# Ignore directory links
+file://.*/docbook/$
+file://.*/docbook/.*/$
+file://.*/docs/$
+file://.*/docs/.*/$
+
+# Ignore example domain links
+http://example\.com/.*
+http://a\.com/.*
+http://b\.com/.*
+
+# Ignore GitHub-specific links
+https://github\.com/[^/]+/[^/]+/edit/.*
+https://github\.com/[^/]+/[^/]+/blob/.*
+
+# Ignore mailto links
+mailto:.*
+
+# Ignore localhost
+http://localhost:.*
+http://127\.0\.0\.1:.*

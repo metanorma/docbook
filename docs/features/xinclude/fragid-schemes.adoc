@@ -1,0 +1,287 @@
+---
+layout: default
+title: fragid Schemes
+parent: XInclude Resolution
+grand_parent: Features
+nav_order: 3
+---
+
+# fragid Schemes
+
+The `fragid` attribute on text-mode XIncludes enables selective extraction of file content. Three filtering schemes are supported: `search=` for pattern-based extraction, `line=` for line-number ranges, and `char=` for character offsets. This is a key feature for including specific portions of source files in documentation.
+
+## Overview
+
+The `fragid` attribute is applied to `xi:include` elements with `parse="text"`:
+
+[source,xml]
+----
+<programlisting language="ruby">
+  <xi:include href="lib/example.rb" parse="text" fragid="line=10,25"/>
+</programlisting>
+----
+
+The resolver dispatches to the appropriate filter based on the scheme prefix:
+
+[source,ruby]
+----
+def self.apply_fragid(content, fragid)
+  if fragid.start_with?("search=")
+    apply_search_fragid(content, fragid[7..])
+  elsif fragid.start_with?("line=")
+    apply_line_fragid(content, fragid[5..])
+  elsif fragid.start_with?("char=")
+    apply_char_fragid(content, fragid[5..])
+  end
+end
+----
+
+## search= Scheme (DocBook xslTNG Extension)
+
+The `search=` scheme is an extension inspired by the https://github.com/docbook/xslTNG[DocBook xslTNG stylesheets]. It extracts content by matching patterns, with support for literal and regex matching, directional modifiers, and stop patterns.
+
+### Syntax
+
+----
+search=DELIMITER pattern DELIMITER [;after|;before] [,DELIMITER stop_pattern DELIMITER]
+----
+
+Where `DELIMITER` is `#` (literal match) or `/` (regex match).
+
+### Literal Match with `#`
+
+The `#` delimiter performs literal string matching:
+
+[source,xml]
+----
+<!-- Include lines containing "xmlns:css" up to lines containing "a border" -->
+<programlisting language="xml">
+  <xi:include href="stylesheets/main.xsl" parse="text"
+             fragid="search=#xmlns:css#,#a border#"/>
+</programlisting>
+----
+
+This extracts all lines from the first line containing `xmlns:css` up to (but not including) the first line containing `a border`.
+
+### Regex Match with `/`
+
+The `/` delimiter performs regular expression matching:
+
+[source,xml]
+----
+<!-- Include lines matching a regex pattern -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook.rb" parse="text"
+             fragid="search=/def process_image/"/>
+</programlisting>
+----
+
+This extracts the first line matching the regex `def process_image`.
+
+### Modifiers
+
+Two modifiers control which lines around the match are included:
+
+**`;after`** -- Extract lines *after* the match (excludes the matching line itself):
+
+[source,xml]
+----
+<!-- Include lines after the "class Html" match, up to the "end" match -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook/output/html.rb" parse="text"
+             fragid="search=#class Html#;after,#private#"/>
+</programlisting>
+----
+
+**`;before`** -- Extract lines *before* the match (excludes the matching line itself):
+
+[source,xml]
+----
+<!-- Include all lines before the "Copyright" notice -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook.rb" parse="text"
+             fragid="search=#Copyright#;before"/>
+</programlisting>
+----
+
+### Stop Patterns
+
+A stop pattern terminates extraction at the first matching line (exclusive -- the stop line is not included):
+
+[source,xml]
+----
+<!-- Extract from "class Html" to "def initialize" -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook/output/html.rb" parse="text"
+             fragid="search=#class Html#,#def initialize#"/>
+</programlisting>
+----
+
+[source,xml]
+----
+<!-- Extract from regex match to regex stop -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook/output/html.rb" parse="text"
+             fragid="search=/def to_html/,/end$/"/>
+</programlisting>
+----
+
+### Complete search= Examples
+
+[source,xml]
+----
+<!-- Example 1: Single line literal match -->
+<programlisting>
+  <xi:include href="config.yaml" parse="text"
+             fragid="search=#database:#"/>
+</programlisting>
+
+<!-- Example 2: Range from literal start to literal stop -->
+<programlisting language="ruby">
+  <xi:include href="lib/parser.rb" parse="text"
+             fragid="search=#class Parser#,#class SyntaxError#"/>
+</programlisting>
+
+<!-- Example 3: Lines after a match, with stop -->
+<programlisting language="xml">
+  <xi:include href="schema.xsd" parse="text"
+             fragid="search=#complexType name=&quot;Book&quot;#;after,#</complexType>#"/>
+</programlisting>
+
+<!-- Example 4: Regex range -->
+<programlisting language="ruby">
+  <xi:include href="spec/example_spec.rb" parse="text"
+             fragid="search=/describe.*Html/,/end$/"/>
+</programlisting>
+
+<!-- Example 5: Lines before a marker -->
+<programlisting language="yaml">
+  <xi:include href="docker-compose.yml" parse="text"
+             fragid="search=#volumes:#;before"/>
+</programlisting>
+----
+
+## line= Scheme (RFC 5147)
+
+The `line=` scheme implements the https://www.rfc-editor.org/rfc/rfc5147[RFC 5147] line-based text range fragment identifier. It extracts a range of lines by 1-based line number.
+
+### Syntax
+
+----
+line=START,END[;length=N]
+----
+
+- `START` -- First line to include (1-based)
+- `END` -- Last line to include (inclusive)
+- `length=N` -- Optional maximum character length for the extracted content
+
+### Basic Line Range
+
+[source,xml]
+----
+<!-- Include lines 10 through 25 of the file -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook.rb" parse="text" fragid="line=10,25"/>
+</programlisting>
+----
+
+This extracts lines 10, 11, 12, ..., 25 from the file (1-based indexing).
+
+### Line Range with Length Truncation
+
+[source,xml]
+----
+<!-- Include lines 3 through 50, truncated to 889 characters -->
+<programlisting language="ruby">
+  <xi:include href="lib/docbook/output/html.rb" parse="text"
+             fragid="line=3,50;length=889"/>
+</programlisting>
+----
+
+The `length=` modifier truncates the output to at most N characters. This is useful for:
+
+- Showing a representative sample of a long file
+- Limiting output size in generated documentation
+- Ensuring consistent example lengths
+
+### Examples
+
+[source,xml]
+----
+<!-- First 5 lines of a file -->
+<programlisting>
+  <xi:include href="README.md" parse="text" fragid="line=1,5"/>
+</programlisting>
+
+<!-- Lines 100-120 (a specific function) -->
+<programlisting language="python">
+  <xi:include href="app.py" parse="text" fragid="line=100,120"/>
+</programlisting>
+
+<!-- A specific range, max 500 characters -->
+<programlisting language="javascript">
+  <xi:include href="index.js" parse="text" fragid="line=1,100;length=500"/>
+</programlisting>
+----
+
+## char= Scheme (RFC 5147)
+
+The `char=` scheme implements the https://www.rfc-editor.org/rfc/rfc5147[RFC 5147] character-based text range fragment identifier. It extracts content by character offset.
+
+### Syntax
+
+----
+char=START,END
+----
+
+- `START` -- Starting character offset (0-based)
+- `END` -- Ending character offset (exclusive)
+
+### Usage
+
+[source,xml]
+----
+<!-- Extract characters 0 through 500 (first 500 characters) -->
+<programlisting>
+  <xi:include href="data/output.txt" parse="text" fragid="char=0,500"/>
+</programlisting>
+----
+
+[source,xml]
+----
+<!-- Extract a specific section by character offset -->
+<programlisting>
+  <xi:include href="large-file.txt" parse="text" fragid="char=1024,2048"/>
+</programlisting>
+----
+
+### Examples
+
+[source,xml]
+----
+<!-- First 1000 characters -->
+<programlisting>
+  <xi:include href="CHANGELOG.md" parse="text" fragid="char=0,1000"/>
+</programlisting>
+
+<!-- Characters from offset 500 to 1000 -->
+<programlisting language="json">
+  <xi:include href="package.json" parse="text" fragid="char=500,1000"/>
+</programlisting>
+----
+
+## Scheme Comparison
+
+[cols="1,1,3,3"]
+|===
+| Scheme | Standard | Best For | Example
+
+| `search=` | DocBook xslTNG | Pattern-based extraction, code with markers
+| `search=#def process#;after,#end$#`
+
+| `line=` | RFC 5147 | Known line ranges, fixed-position content
+| `line=10,25;length=889`
+
+| `char=` | RFC 5147 | Known byte offsets, binary-adjacent content
+| `char=0,500`
+|===

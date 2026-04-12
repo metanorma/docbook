@@ -1,0 +1,150 @@
+---
+layout: default
+title: TOC Generation
+parent: Features
+nav_order: 4
+---
+
+# TOC Generation
+
+The table of contents is generated as a recursive tree of `SectionData` objects. Each node carries an ID, title, section type, and children. The Vue SPA renders this tree as a collapsible sidebar with type badges and section numbering.
+
+## SectionData Tree
+
+Each node in the TOC is a `SectionData` with four fields:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `id` | `String` | Section's `xml:id` attribute or a generated slug from the title
+| `title` | `String` | Section title (from `info/title` or direct `title` child)
+| `type` | `String` | Section type used for badge rendering and numbering
+| `children` | `SectionData[]` | Nested child sections
+|===
+
+### Type Values
+
+The `type` field determines how the section is displayed in the sidebar:
+
+[cols="1,3,2"]
+|===
+| Type | Badge | Color
+
+| `part` | Pt | Purple
+| `chapter` | Ch | Blue
+| `appendix` | App | Green
+| `section` | (none) | Gray
+| `glossary` | Gl | Yellow
+| `bibliography` | Bib | Red
+| `index` | Idx | Indigo
+| `preface` | Pref | Orange
+| `reference` | Ref | Cyan
+|===
+
+## Tree Structure by Document Type
+
+The TOC tree varies depending on the root document element.
+
+### Book
+
+For `<book>` documents, the top-level sections include:
+
+- **Preface** -- Direct children of the book
+- **Parts** -- Contain chapters, references, appendices, glossary, bibliography, index
+- **Chapters** -- Direct children of the book (when no Parts are used), contain nested sections
+- **Appendices** -- May contain nested sections
+- **Glossary** -- Leaf node
+- **Bibliography** -- Leaf node
+- **Index** -- Leaf node
+
+[source,ruby]
+----
+# Book TOC collection
+def collect_sections
+  sections = []
+  case @document
+  when Docbook::Elements::Book
+    each_attr(@document, :preface) { |pf| sections << SectionData.new(type: 'preface', ...) }
+    each_attr(@document, :part)    { |p|  sections << SectionData.new(type: 'part', children: collect_part_children(p)) }
+    each_attr(@document, :chapter) { |ch| sections << SectionData.new(type: 'chapter', ...) }
+    each_attr(@document, :appendix){ |ap| sections << SectionData.new(type: 'appendix', children: collect_appendix_children(ap)) }
+    each_attr(@document, :glossary){ |g|  sections << SectionData.new(type: 'glossary', ...) }
+    each_attr(@document, :bibliography){ |b| sections << SectionData.new(type: 'bibliography', ...) }
+    each_attr(@document, :index)   { |i|  sections << SectionData.new(type: 'index', ...) }
+  end
+  sections
+end
+----
+
+### Article
+
+For `<article>` documents, the TOC contains top-level sections and their recursive children:
+
+- **Sections** -- Nested recursively via `collect_section_children`
+
+### Reference
+
+For `<reference>` documents, the TOC contains reference entries:
+
+- **RefEntry** -- Each `refentry` becomes a top-level TOC item with type `reference`
+
+## Recursive Collection
+
+Section children are collected recursively through dedicated methods:
+
+- `collect_part_children` -- Collects chapters, references, appendices, prefaces, glossary, bibliography, and index within a Part
+- `collect_section_children` -- Recursively collects nested `section` elements
+- `collect_appendix_children` -- Collects sections within an Appendix
+
+The recursion depth is unbounded, supporting arbitrarily nested section hierarchies.
+
+## Vue Sidebar Rendering
+
+The Vue frontend renders the TOC tree using the recursive `TocTreeItem` component:
+
+[source,typescript]
+----
+// TocTreeItem.vue renders each TOC node:
+// - Collapsible toggle for nodes with children
+// - Type badge (Pt, Ch, App, etc.) based on item.type
+// - Section number from the numbering map
+// - Title text
+// - Active state highlighting
+// - Recursive rendering of children with indentation
+----
+----
+
+The sidebar features:
+
+- **Collapsible tree** -- Items with children show an expand/collapse toggle
+- **Type badges** -- Color-coded labels indicating section type
+- **Section numbers** -- Right-aligned monospace numbers from the numbering map
+- **Active tracking** -- The currently visible section is highlighted via `IntersectionObserver`
+- **Deep linking** -- Clicking a TOC item scrolls to the section via anchor link
+
+## Title Resolution
+
+Section titles are resolved using a priority chain:
+
+. `element.info.title.content` -- Title inside an `info` element
+. `element.title.content` -- Direct title child
+. Fallback string (e.g., "Preface", "Chapter", "Glossary")
+
+[source,ruby]
+----
+def best_title(el)
+  title_of(el)
+end
+
+def title_of(el)
+  case el
+  when Elements::Book, Elements::Article
+    el.info&.title&.content
+  when Elements::Chapter, Elements::Appendix, Elements::Section,
+       Elements::Part, Elements::Preface
+    el.info&.title&.content || el.title&.content
+  # ...
+  end
+end
+----
