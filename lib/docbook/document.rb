@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "lutaml/model"
-require "nokogiri"
 
 module Docbook
   class Document
@@ -40,16 +39,11 @@ module Docbook
 
     class << self
       def from_xml(xml_string)
-        doc = Nokogiri::XML(xml_string)
-        root = doc.root
-        raise Docbook::Error, "Empty or invalid XML document" unless root
+        root_name = extract_root_element(xml_string)
+        raise Docbook::Error, "Empty or invalid XML document" unless root_name
 
-        root_name = root.name
         klass = ROOT_ELEMENT_MAP[root_name]
-
-        if klass.nil?
-          raise Docbook::Error, "Unsupported DocBook root element: #{root_name}"
-        end
+        raise Docbook::Error, "Unsupported DocBook root element: #{root_name}" unless klass
 
         klass.from_xml(xml_string)
       end
@@ -61,6 +55,13 @@ module Docbook
 
       def supported_root_elements
         ROOT_ELEMENT_MAP.select { |_, v| v }.keys
+      end
+
+      private
+
+      def extract_root_element(xml_string)
+        match = xml_string.match(/<\s*([a-zA-Z_][\w.-]*)(?:\s|\/|>)/)
+        match&.[](1)
       end
     end
   end
