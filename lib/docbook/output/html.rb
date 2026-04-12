@@ -505,6 +505,14 @@ module Docbook
           section_content.add_block(build_refentry_block(element))
         else
           build_element_content(element, section_content)
+          # Also render any bibliolist children (not yielded by each_mixed_content)
+          if element.respond_to?(:bibliolist)
+            Array(element.bibliolist).each do |bl|
+              Array(bl.bibliomixed).each do |bm|
+                section_content.add_block(build_bibliomixed_block(bm))
+              end
+            end
+          end
         end
         section_content
       end
@@ -595,6 +603,9 @@ module Docbook
 
           when Docbook::Elements::GlossEntry
             section_content.add_block(build_glossentry_block(node))
+
+          when Docbook::Elements::Bibliomixed
+            section_content.add_block(build_bibliomixed_block(node))
 
           when Docbook::Elements::Bibliomixed
             section_content.add_block(build_bibliomixed_block(node))
@@ -1149,7 +1160,7 @@ module Docbook
             text = node.content.to_s.empty? ? node.linkend : node.content
             children << ContentBlock.new(type: :biblioref, text: text, src: "##{node.linkend}")
           when Docbook::Elements::FirstTerm, Docbook::Elements::Glossterm
-            children << ContentBlock.new(type: :emphasis, text: node.content)
+            children << ContentBlock.new(type: :emphasis, text: extract_text_content(node))
           when Docbook::Elements::Tag
             # Render tag elements like <appendix> as inline code text
             tag_content = node.content.to_s
@@ -1183,7 +1194,9 @@ module Docbook
                else
                  "#"
                end
-        ContentBlock.new(type: :link, text: el.content, src: href)
+        text = el.content
+        text = href if text.nil? || text.strip.empty?
+        ContentBlock.new(type: :link, text: text, src: href)
       end
 
       def build_xref_block(el)

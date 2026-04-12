@@ -30,6 +30,7 @@ module Docbook
       attribute :screen, Screen, collection: true
       attribute :literallayout, LiteralLayout, collection: true
       attribute :indexterm, IndexTerm, collection: true
+      attribute :bibliolist, Bibliolist, collection: true
 
       xml do
         element "section"
@@ -60,6 +61,7 @@ module Docbook
         map_element "screen", to: :screen
         map_element "literallayout", to: :literallayout
         map_element "indexterm", to: :indexterm
+        map_element "bibliolist", to: :bibliolist
       end
     end
   end

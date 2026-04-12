@@ -129,6 +129,7 @@ module Docbook
 
     # Bibliography elements
     autoload :Bibliography, "#{__dir__}/elements/bibliography"
+    autoload :Bibliolist, "#{__dir__}/elements/bibliolist"
     autoload :Bibliomixed, "#{__dir__}/elements/bibliomixed"
     autoload :Biblioref, "#{__dir__}/elements/biblioref"
     autoload :OrgName, "#{__dir__}/elements/orgname"

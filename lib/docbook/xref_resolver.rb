@@ -56,8 +56,16 @@ module Docbook
       when Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Section, Docbook::Elements::Preface
         el.section&.each { |s| build_xml_id_map(s, map) }
+        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) }
       when Docbook::Elements::Reference
         el.refentry&.each { |r| build_xml_id_map(r, map) }
+      when Docbook::Elements::Bibliolist
+        el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
+      when Docbook::Elements::Bibliography
+        el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
+        if el.respond_to?(:bibliolist)
+          el.bibliolist&.each { |bl| build_xml_id_map(bl, map) }
+        end
       end
 
       map
@@ -70,6 +78,8 @@ module Docbook
       when Docbook::Elements::Section, Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Preface, Docbook::Elements::Part, Docbook::Elements::Reference
         el.title&.content
+      when Docbook::Elements::Bibliomixed
+        el.abbrev&.content || el.citetitle&.first&.content
       else
         el.title&.content rescue nil
       end

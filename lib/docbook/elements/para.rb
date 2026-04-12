@@ -25,6 +25,8 @@ module Docbook
       attribute :tag, Tag, collection: true
       attribute :att, Att, collection: true
       attribute :biblioref, Biblioref, collection: true
+      attribute :glossterm, Glossterm, collection: true
+      attribute :firstterm, FirstTerm, collection: true
       attribute :inlinemediaobject, Inlinemediaobject, collection: true
       attribute :indexterm, IndexTerm, collection: true
 
@@ -53,6 +55,8 @@ module Docbook
         map_element "tag", to: :tag
         map_element "att", to: :att
         map_element "biblioref", to: :biblioref
+        map_element "glossterm", to: :glossterm
+        map_element "firstterm", to: :firstterm
         map_element "inlinemediaobject", to: :inlinemediaobject
         map_element "indexterm", to: :indexterm
       end
