@@ -1,0 +1,13 @@
+= Test fixtures from OASIS DocBook WG
+
+The files in this directory are taken from the OASIS DocBook WG site, available
+at: https://docs.oasis-open.org/docbook/
+
+The files included are:
+
+* DocBook XML 5.0 (versions beyond 5.0 are published in Word, with no DocBook XML)
+* DocBook Publisher Schema 1.0
+
+== License
+
+Original license as per the OASIS DocBook WG site.

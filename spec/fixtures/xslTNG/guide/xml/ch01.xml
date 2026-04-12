@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns="http://docbook.org/ns/docbook"
+	 xmlns:xlink="http://www.w3.org/1999/xlink"
+	 version="5.0" xml:id="whatfor">
+<info>
+  <?db filename="ch-overview"?>
+  <title>Overview</title>
+</info>
+
+<para>Before we get started, let’s look at what the stylesheets do and
+where you can get them!</para>
+
+<section xml:id="whatdo">
+<title>What do the stylesheets do?</title>
+
+<para>The <citetitle>DocBook xslTNG</citetitle> stylesheets transform
+DocBook V5.x into HTML. The intent is that they support all of DocBook
+V5.2, including the DocBook Publishers elements. (The
+<link xlink:href="https://xsltng.docbook.org/report/">test suite report</link>
+gives a precise summary of the current state of coverage.) They will also
+process DocBook V4.x documents by first converting them (tranforming
+source elements that have changed, adding the namespace, etc.) into
+5.x documents.</para>
+
+<para>Some parts of DocBook, especially the modeling parts, are very
+open-ended. One could, in principle, write a function synopsis for any
+programming language. The stylesheets are naturally going to support
+only a subset of languages out of the box. Every attempt has been made
+to make customizations easy where it’s anticipated that they may be
+necessary.</para>
+
+<para>The stylesheets can also be used to produce paged media such as
+PDF files. This works by having a slightly different HTML
+transformation initially, and then by further transforming the HTML so
+that it can be formatted with an appropriate CSS formatter to produce
+paged output. This is similar, but not the same as producing XSL
+Formatting Objects and then transforming those.</para>
+
+<para>Producing other output formats, EPUB files, for example, is
+planned for the future but no specific schedule is promised. There are no
+plans at the moment to produce XSL FO stylesheets.</para>
+</section>
+
+<section xml:id="getting">
+<title>Getting the stylesheets</title>
+
+<para>There are three ways to get the stylesheets: you can
+<link linkend="get-github">download the latest release</link> from
+GitHub, you can <link linkend="get-maven">get them from Maven</link>,
+or you can clone
+<link xlink:href="https://github.com/docbook/xslTNG">the repository</link>
+and  <link linkend="building">build them yourself</link>. We’ll cover
+the first two options in this chapter; <xref linkend="building"/> covers
+the last option in detail.</para>
+
+<section xml:id="get-github">
+<title>Download the latest release</title>
+
+<para>The latest release is always available from the
+<link xlink:href="https://github.com/docbook/xslTNG/releases">GitHub
+releases page</link>. At the time of publication, the latest release was
+version <?DocBook-xslTNG-version?>.</para>
+
+<para>Distributed this way, you’ll get a ZIP file that contains the stylesheets
+plus a number of ancillary files and tools. These are mostly covered in
+the next chapter <xref linkend="using"/>.</para>
+
+<para>You can unzip the file anywhere that’s convenient: in your home
+directory or in a system-wide location.</para>
+
+</section>
+
+<section xml:id="get-maven">
+<title>Getting the release from Maven</title>
+
+<para>The latest release is always available
+<link xlink:href="https://search.maven.org/search?q=org.docbook.docbook-xslTNG">from
+Maven</link><footnote><para>With the caveat that it sometimes takes a few
+hours for the releases to make their way from the registry onto the website.
+If you’re chasing the very latest release and it’s just been published, it
+may be available before it appears on the website.</para></footnote>.
+</para>
+
+<para>The group, artifact, and version ID for the latest release at
+the time of publication is:</para>
+
+<para role="center"
+><code>org.docbook:docbook-xslTNG:<?DocBook-xslTNG-version?></code></para>
+
+<para>If you’re comfortable using Maven, I’m going to assume that’s all you
+need to know.</para>
+
+<para>The Maven distribution differs from the zip file in a couple of ways:</para>
+
+<orderedlist>
+<listitem>
+<para>It doesn’t bundle any of the dependencies. The
+<link linkend="get-github">ZIP file</link> is more akin
+to
+<link xlink:href="https://stackoverflow.com/questions/11947037/what-is-an-uber-jar">an
+“uber” or “fat” jar</link>; it includes (some of) the core dependencies so
+that it works out-of-the-box. Maven is designed to resolve dependencies,
+so that shouldn’t be necessary here.</para>
+</listitem>
+<listitem>
+<para>The Maven jar doesn’t include the Python script or the extra resources
+(CSS and JavaScript files) because it doesn’t seem like it would be convenient
+to extract them from the Maven jar (which will probably be installed deep in
+some repository hierarchy well out of sight). Consequently, you may want to
+<link linkend="get-github">download the distribution</link> periodically as well.
+</para>
+</listitem>
+</orderedlist>
+
+</section>
+</section>
+</chapter>

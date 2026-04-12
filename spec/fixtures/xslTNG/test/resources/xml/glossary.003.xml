@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0">
+   <title>Article wrapper</title>
+
+<note>
+<para>The test harness is configured to run this test with the
+<parameter>glossary-collection</parameter> parameter pointing to
+<filename>src/test/resources/glosscollection.xml</filename>.</para>
+</note>
+
+   <para>This is a test. Xref to fifo: <xref linkend="fifo"/>. The glossary
+entries are sorted alphabetically by default.</para>
+
+   <glossary>
+      <glossentry>
+         <glossterm>test1</glossterm>
+         <glossdef>
+            <para>First definition</para>
+         </glossdef>
+      </glossentry>
+      <glossentry>
+         <glossterm>test2</glossterm>
+         <glossdef>
+            <para>First definition</para>
+         </glossdef>
+         <glossdef>
+            <para>Second definition</para>
+         </glossdef>
+      </glossentry>
+      <glossentry>
+         <glossterm>first thing</glossterm>
+         <acronym>FT</acronym>
+         <abbrev>fthing</abbrev>
+         <glossdef>
+            <para>Alphabetically first entry</para>
+         </glossdef>
+      </glossentry>
+      <glossentry xml:id="fifo">
+         <glossterm>First-in First-out</glossterm>
+         <acronym>FIFO</acronym>
+         <glossdef>
+            <para>Alphabetically second entry</para>
+         </glossdef>
+      </glossentry>
+   </glossary>
+</article>
