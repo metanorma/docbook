@@ -1,0 +1,1175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns="http://docbook.org/ns/docbook"
+         xmlns:xi='http://www.w3.org/2001/XInclude'
+	 xmlns:xlink="http://www.w3.org/1999/xlink"
+	 version="5.0" xml:id="customization">
+<info>
+  <?db filename="ch-customizing"?>
+  <title>Customizing the stylesheets</title>
+</info>
+
+<para>In many circumstances, the stylesheets can be used “out of the
+box” without any customization. But sometimes you may need to change
+the formatting of certain elements. One common reason is to change the
+formatting of title pages or navigational features. In other cases, it
+may be to support local extensions to DocBook or simply to change the
+markup to support a particular use case.</para>
+
+<para>Three approaches are possible, with increasing degrees of
+effort: changing stylesheet parameters, creating your own
+customization layer, or making broader changes to the stylesheet’s
+implementation.</para>
+
+<para>The subject of broader implementation changes is the subject of
+<xref linkend="implementation"/>. In this chapter, we’ll look at the
+easier options.</para>
+
+<section xml:id="change-params">
+<title>Changing stylesheet parameters</title>
+
+<para>The <citetitle>DocBook xslTNG Stylesheets</citetitle> define a
+lot of parameters. They are all described in <xref linkend="params"/>.
+If the change you want to make has already been parameterized, you may
+be able to achieve your goal simply by setting a parameter at runtime.</para>
+
+<para>For example, if you want to change the formatting of dates and times
+in <tag>date</tag> elements, you can simply change the
+<link linkend="p_date-date-format">date and time formatting</link>
+parameters. Similarly, if you want to change the numeration style of
+ordered lists, you can simply change the <link
+linkend="p_orderedlist-item-numeration">ordered list item
+numeration</link> parameter.</para>
+
+<para>These changes can be accomplished by simply passing the new
+values to the processor, on the command line or in a configuration
+file, for example. You do not have to write any XSLT to make these
+changes.</para>
+
+<para>Parameter values apply to the entire document processed by the
+stylesheets. In some cases, you may wish to change the presentation of
+just one or small number of elements. This can often be accomplished
+with a <link linkend="pi_db">db processing instruction</link> in
+the source document itself. These customizations can also be
+accomplished without writing any XSLT.</para>
+
+<para>If you want to make a change that isn’t supported by a
+parameter, or an ad hoc exception that doesn’t have a supporting
+processing instruction, you will have to write a customization layer.
+(You are invited to submit an issue with your use case if you think it
+would be of general interest.)
+</para>
+
+<para>You may also find it convenient to write a customization layer
+if you want to change several parameters and you find it inconvenient
+to pass them all to the processor on every invocation.
+</para>
+</section>
+
+<section xml:id="layer">
+<title>Creating a customization layer</title>
+
+<para>A customization layer is simply an XSLT stylesheet that you
+write which extends the DocBook stylesheets. The simplest<footnote><para>Ok,
+technically, this stylesheet has a couple of namespace references that aren’t
+strictly necessary so it could be a teeny bit simpler, but you’ll need those
+declarations (and more!) if you want to do anything useful.</para></footnote> customization
+layer is:</para>
+
+<programlisting language="xml"
+><xi:include href="examples/custom0.xsl" parse="text"/></programlisting>
+
+<para>This customization doesn’t do anything. But you can, for example, redefine
+parameters if you wish:</para>
+
+<programlisting language="xml"
+><xi:include href="examples/custom1.xsl" parse="text"/></programlisting>
+
+<para>This will have the effect of running the DocBook stylesheets with those two
+parameters set as specified.</para>
+
+<para>If you want to change the HTML output for an element, you can write a template
+for that element in your customization layer. Consider this DocBook document:
+</para>
+
+<programlisting language="xml"
+><xi:include href="examples/sample.xml" parse="text"/></programlisting>
+
+<para>Suppose that you decided you wanted to have the
+<tag>productname</tag> element link automatically to the vendor
+webpage.</para>
+
+<important>
+<para>The <citetitle>DocBook xslTNG Stylesheets</citetitle> process
+<emphasis>all</emphasis> DocBook elements in the
+<mode>m:docbook</mode> mode. This is different from previous XSLT stylesheets for DocBook
+which simply used the default mode.</para>
+<para>You must either specify a default mode in your customization layer
+or remember to specify the mode on match templates and template applications.
+If you forget the mode, you’ll get unexpected results!</para>
+</important>
+
+<para>One way to do that would be to redefine the template that processes the
+<tag>productname</tag> element:</para>
+
+<programlistingco>
+<areaspec>
+  <area xml:id="ex.xmlns-m" coords="5 52"/>
+  <area xml:id="ex.excl-m" coords="8 40"/>
+  <area xml:id="ex.m-docbook" coords="21 34"/>
+  <area xml:id="ex.cramped" coords="24 1"/>
+  <areaset xml:id="ex.next-match">
+    <area xml:id="ex.next-match-44" coords="44 26"/>
+    <area xml:id="ex.next-match-48" coords="48 28"/>
+  </areaset>
+</areaspec>
+<programlisting language="xml"
+><xi:include href="examples/custom2.xsl" parse="text"
+             xpointer="line=0,;length=1559"/></programlisting>
+</programlistingco>
+
+<calloutlist>
+<callout arearefs="ex.xmlns-m">
+<para>All of the DocBook elements are processed in the “<mode>m:docbook</mode>” mode.</para>
+</callout>
+<callout arearefs="ex.excl-m">
+<para>Remember to exclude all the namespaces you declare so that they don’t wind up
+scattered about in your HTML.</para>
+</callout>
+<callout arearefs="ex.m-docbook">
+<para>I repeat, all of the DocBook elements are processed in the
+“<mode>m:docbook</mode>” mode. I expect that failure to declare this mode is going to be a common
+error.</para>
+</callout>
+<callout arearefs="ex.cramped">
+<para>Yes, this whole listing is rather cramped.
+<phrase outputformat="print">I’m trying to make it all narrow
+enough to fit in the display without overflowing the margins.
+</phrase><phrase outputformat="online">I’m trying to make it all narrow
+enough to fit in the display without making horizontal scrolling necessary.</phrase>
+</para>
+</callout>
+<callout arearefs="ex.next-match">
+<para>Calling <literal>xsl:next-match</literal> invokes the underlying
+processing. The effect of this template is to wrap an HTML
+“<code>a</code>” around the default processing for
+<tag>productname</tag>.</para>
+</callout>
+</calloutlist>
+
+<para>It’s worth pointing out that if the tag has an
+<att>xlink:href</att> attribute, that will generate an HTML
+<code>a</code> as well. A more robust stylesheet would check for that,
+but I’m trying to keep the example simple.</para>
+
+</section>
+
+<section xml:id="managing-css">
+<title>Managing CSS stylesheets</title>
+
+<para>The HTML that the <citetitle>DocBook xslTNG</citetitle> stylesheets
+produce is intended to be clean, robust markup for styling with CSS.
+Exactly how you control which stylesheet links are produced has
+changed several times. The current scheme is this:</para>
+
+<orderedlist>
+<listitem>
+<para>If syntax highlighting is enabled, a link to the
+<parameter>verbatim-syntax-highlight-css</parameter> stylesheet is
+included.
+</para>
+</listitem>
+<!--
+<listitem>
+<para>If <parameter>oxy-markup-css</parameter> <glossterm>is
+true</glossterm> and there is at least one processing instruction in
+the document that has a name that begins with <code>oxy_</code>,
+a link to the <parameter>oxy-markup-css</parameter> stylesheet
+is included.
+</para>
+</listitem>
+-->
+<listitem>
+<para>If <parameter>persistent-toc</parameter> <glossterm>is
+true</glossterm>
+a link to the <parameter>persistent-toc-css</parameter> stylesheet
+is included.
+</para>
+</listitem>
+<listitem>
+<para>If <parameter>use-docbook-css</parameter> <glossterm>is true</glossterm>,
+links to the standard DocBook stylesheets are included. Those stylesheets
+are <filename>docbook.css</filename> (for all media),
+<filename>docbook-screen.css</filename> (for screen media), and
+<filename>docbook-page-setup.css</filename> and
+<filename>docbook-paged.css</filename> (for print media).
+</para>
+</listitem>
+<listitem>
+<para>The DocBook element that is the context element when the HTML
+<tag namespace="http://www.w3.org/1999/xhtml">head</tag> is being
+generated is processed in the <mode>m:html-head-links</mode> mode.
+By default, that template does nothing, but you can change that in
+a customization layer.</para>
+</listitem>
+<listitem>
+<para>If any CSS stylesheets are defined in
+<parameter>user-css-links</parameter>, they are included.
+</para>
+</listitem>
+<listitem>
+<para>The DocBook element that is the context element when the HTML
+<tag namespace="http://www.w3.org/1999/xhtml">head</tag> is being
+generated is processed in the <mode>m:html-head-last</mode> mode.
+By default, that template does nothing, but you can change that in
+a customization layer.</para>
+</listitem>
+</orderedlist>
+</section>
+
+<section xml:id="titlepages">
+<title>Customizing title pages</title>
+
+<para>All of the titled elements (books, chapters, sections, etc.) have “title pages”. That is,
+they have a
+<tag namespace="http://www.w3.org/1999/xhtml">header</tag> element that contains the
+elements from the <tag>info</tag> that should be presented in the title header.
+In practice, <tag>info</tag> is a wrapper for general metadata about the element and
+often contains many elements that shouldn’t be presented.</para>
+
+<para>There’s <emphasis>so</emphasis> much variation both in what goes in the
+<tag>info</tag> elements and in what users need to have in the title header, that
+there’s no practical way to control it simply with stylesheet parameters.</para>
+
+<para>Instead the stylesheets offer two customization mechanisms: first, each header is formed
+from a header template. You can change the titlepage template in your
+<link linkend="layer">customization layer</link>.</para>
+
+<para>For example, the default titlepage template for chapter headers is:</para>
+
+<programlisting language="xml"><![CDATA[<header>
+  <tmp:apply-templates select="db:title">
+    <h2><tmp:content/></h2>
+  </tmp:apply-templates>
+  <tmp:apply-templates select="db:subtitle">
+    <h3><tmp:content/></h3>
+  </tmp:apply-templates>
+</header>]]></programlisting>
+
+<para>The <code>tmp:apply-templates</code> elements aren’t as sophisticated as
+XSLT templates, but they let you select parts of the document. If nothing is
+selected, the content is ignored. When the title page template is evaluated, the context
+item is the <tag>info</tag> element.</para>
+
+<para>Inside the <code>tmp:apply-templates</code>, you can decide what HTML markup should
+appear. The
+<code>tmp:content</code> element will be replaced by the result of processing
+the element or elements you selected.</para>
+
+<para>As a consequence of that template, a chapter title page contains the
+chapter title in an <tag namespace="http://www.w3.org/1999/xhtml">h2</tag> and
+the subtitle in an <tag namespace="http://www.w3.org/1999/xhtml">h3</tag>. No
+other elements in the <tag>info</tag> are presented.</para>
+
+<para>Suppose you are writing a book where each chapter has a different author.
+You can add the authors to the chapter title page by updating the template in
+your customization layer. The stylesheets contain a
+<varname>v:templates</varname> variable for this purpose. Any templates that you
+put inside it will be used before the default templates.</para>
+
+<programlisting language="xml"><![CDATA[<xsl:variable name="v:templates" as="document-node()"
+              xmlns:v="http://docbook.org/ns/docbook/variables">
+  <xsl:document xmlns:tmp="http://docbook.org/ns/docbook/templates"
+                xmlns:db="http://docbook.org/ns/docbook"
+                xmlns="http://www.w3.org/1999/xhtml">
+    <db:chapter context="parent::db:book">
+      <header>
+        <tmp:apply-templates select="db:title">
+          <h2><tmp:content/></h2>
+        </tmp:apply-templates>
+        <tmp:apply-templates select="db:subtitle">
+          <h3><tmp:content/></h3>
+        </tmp:apply-templates>
+        <tmp:apply-templates select="db:author">
+          <h3 class="author">
+            <tmp:content/>
+          </h3>
+        </tmp:apply-templates>
+      </header>
+    </db:chapter>
+  </xsl:document>
+</xsl:variable>]]></programlisting>
+
+<para>With that customization, a chapter title page contains the
+chapter title in an <tag namespace="http://www.w3.org/1999/xhtml">h2</tag>
+and the subtitle and authors in 
+<tag namespace="http://www.w3.org/1999/xhtml">h3</tag> elements, in that order.
+If you change the order of the <code>tmp:apply-template</code> elements, the
+order of the elements in the header will change.</para>
+
+<para>Another common requirement is to put a graphic on the title page of a
+book. Here’s how you might do that. (This example appears in the test suite
+as test <filename>book.014.xml</filename>.) Add the <tag>cover</tag> to your
+<tag>info</tag> element:</para>
+
+<programlisting language="xml"><![CDATA[<book xmlns="http://docbook.org/ns/docbook" version="5.2">
+<info>
+  <title>Unit Test: book.014</title>
+  <cover>
+    <mediaobject>
+      <imageobject>
+        <imagedata fileref="../media/yoyodyne.png"/>
+      </imageobject>
+    </mediaobject>
+  </cover>
+  <editor>
+    <personname>
+      <firstname>Norman</firstname>
+      <surname>Walsh</surname>
+    </personname>
+    <email>ndw@nwalsh.com</email>
+  </editor>
+</info>
+…
+</book>]]></programlisting>
+
+<para>Then decide how you want that graphic in the header with a new book template:</para>
+
+<programlisting language="xml"><![CDATA[<xsl:variable name="v:templates" as="document-node()"
+              xmlns:v="http://docbook.org/ns/docbook/variables">
+  <xsl:document xmlns:tmp="http://docbook.org/ns/docbook/templates"
+                xmlns:db="http://docbook.org/ns/docbook"
+                xmlns="http://www.w3.org/1999/xhtml">
+    <db:book>
+      <header>
+        <tmp:apply-templates select="db:cover/db:mediaobject">
+          <div class="cover">
+            <tmp:content/>
+          </div>
+        </tmp:apply-templates>
+        <tmp:apply-templates select="db:title">
+          <h1><tmp:content/></h1>
+        </tmp:apply-templates>
+        <tmp:apply-templates select="db:editor">
+          <div class="editor">
+            <h3><tmp:content/></h3>
+          </div>
+        </tmp:apply-templates>
+      </header>
+    </db:book>
+  </xsl:document>
+</xsl:variable>]]></programlisting>
+
+<para>This template will output the cover image, then the title, then the editor.
+If you want to update multiple templates, put them all in the same 
+<varname>v:templates</varname> element as siblings.</para>
+
+<para>Once you’ve output the elements in the header, you can use CSS to
+customize their appearance further.</para>
+
+<para>You can get a long way just by updating the title page templates, but not
+always far enough. If you can’t achieve what you need by changing a template,
+you can take full control.</para>
+
+<para>Each element generates its title page with the <mode>m:generate-titlepage</mode>
+mode. If you add a template in that mode to your customization layer, it has
+complete freedom to generate a custom title page.</para>
+
+<para>Here, for example, is a book title page template:</para>
+
+<programlisting language="xml"><![CDATA[<xsl:template match="db:book" mode="m:generate-titlepage">
+  <header>
+    <h1>
+      <xsl:apply-templates select="db:info/db:title" mode="m:titlepage"/>
+    </h1>
+    <p>Hello, world</p>
+  </header>
+</xsl:template>]]></programlisting>
+
+<para>With this XSLT template in your customization layer, the book title page
+will consist of the title in an 
+<tag namespace="http://www.w3.org/1999/xhtml">h1</tag>
+and the phrase “Hello, world” in a paragraph.
+In this case, the context item for the XSLT template is the main element, not
+its <tag>info</tag> child. But it will <emphasis>always</emphasis> have an
+<tag>info</tag> child, even if your original document didn’t have a wrapper
+around the titlepage metadata.</para>
+
+</section>
+
+<section xml:id="media">
+<title>Managing media</title>
+
+<para>References to external media through <tag>imagedata</tag>,
+<tag>videodata</tag>, <tag>audiodata</tag>, and even
+<tag>textdata</tag> can be tricky to manage. On the one hand, it’s
+most convenient if the URIs in the source documents point to the
+actual media files. This allows extensions, like the image properties
+<link linkend="extensions">extension function</link>, to access the
+files. At the same time, the references generated in the HTML have to
+point to the locations where they will be published. It is often, but
+not always, the case that the authoring structures and the publishing
+structures are the same.</para>
+
+<para>The stylesheets are regularly tested against five possible
+arrangements: three where the media are stored in locations relative
+to the XML files and two where the media are stored in a separate
+hierarchy. These are unimaginative named “mo-1”, “mo-2”, “mo-3”, “mo-4”,
+and “mo-5”.
+You can find them in the
+<filename xlink:href="https://github.com/docbook/xslTNG/tree/main/src/test/resources/xml"
+>src/test/resources/xml</filename> hierarchy in the repository.</para>
+
+<variablelist>
+<varlistentry xml:id="mo_mo-1">
+<term>mo-1</term>
+<listitem>
+<para>All of the XML files are in a single directory, the media are in the same
+hierarchy. Media references in the source use relative URIs to refer to the
+underlying media: <filename>preface.xml</filename> refers to the “this is a test”
+audio clip as <uri>media/this-is-a-test.mp3</uri>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry xml:id="mo_mo-2">
+<term>mo-2</term>
+<listitem>
+<para>The XML files are in different directories (this changes the
+base URI of the media elements). The media are in the same hierarchy.
+Media references in the source use relative URIs to refer to the
+underlying media: <filename>front/preface.xml</filename> refers to the “this is a test”
+audio clip as <uri>../media/spinning-top.mp4</uri>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry xml:id="mo_mo-3">
+<term>mo-3</term>
+<listitem>
+<para>The XML files are in different directories, but the structure is
+deeper. This scenario represents the case where there might be multiple books, each
+with their own media, but also a shared media folder “above” the book hierarchies.
+The media are in the same hierarchy, but some are “above” the book.
+Media references in the source use relative URIs to refer to the
+underlying media: <filename>book/front/preface.xml</filename> refers to the “this is a test”
+audio clip as <uri>../../media/spinning-top.mp4</uri>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry xml:id="mo_mo-4">
+<term>mo-4</term>
+<listitem>
+<para>The XML files are still in different directories, but the significant change
+here is that the media are in their own hierarchy.
+Media references in the source use URIs relative to the root of <emphasis>that</emphasis>
+hierarchy: <filename>book/front/preface.xml</filename> refers to the “this is a test”
+audio clip as <uri>spinning-top.mp4</uri>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry xml:id="mo_mo-5">
+<term>mo-5</term>
+<listitem>
+<para>The XML files are in different directories and the media are in their own
+hierarchy. What’s different here is that the media hierarchy is <emphasis>further</emphasis>
+subdivided by media type.
+Media references in the source use URIs relative to the root of media
+hierarchy <emphasis>without</emphasis> the media type:
+<filename>book/front/preface.xml</filename> still refers to the “this is a test”
+audio clip as <uri>spinning-top.mp4</uri>, but this time it is found in
+<filename>media/mp4/spinning-top.mp4</filename> rather than directly in
+<filename>media</filename>.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>For each arrangement, we look at five possible output structures:</para>
+
+<orderedlist>
+<listitem xml:id="mo_s-1">
+<para>A single HTML document with the media in the same relative locations
+as the sources.
+</para>
+</listitem>
+<listitem xml:id="mo_s-2">
+<para>A single HTML document with the media in a single <filename>media</filename>
+subdirectory.
+</para>
+</listitem>
+<listitem xml:id="mo_s-3">
+<para>“Chunked” HTML output with the media in the same relative locations
+as the sources.
+</para>
+</listitem>
+<listitem xml:id="mo_s-4">
+<para>“Chunked” HTML output with the media in custom locations. (This is especially
+tricky for the “mo-5” case because there are two kinds of customization involved.)
+</para>
+</listitem>
+<listitem xml:id="mo_s-5">
+<para>“Chunked” HTML output with the media in a single <filename>media</filename>
+subdirectory.
+</para>
+</listitem>
+</orderedlist>
+
+<para>The list below gives a brief summary of the parameters used to achieve
+the desired results for each combination of input and output arrangements.</para>
+
+<note>
+<para>Remember that in each case, the questions are: can the
+stylesheets find the media files to query them and are the correct
+HTML references produced? Actually copying the media files from where
+they are in the source system to where they need to be in the HTML is
+“not our problem.”</para>
+</note>
+
+<variablelist>
+<varlistentry>
+<term><link linkend="mo_mo-1">mo-1</link>, <link linkend="mo_mo-2">mo-2</link>, and <link linkend="mo_mo-3">mo-3</link> /
+      <link linkend="mo_s-1">scenario 1</link></term>
+<listitem>
+<para>No parameters are needed, this combination works correctly with the defaults.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-1">mo-1</link>, <link linkend="mo_mo-2">mo-2</link>, and <link linkend="mo_mo-3">mo-3</link> /
+      <link linkend="mo_s-2">scenario 2</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">mediaobject-output-base-uri = "media/"
+mediaobject-output-paths = "false"</programlisting>
+<para>The output base URI is relative to the “root” of the HTML result.
+Setting the output paths to “false” removes intermediate hierarchy from the
+image references.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-1">mo-1</link>, <link linkend="mo_mo-2">mo-2</link>, and <link linkend="mo_mo-3">mo-3</link> /
+      <link linkend="mo_s-3">scenario 3</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"</programlisting>
+<para>These parameters aren’t related to media objects, they just tell
+the stylesheets how and where to “chunk” the output.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-1">mo-1</link>, <link linkend="mo_mo-2">mo-2</link>, and <link linkend="mo_mo-3">mo-3</link> /
+      <link linkend="mo_s-4">scenario 4</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"</programlisting>
+<para>This combination is really the same as the previous except that
+it uses a
+<link xlink:href="https://github.com/docbook/xslTNG/blob/main/src/test/resources/mo_1_test_4.xsl">custom stylesheet</link>
+with a template in the <mode>m:mediaobject-output-adjust</mode> mode
+to add an extra level of hierarchy to the output URIs. This is just an
+example of arbitrary, custom processing.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-1">mo-1</link>, <link linkend="mo_mo-2">mo-2</link>, and <link linkend="mo_mo-3">mo-3</link> /
+      <link linkend="mo_s-5">scenario 5</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"
+mediaobject-output-base-uri = "media/"
+mediaobject-output-paths = "false"</programlisting>
+<para>The output base URI is relative to the “root” of the HTML result.
+Setting the output paths to “false” removes intermediate hierarchy from the
+image references.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><link linkend="mo_mo-4">mo-4</link> /
+      <link linkend="mo_s-1">scenario 1</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">mediaobject-input-base-uri = "../media/"</programlisting>
+<para>The input base URI will be made absolute relative to the base URI
+of the input document, so it’s often convenient to specify it as a relative
+URI. It’s equally possible to specify it as an absolute URI.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-4">mo-4</link> /
+      <link linkend="mo_s-2">scenario 2</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">mediaobject-input-base-uri = "../media/"
+mediaobject-output-base-uri = "media/"
+mediaobject-output-paths = "true"</programlisting>
+<para>This example has two images with the same name in different directories,
+so it’s necessary to preserve the output paths.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-4">mo-4</link> /
+      <link linkend="mo_s-3">scenario 3</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"
+mediaobject-input-base-uri = "../media/"</programlisting>
+<para>This is the combination of chunking and a single media directory.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-4">mo-4</link> /
+      <link linkend="mo_s-4">scenario 4</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"
+mediaobject-input-base-uri = "../media/"</programlisting>
+<para>This combination is really the same as the previous except that
+it uses a
+<link xlink:href="https://github.com/docbook/xslTNG/blob/main/src/test/resources/mo_1_test_4.xsl">custom stylesheet</link>
+with a template in the <mode>m:mediaobject-output-adjust</mode> mode
+to add an extra level of hierarchy to the output URIs. This is just an
+example of arbitrary, custom processing.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><link linkend="mo_mo-4">mo-4</link> /
+      <link linkend="mo_s-5">scenario 5</link></term>
+<listitem>
+<programlisting linenumbering="unnumbered">chunk = "index.html"
+chunk-output-base-uri = "/path/to/output/location/"
+mediaobject-input-base-uri = "../media/"
+mediaobject-output-base-uri = "media/"
+mediaobject-output-paths = "true"</programlisting>
+<para>This is effectively scenario 2 with chunking.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><link linkend="mo_mo-5">mo-5</link> / scenarios 1-5</term>
+<listitem>
+<para>The “mo-5” scenarios are all the same as the “mo-4” scenarios
+with the addition of one more parameter:</para>
+
+<programlisting linenumbering="unnumbered">mediaobject-grouped-by-type = "true"</programlisting>
+
+<para>In each case, this adds the extra “media object type” level to the
+URI path.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>If you download the source repository, you can see these combinations
+in action with the build targets
+“<literal>mo_<replaceable>number</replaceable>_test_<replaceable>scenario</replaceable></literal>”,
+for example, run:</para>
+
+<screen linenumbering="unnumbered">./gradlew mo_3_test_2</screen>
+
+<para>to see the results of processing “mo-3” in scenario 2. The output
+will be in the <filename>build/actual</filename> directory. The build target
+<buildtarget>all_mo_tests</buildtarget> will run them all.</para>
+</section>
+
+<section xml:id="numeration">
+<title>Controlling numeration</title>
+
+<para>Numeration refers to the process(es) by which sets, books,
+divisions, components, sections, and formal objects are numbered.
+There are three separate aspects to numeration: what’s numbered, where
+does numbering begin, and does the number inherit from its ancestors.</para>
+
+<para>Consider this book:</para>
+
+<programlisting language="xml"><![CDATA[<book>
+  <title>Book title</title>
+  <part>
+    <title>Part title</title>
+    <chapter>
+      <title>Chapter title</title>
+      <para>…</para>
+    </chapter>
+  </part>
+  <part>
+    <title>Another part title</title>
+    <chapter>
+      <title>Another chapter title</title>
+      <para>…</para>
+    </chapter>
+    <chapter>
+      <title>Yet another chapter title</title>
+      <para>…</para>
+    </chapter>
+  </part>
+</book>]]></programlisting>
+
+<para>Let’s suppose that parts are numbered “I” and “II”. (The number
+format is controlled by the localization, see <link linkend="gentext"/>.) If chapter
+numbering begins at the book level, those chapters will be
+numbered “1”, “2”, and “3”. If chapter numbering begins at the division level
+(the <tag>part</tag>), those chapters will be numbered “1”, “1”, and “2”.
+If division numbers are inherited, those numbers will be “I.1”, “II.1”, “II.2”.
+</para>
+
+<para>In the 1.x versions of these stylesheets, all of the aspects of
+numeration were controlled by three now obsolete parameters:
+<code>$component-numbers-inherit</code>,
+<code>$division-numbers-inherit</code>, and
+<code>$section-numbers-inherit</code>. In the 2.x stylesheets, the
+various aspects can be controlled independently and the result is
+much more consistent, if a bit more complicated.</para>
+
+<para>The default numeration parameters are designed to cover the most
+common use cases and are specified with strings so that they’re easy to control
+with parameters. <emphasis>Any</emphasis> numeration scheme can be implemented
+with a customization layer, but hopefully that will be necessary only rarely and
+in uncommon cases.</para>
+
+<para>To simplify the problem, we divide the DocBook elements into six categories:</para>
+
+<variablelist>
+<varlistentry>
+<term>sets</term>
+<listitem>
+<para>The <tag>set</tag> is the only member of this category.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>books</term>
+<listitem>
+<para>The <tag>book</tag> is the only member of this category.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>divisions</term>
+<listitem>
+<para>The divisions elements are <tag>part</tag> and <tag>reference</tag>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>components</term>
+<listitem>
+<para>The component elements are
+<tag>acknowledgements</tag>,
+<tag>appendix</tag>,
+<tag>article</tag>,
+<tag>bibliography</tag>,
+<tag>chapter</tag>,
+<tag>colophon</tag>,
+<tag>dedication</tag>,
+<tag>glossary</tag>,
+<tag>index</tag>,
+<tag>partintro</tag>,
+<tag>preface</tag>,
+<tag>refentry</tag>, and
+<tag>setindex</tag>.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>sections</term>
+<listitem>
+<para>The section elements are
+<tag>section</tag>,
+<tag>sect1</tag>,
+<tag>sect2</tag>,
+<tag>sect3</tag>,
+<tag>sect4</tag>,
+<tag>sect5</tag>,
+<tag>simplesect</tag>.
+The <tag>refentry</tag> section elements are not included because they are
+not typically numbered.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>formal objects</term>
+<listitem>
+<para>The formal objects are
+<tag>figure</tag>,
+<tag>table</tag>,
+<tag>example</tag>,
+<tag>equation</tag>,
+<tag>formalgroup</tag>,
+<tag>procedure</tag>.
+</para>
+<para>There’s a bit of complexity here. A <tag>formalgroup</tag> that contains figures
+counts as a <tag>figure</tag>, a <tag>formalgroup</tag> that contains tables
+counts as a <tag>table</tag>, etc. An <tag>equation</tag> or <tag>procedure</tag>
+only counts as a formal object if it has a title.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>Six parameters control where numbering starts (or restarts):
+<parameter>sets-number-from</parameter>,
+<parameter>books-number-from</parameter>,
+<parameter>divisions-number-from</parameter>,
+<parameter>components-number-from</parameter>,
+<parameter>sections-number-from</parameter>, and
+<parameter>formal-objects-number-from</parameter>. In each case, the value
+of the parameter must be the name of one of the categories. Sets and books
+can only number from sets, divisions can number from sets or books,
+components can number from sets, books, or divisions, etc. It is also
+possible to specify the value <code>root</code> to indicate that elements in
+the relevant category are numbered sequentially through the whole document.</para>
+
+<para>To assure consistency, “numbering from” resets when the specified
+category or one of its ancestors is encountered. In other words, if
+you’re formatting a set of books and numbering components from
+divisions, the numbering resets when a new division, book, or set begins.</para>
+
+<para>Six parameters control how numbers are inherited:
+<parameter>sets-inherit-from</parameter>,
+<parameter>books-inherit-from</parameter>,
+<parameter>divisions-inherit-from</parameter>,
+<parameter>components-inherit-from</parameter>,
+<parameter>sections-inherit-from</parameter>, and
+<parameter>formal-objects-inherit-from</parameter>. Like the “number
+from” parameters, each parameter takes the value of the categories
+above it. In this case, however, you can specify more than one
+category.</para>
+
+<para>For example, the default value for formal objects is to
+inherit from “<code>component section</code>”. That means that the
+first figure in chapter 2 will be labeled “2.1” and the first figure
+in the first section in chapter 2 will be labeled “2.1.1”, etc.
+This most closely reproduces the numbering from the 1.x stylesheets.</para>
+
+<section xml:id="numeration-overrides">
+<title>Numeration overrides</title>
+
+<para>Although the numeration parameters give you complete control over
+numeration, they aren’t simple to use. A few common cases can be handled with
+simpler settings: <parameter>division-numbers</parameter>,
+<parameter>component-numbers</parameter>, and
+<parameter>section-numbers</parameter>. Each of these parameters is “true” by
+default and numeration of divisions, components, and sections is handled as
+described above. If these parameters are set to “false”, divisions, components,
+and sections, respectively, will not be numbered.</para>
+
+<para>Numbering can also be controlled on a per-element basis with the
+<link linkend="pi_db">db processing instruction</link>.
+<indexterm>
+<primary>db processing instruction</primary>
+</indexterm>
+If the <literal>numbered</literal>
+<indexterm>
+<primary>db processing instruction</primary>
+<secondary>numbered pseudo-attribute</secondary>
+</indexterm>
+pseudo-attribute is “true”, the division, component, or section in which that 
+processing instruction occurs, and all of its descendants, will be numbered.
+If it’s “false”, the element and its descendants will not be numbered.</para>
+<para>In this way, it would be possible to have a single chapter or article with
+numbered sections even in a book where sections are not normally numbered.</para>
+</section>
+</section>
+
+<section xml:id="using-glossaries">
+<title>Using glossaries</title>
+
+<para>There are essentially two ways to manage glossaries: you can
+author them by hand, or you can compose them automatically from a
+collection of glossary entries.</para>
+
+<para>In a glossary authored by hand, no special processing
+takes place. The entries appear as they are listed and every entry appears
+whether there is a corresponding glossary reference in the document or not.
+The author is free to use <tag>glossdiv</tag> elements
+to divide the glossary into sections and the document may have multiple
+<tag>glossary</tag> elements.</para>
+
+<para>If you compose them from glossary collections, only the terms
+used in your document (in <tag>glossterm</tag> or <tag>firstterm</tag>
+elements) will appear in the glossary. The glossary collections can be
+managed internally or externally. If multiple definitions appear in
+the glossary collections, only the first definition is
+included.</para>
+
+<para>The best way to explain automatic glossaries is to use an
+example. Let's assume that you have marked the two terms
+<emphasis role="bold">Apple</emphasis> and
+<emphasis role="bold">Pear</emphasis> as <tag>glossterm</tag>s in your document.
+Your automatic glossary should ultimately contain exactly two entries,
+one for each of those terms.</para>
+
+<para>Create a glossary in your document and add <code>auto</code> to the
+<att>role</att> attribute on the <tag>glossary</tag> element.
+(If you’re using automatic glossaries, there should only be one <tag>glossary</tag>
+element in your document.) This is the <emphasis>internal</emphasis> glossary.</para>
+
+<itemizedlist>
+<listitem>
+<para>Even if your internal glossary has three entries, one each for <emphasis>Apple</emphasis>,
+<emphasis>Jackfruit</emphasis> and <emphasis>Pear</emphasis>, you will end up with a
+glossary in the generated document that has only two entries. There will be no entry for
+<emphasis>Jackfruit</emphasis>, since there is no corresponding <code>glossterm</code>
+or <code>firstterm</code> in the main part of your text.</para>
+</listitem>
+<listitem>
+<para>You can also use <emphasis>external</emphasis> glossaries for
+this task, which can be identified by the
+<parameter>glossary-collection</parameter> parameter, or the
+<tag class="pi">db</tag><indexterm><primary>db processing instruction</primary>
+</indexterm> processing instructions with a
+<literal>glossary-collection</literal><indexterm>
+<primary>db processing instruction</primary>
+<secondary>glossary-collection pseudo-attribute</secondary>
+</indexterm> pseudo-attribute in the root element.</para>
+<para>If you use external glossaries, you can leave the internal,
+automatic glossary completely empty. As long as there are entries for
+<emphasis>Apple</emphasis> and <emphasis>Pear</emphasis> in one of
+your external glossaries, you will end up with those two entries in
+the generated glossary, even if the external glossaries contain many
+more terms.
+</para>
+</listitem>
+<listitem>
+<para>You can use the internal, automatic glossary in conjunction with
+external glossaries. In this case, entries from the internal glossary
+take precedence over entries for the same term from external
+glossaries. Lets say you have entries for <emphasis>Apple</emphasis>
+and <emphasis>Pear</emphasis> among others in your external glossary,
+and also a <code>glossentry</code> for <emphasis>Apple</emphasis> in
+your internal glossary. In this case you will end up with a glossary
+which contains two entries, one for <emphasis>Apple</emphasis>, with
+the definition taken from the internal glossary, and one for
+<emphasis>Pear</emphasis> with a definition from the
+external glossary.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>Entries will appear in the glossary in the same order as they appear in the
+internal and external glossaries unless they are sorted. Sorting is controlled
+by the <parameter>glossary-sort-entries</parameter> parameter.</para>
+
+<para>An automatic glossary may have glossary divisions. Those are
+controlled by the <parameter>glossary-automatic-divisions</parameter>
+parameter.</para>
+
+<section xml:id="glossary-schematron">
+<info>
+<titleabbrev>Using Schematron</titleabbrev>
+<title>Using Schematron to manage the glossary</title>
+</info>
+
+<para>Schematron rules can help manage the glossary. The
+<function>f:glossentries</function> function (defined in
+<filename>standalone-functions.xsl</filename> in the xslTNG install
+directory) has been designed so that it can be integrated into
+Schematron independently of the xslTNG stylesheets. You can use it to
+check whether a corresponding <code>glossentry</code> exists for a
+<code>glossterm</code> or <code>firstterm</code> while you are still
+writing. Corresponding Schematron schemas are not yet part of the
+xslTNG framework. <xref linkend="ex.schematron.glossary" xrefstyle="%label"/>, however,
+shows how you could use schematron to check whether there is exactly one <tag>glossentry</tag>
+for the <tag>glossterm</tag> and <tag>firstterm</tag> elements in your document.</para>
+
+<example xml:id="ex.schematron.glossary" role="landscape">
+  <title>A Schematron schema to check glossary terms</title>
+  <programlistingco>
+    <areaspec units="linecolumn">
+      <area xml:id="co.include-function" coords="3 1"/>
+      <area xml:id="co.ns-f" coords="7 1"></area>
+      <area xml:id="co.use-function" coords="14 1"></area>
+    </areaspec>
+    <programlisting><xi:include href="examples/glossary.sch" parse="text"/></programlisting>
+    <calloutlist>
+      <callout arearefs="co.include-function"><para>Include the <filename>standalone-functions.xsl</filename> file.
+        You have to adjust the path accordingly.</para></callout>
+      <callout arearefs="co.ns-f"><para>Provide declaration for the namespace of functions from xslTNG.</para></callout>
+      <callout arearefs="co.use-function"><para>Use the <function>f:glossentries</function> function
+        to get the number of matching <tag>glossentry</tag> elements for the given <tag>glossterm</tag> or <tag>firstterm</tag></para></callout>
+    </calloutlist>
+  </programlistingco>
+</example>
+
+<para>If you want to use Schematron rules with external glossaries,
+it’s most convenient to use the <tag class="pi">db</tag> processing instruction
+to identify the external glossaries. The
+<function>f:glossentries</function> function will load them automatically (see <xref
+linkend="ex.pass-parameter-to-schematron" xrefstyle="%label"/>).
+</para>
+
+<example xml:id="ex.pass-parameter-to-schematron">
+  <title>Pass the <literal>glossary-collection</literal> parameter to Schematron</title>
+  <programlisting>&lt;article xmlns="http://docbook.org/ns/docbook" version="5.0"&gt;
+  &lt;?db glossary-collection='resources/glosscollection.xml' ?&gt;
+  &lt;title&gt;My document&lt;/title&gt;
+  …
+&lt;/article></programlisting>
+</example>
+</section>
+</section>
+
+<section xml:id="using-bibliographies">
+<title>Using bibliographies</title>
+
+<para>Bibliographies are more complicated than glossaries.
+Bibliography entries can be “cooked” (<tag>bibliomixed</tag>) or “raw”
+(<tag>biblioentry</tag>) and there’s no obvious way to sort
+bibliography entries in the general case.</para>
+
+<para>There are also two different cross-referencing mechanisms for
+bibliographic entries: by ID, using <tag>biblioref</tag> or <tag>xref</tag>,
+or with <tag>citation</tag> that matches on <tag>abbrev</tag> elements
+in the bibliography entry.</para>
+
+<para>Consider this example bibliography:</para>
+
+<programlisting language="xml"><![CDATA[<bibliography>
+<bibliomixed xml:id="bib.xml"><abbrev>XML</abbrev>Tim Bray,
+Jean Paoli, …</bibliomixed>
+
+<biblioentry><abbrev>MalerElAndaloussi96</abbrev>
+  <title>Developing SGML DTDs</title> …</biblioentry>
+</bibliography>]]></programlisting>
+
+<para>The first entry can be cited in two ways: <code>&lt;biblioref linkend="bib.xml"/&gt;</code>
+or <code>&lt;citation&gt;XML&lt;/citation&gt;</code>. The second can only be cited with
+a <code>&lt;citation&gt;MalerElAndaloussi96&lt;/citation&gt;</code>
+(it has no <att>xml:id</att> to link to).</para>
+
+<para>Taking all of these variations into account, there are three
+ways to construct bibliographies:</para>
+
+<orderedlist>
+<listitem><para><link linkend="bib.byhand">Entirely by hand</link>.</para>
+</listitem>
+<listitem><para><link linkend="bib.managed.by.hand">Managed by hand</link>,
+with empty elements as placeholders.</para>
+</listitem>
+<listitem><para><link linkend="bib.automatic">Managed automatically</link>.</para>
+</listitem>
+</orderedlist>
+
+<para>There are tradeoffs to each approach.</para>
+
+<para>When external bibliographies are used, they can be identified either with the
+<parameter>bibliography-collection</parameter> parameter or with
+<tag class="pi">db</tag><indexterm><primary>db processing instruction</primary>
+</indexterm> processing instructions with a
+<literal>bibliography-collection</literal><indexterm>
+<primary>db processing instruction</primary>
+<secondary>bibliography-collection pseudo-attribute</secondary>
+</indexterm> pseudo-attribute in the root element.</para>
+
+<section xml:id="bib.byhand">
+<title>Entirely by hand</title>
+<para>In a bibliography constructed entirely by hand, no special processing
+takes place. The entries appear as they are listed and every entry appears
+whether it is cited or not. The author is free to use <tag>bibliodiv</tag> elements
+to divide the bibliography into sections and the document may have multiple
+<tag>bibliography</tag> elements.</para>
+</section>
+
+<section xml:id="bib.managed.by.hand">
+<title>Managed by hand</title>
+<para>Bibliographic entries can be complex and may be shared across multiple
+documents. One approach to managing this complexity is to store the full entries in
+an external bibliography and use only placeholders in your actual document.</para>
+<para>A placeholder is an empty entry with an <att>xml:id</att>, or an entry that contains only an
+<tag>abbrev</tag> (if it has both an <att>xml:id</att> and contains only an <tag>abbrev</tag>, the
+ID will be used to search for a matching entry in the external bibliography).
+It will be replaced by the full entry from the external bibliography
+when the document is formatted.</para>
+<para>For example, if the full entries are available externally, the preceding
+bibliography example could be shortened to:</para>
+
+<programlisting language="xml"><![CDATA[<bibliography>
+<bibliomixed xml:id="bib.xml"/>
+<biblioentry><abbrev>MalerElAndaloussi96</abbrev>
+</biblioentry>
+</bibliography>]]></programlisting>
+
+<para>The entries appear in the order listed and every entry appears
+whether it is cited or not. The author is free to use <tag>bibliodiv</tag> elements
+to divide the bibliography into sections and the document may have multiple
+<tag>bibliography</tag> elements.</para>
+</section>
+
+<section xml:id="bib.automatic">
+<title>Automatic</title>
+
+<para>An automatic bibliography is selected by using the token
+<code>auto</code> in the <att>role</att> attribute on a <tag>bibliography</tag>.
+Placeholders can still be used, but they are unnecessary when using
+<tag>citation</tag> for citations.</para>
+
+<para>Any citation that appear in the text will be matched to entries
+in the external bibliographies. Those entries will be included
+automatically. Automatically added entries appear at the end of the
+bibliography (after any internal ones, if the internal bibliography
+has entries), in the order that they appear in the external
+bibliographies.
+If multiple external entries match, only the first is added.</para>
+
+<para>Any bibliography entries in the internal bibliography that
+<emphasis>aren’t</emphasis> cited will be removed.</para>
+
+<para>When using the automatic style, there should be only one
+<tag>bibliography</tag> in the document and it cannot contain
+divisions.</para>
+</section>
+</section>
+
+<section xml:id="different">
+<info>
+<title>Creating something completely different</title>
+<titleabbrev>Something completely different</titleabbrev>
+</info>
+
+<para>Your input documents go through several pre-processing steps
+before they are rendered into HTML. If you want to produce completely
+different outputs, the place to start is with root template in the
+<mode>m:docbook</mode> mode.</para>
+
+<para>Consider, <link xlink:href="https://github.com/docbook/xslTNG/issues/84">for example</link>,
+the task of creating a JSON version of the Table of Contents. In principle, you could
+write your own stylesheet to do this, but leveraging the
+<citetitle>DocBook xslTNG Stylesheets</citetitle> means you can make use of functions like
+<function>f:generate-id</function> to create links.</para>
+
+<para>To produce completely different results, override the root template in the
+<mode>m:docbook</mode> mode:</para>
+
+<programlisting language="xml"><![CDATA[<xsl:template match="/" mode="m:docbook">
+  <xsl:document>
+    <!-- your processing here -->
+  </xsl:document>
+</xsl:template>]]></programlisting>
+
+<para>This template <emphasis>must</emphasis> return a document node.</para>
+
+<para>Note that you can mix-and-match your processing with default
+processing by processing DocBook elements in the
+<mode>m:docbook</mode> mode.</para>
+
+<para>Here is a simple example of a stylesheet that produces a JSON version of the
+Table of Contents for a DocBook document:</para>
+
+<programlisting language="xml landscape"
+><xi:include href="examples/issue84.xsl" parse="text"/></programlisting>
+
+<note>
+<para>This example is meant as a starting point; it’s not robust as it only handles
+a few of the possible elements that might appear in a Table of Contents.</para>
+</note>
+
+<para>When processing documents this way, be aware that you are transforming the pre-processed,
+normalized versions of your input documents. For example, whether or not you put
+<tag>info</tag> wrappers around the titles of your sections, in the pre-processed input,
+<tag>title</tag>s <emphasis>always</emphasis> appear inside <tag>info</tag> wrappers.
+This normalization greatly simplifies processing in many places.</para>
+</section>
+
+</chapter>

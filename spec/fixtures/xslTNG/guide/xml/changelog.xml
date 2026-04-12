@@ -1,0 +1,949 @@
+<section xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         xmlns:xi='http://www.w3.org/2001/XInclude'
+         version="5.0" xml:id="changelog">
+<title>Change Log</title>
+
+<para>This section documents the changes made in each release. This
+does not necessarily include every minor change, only those likely to
+be of interest to users of the stylesheets. See the commits and pull requests on
+<link xlink:href="https://github.com/docbook/xslTNG/">the repository</link> for
+finer detail.</para>
+
+<section xml:id="r271">
+<info>
+  <title>Changes in version 2.7.1</title>
+  <productnumber>2.7.1</productnumber>
+  <date>2025-11-16</date>
+</info>
+<itemizedlist>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/666">#666</link>.
+Avoid putting the subtitle in the title when <parameter>titleabbrev-passthrough</parameter> is
+used.
+</para></listitem>
+<listitem><para>Switched to SInclude version 5.6.0 for the fix to in-scope namespace
+handling.
+</para></listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r270">
+<info>
+  <title>Changes in version 2.7.0</title>
+  <productnumber>2.7.0</productnumber>
+  <date>2025-11-09</date>
+</info>
+
+<important>
+<para>This release contains <emphasis>backwards incompatible</emphasis> changes in
+the way relative media object widths are computed. If you specify media object
+widths or depths with percentages, take special care to assure you’re getting the
+results you expect. Use <parameter>mediaobject-percentage-of-intrinsic-size</parameter>
+to select backwards compatible behavior.</para>
+</important>
+ 
+<itemizedlist>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/657">#657</link>.
+If a resource path appears to be absolute, don’t add the resource base URI to it.
+</para></listitem>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/655">#655</link>.
+Avoid duplicate ID values in automatically generated glossaries when
+a document consists of multiple books.
+</para></listitem>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/654">#654</link>.
+Corrected the context for abstracts in titlepage templates.
+</para></listitem>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/651">#651</link>.
+Avoid a runtime error when using multiple admonition icons.
+</para></listitem>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/648">#648</link>.
+When the width or depth of a media object is specified as a percentage, it is
+supposed to be a percentage of the available space. All versions of the
+stylesheets before 2.7.0 incorrectly calculate percentages against the intrinsic
+size of the media object. That has been fixed. Note that this is a backwards
+incompatible change if you specify widths or depths as percentages.
+Use <parameter>mediaobject-percentage-of-intrinsic-size</parameter>
+to select backwards compatible behavior.
+</para></listitem>
+<listitem><para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/651">#647</link>.
+Support language localization with Saxon PE.
+</para></listitem>
+<listitem><para>Improved the fix for <link xlink:href="https://github.com/docbook/xslTNG/issues/581">#581</link>.
+It occurred to me that the templates processing CALS tables do know the width
+of each column. That allows the available space in a CALS table to be computed
+correctly for media objects that specify widths as a percentage. This is also
+a backwards incompatible change. Like the fix for #648, backwards compatible
+behavior can be retained with the
+<parameter>mediaobject-percentage-of-intrinsic-size</parameter> parameter.
+</para></listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r261">
+<info>
+  <title>Changes in version 2.6.1</title>
+  <productnumber>2.6.1</productnumber>
+  <date>2025-09-14</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/637">#637</link>.
+Catch and ignore parse errors from <command>pygmentize</command>.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/634">#634</link>.
+Attempt to avoid false positive warnings about table widths.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/629">#629</link>.
+Don’t create duplicate ID values when styling <tag>coref</tag> elements.
+This fix also changes the element that wraps a <tag>co</tag> from “a” to “span”. That’s
+possibly backwards incompatible, but seems unlikely to be harmful and “a” is
+clearly wrong.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/625">#625</link>.
+Added a <parameter>user-document-class</parameter> parameter.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/621">#621</link>.
+Assure that when <tag>indexterm</tag> elements appear in <tag>title</tag> elements,
+they don’t generate anchors in the list of titles.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/620">#620</link>.
+Fixed an error in how scope was computed for generated indexes.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/614">#614</link>.
+Corrected the way <tag>citation</tag> links are constructed so that they work
+even when the bibliography entry doesn’t have an <tag class="attribute">xml:id</tag>.
+This change also introduces a warning message for citations that don’t have
+corresponding entries. I think that’s the right thing to do.
+</para>
+<para>There’s a small markup change in this fix. Where previously a citation
+would produce something like this:</para>
+<programlisting language="xml"><![CDATA[<a href="#R_bi1_biblioentry1" class="xref xref-biblioentry">
+  <span class="label">
+    <span class="abbrev">AhoSethiUllman96</span>
+  </span>
+</a>]]></programlisting>
+<para>it now produces:</para>
+
+<programlisting language="xml"><![CDATA[<span class="citation">
+  <a href="#R_bi1_biblioentry1" class="xref xref-biblioentry">AhoSethiUllman96</a>
+</span>]]></programlisting>
+
+<para>Technically this is backwards incompatible; it’s possible that the
+label/abbrev classes were used for styling, but styling the citation class
+should be a lot easier.</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/573">#573</link>.
+Make sure that section numbering works correctly when sections contain
+<tag>refentry</tag> elements.
+</para>
+</listitem>
+<listitem>
+<para>Made a number of improvements to this guide with special thanks to
+Olivier Cailloux for careful review and feedback.
+</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r260">
+<info>
+  <title>Changes in version 2.6.0</title>
+  <productnumber>2.6.0</productnumber>
+  <date>2025-06-29</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/616">#616</link>.
+The spacebar has a navigation purpose in the browser, so don’t interfere with that.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/615">#615</link>.
+Title and subtitle elements now get attributes, for example 
+<tag class="attribute">lang</tag>. This also has the benefit that headings for subtitles
+have a class attribute to identify them.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/612">#612</link>.
+Whitespace in the baseform attribute is normalized when processing glossary entries.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/593">#593</link>.
+Updated MathJax, added support for TeX equations with a
+<tag class="attribute">role</tag> of <literal>tex</literal> on
+<tag>mathphrase</tag>.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/587">#587</link>.
+Improved support for titles on <tag>abstract</tag> and <tag>legalnotice</tag> elements.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/584">#584</link>.
+Support both <tag>para</tag> and <tag>simpara</tag> in compact lists.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/582">#582</link>.
+Allow gentext letters to be the empty sequence. This won’t give the <emphasis>correct</emphasis>
+result, but it will allow the stylesheets to run without crashing. Thank you, Johan, for
+the updated sequences for Japanese and Korean.</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/579">#579</link>.
+Remove “.” and “..” segments from the chunk output base URI with the new
+function <function>f:flatten-path</function>.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/576">#576</link>.
+Make sure that bibliography entries have unique (and not possibly duplicate) IDs even
+when the bibliography entries are loaded from external files.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/581">#581</link>;
+handle width=100% and scalefit=1 on media objects.
+</para>
+</listitem>
+<listitem>
+<para>Added support for different options when dealing with unhandled elements,
+see <parameter>on-unhandled-elements</parameter>.
+Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/572">#572</link>.
+Bring the documentation and the code in sync with respect to
+<parameter>on-unhandled-elements</parameter>.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/568">#568</link>.
+Resolved some ambiguity in <parameter>refentry-generate-name</parameter> and
+<parameter>refentry-generate-title</parameter>.
+</para>
+</listitem>
+<listitem>
+<para>Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/563">#563</link>.
+Corrected a typo in the locale files.
+</para>
+</listitem>
+<listitem>
+<para>Accepted <link xlink:href="https://github.com/docbook/xslTNG/pull/570">a patch</link>
+with a large number of Python style improvements. Thank you, Rafał!</para>
+</listitem>
+<listitem>
+<para>Accepted <link xlink:href="https://github.com/docbook/xslTNG/pull/577">a patch</link>
+to fix a problem when copying namespace-qualified attributes. Thank you, Frank!</para>
+</listitem>
+<listitem>
+<para>Accepted <link xlink:href="https://github.com/docbook/xslTNG/pull/586">a patch</link>
+to add a parameter to identify the file containing default templates. Thank you, Frank!</para>
+</listitem>
+<listitem>
+<para>Accepted <link xlink:href="https://github.com/docbook/xslTNG/pull/599">a patch</link>
+to support collecting the secondary outputs of internal transforms. Thank you, Frank!</para>
+</listitem>
+<listitem>
+<para>Upgraded Pygments in the test harness to version 2.19.1.
+</para>
+</listitem>
+<listitem>
+<para>Upgraded a number of dependencies.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r250">
+<info>
+  <title>Changes in version 2.5.0</title>
+  <productnumber>2.5.0</productnumber>
+  <date>2024-11-10</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Rewrote verbatim handling; 
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/556">#556</link>.</para>
+<para>There are a lot of changes to verbatim handling. The code has been refactored
+and cleaned up significantly. There are a number of backwards-incompatible changes as
+a result. (Though the goal is that most documents should look substantially the same.)</para>
+<orderedlist>
+<listitem>
+<para>A bug where <tag class="attribute">db-line</tag> in the output didn’t take
+the starting line number into consideration has been fixed.</para>
+</listitem>
+<listitem>
+<para>Verbatim environments that aren’t numbered no longer have “invisible” line number markup.</para>
+</listitem>
+<listitem>
+<para>The verbatim features are provided using <code>highlight.js</code> and <code>prism</code>
+as much as is practical.</para>
+</listitem>
+<listitem>
+<para>There are new top-level parameters, <parameter>verbatim-embellishments</parameter> and
+<parameter>verbatim-embellish-linenumbers</parameter>. These can control embellishments overall
+and line numbering specifically at a global level. (Apparently, the XSLT 1.0 stylesheets didn’t
+number verbatim environments by default but when I wrote the xslTNG stylesheets, I did. I’m
+reluctant to make that backwards-incompatible change, so I’ve added a parameter to get that
+effect easily.)</para>
+</listitem>
+<listitem>
+<para>The verbatim style and syntax highlighter can be set on per-document basis with
+a processing instruction.</para>
+</listitem>
+<listitem>
+<para>The <code>f:verbatim-highlight</code> and <code>f:highlight-verbatim</code>
+functions have been removed. The highlighter, and highligting, are determined by
+the combination of options. See <xref linkend="verbatim-environments"/>.</para>
+</listitem>
+</orderedlist>
+</listitem>
+<listitem>
+<para>Added <parameter>use-id-as-filename</parameter> parameter. If true,
+the <tag class="attribute">xml:id</tag> value of a chunk will be used as the
+chunk filename.</para>
+</listitem>
+<listitem>
+<para>Support <tag class="attribute">xrefstyle</tag> on <tag>link</tag>;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/561">#561</link>.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r241">
+<info>
+  <title>Changes in version 2.4.1</title>
+  <productnumber>2.4.1</productnumber>
+  <date>2024-10-26</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>A recent fix for bottom-of-page navigation links broke the persistent ToC
+navigation link. This release fixes <emphasis>both</emphasis> of those problems
+simultaneously;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/543">#543</link>.
+</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r240">
+<info>
+  <title>Changes in version 2.4.0</title>
+  <productnumber>2.4.0</productnumber>
+  <date>2024-10-24</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Reworked the <filename>main.xsl</filename> module to resolve import precedence issues;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/536">#536</link>. This change
+has two visible consequences:</para>
+<orderedlist>
+<listitem>
+<para>The formatting of <tag>command</tag> in <tag>cmdsynopsis</tag> uses
+<tag namespace="http://www.w3.org/1999/xhtml">span</tag> instead of
+<tag namespace="http://www.w3.org/1999/xhtml">code</tag>. This was always the intent;
+a <tag>cmdsynopsis</tag> is already monospaced.</para>
+</listitem>
+<listitem>
+<para>The formatting of <tag>task</tag> elements no longer suppresses the title.
+I don’t imagine that was intentional, but if you use <tag>task</tag> elements with 
+titles, make sure you’re getting the results you expect!</para>
+</listitem>
+</orderedlist>
+<para>It’s also <emphasis>possible</emphasis> that this will have consequences in customization
+layers, but I don’t think that’s the case.</para>
+</listitem>
+<listitem>
+<para>Added a wrapper around <tag>cmdsynopsis</tag>;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/538">#538</link>.
+This makes customization of command synopses more practical in CSS.
+</para>
+</listitem>
+<listitem>
+<para>In the DocBook Python script, pass the Saxon return code back to the shell;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/535">#535</link>.
+Thanks, Frank!
+</para>
+</listitem>
+<listitem>
+<para>Fixed the CI build issue that was preventing the link to the most recent
+version of the guide from updating correctly;
+fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/534">#534</link>.
+</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r230">
+<info>
+  <title>Changes in version 2.3.0</title>
+  <productnumber>2.3.0</productnumber>
+  <date>2024-10-21</date>
+</info>
+<itemizedlist>
+<listitem>
+  <para>The principle new feature in version 2.3.0 is support for landscape (and portrait)
+  rotation in paged media, fixing <link xlink:href="https://github.com/docbook/xslTNG/issues/476">#476</link>.
+  This entails a lage number of changes to the paged media
+  stylesheets and some markup changes in the HTML output.</para>
+  <para>The most significant markup change is that elements that appear before
+  the first section of component (before the first <tag>section</tag> of a <tag>chapter</tag>,
+  for example) are now wrapped in a 
+  <tag namespace="http://www.w3.org/1999/xhtml">div</tag> element with the
+  <att>class</att> “<code>db-bfs</code>”. This true in both browser and paged media presentations,
+  though it’s currently unused in the browser presentation.</para>
+  <para>Another change is that rotated elements will have “<code>landscape</code>” or
+  “<code>portrait</code>” in their <att>class</att> attribute. At present, this has no
+  effect in the browser presentation.</para>
+</listitem>
+<listitem>
+  <para>Added support for <tag>titleabbrev</tag> in bibliography entries;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/487">#487</link>.
+  Thanks, Frank!
+  </para>
+</listitem>
+
+<listitem>
+  <para>Added a <filename>vendor-weasyprint.css</filename> stylesheet for use with
+  the <parameter>vendor-css</parameter> parameter;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/497">#497</link>.
+  </para>
+</listitem>
+<listitem>
+  <para>Reworked Java initialization;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/504">#504</link>.
+  This change is a consequence of how Saxon initializes the XML Resolver.
+  </para>
+</listitem>
+<listitem>
+  <para>Support linking on <tag>db:arg</tag> and <tag>db:group</tag> elements;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/528">#528</link>.
+  </para>
+</listitem>
+<listitem>
+  <para>Provided additional class attributes on various flavors of synopsis to enable
+  more precise CSS styling.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r221">
+<info>
+  <title>Changes in version 2.2.1</title>
+  <productnumber>2.2.1</productnumber>
+  <date>2024-09-27</date>
+</info>
+<itemizedlist>
+<listitem>
+  <para>Add missing zh-cn localization for “Danger”;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/510">#510</link>.
+  </para>
+</listitem>
+<listitem>
+  <para>Added <xref linkend="titlepages"/>, describing how to customize title pages;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/507">#507</link>.</para>
+</listitem>
+<listitem>
+  <para>Added support for a <code>numbered</code> DocBook processing instruction pseudo-attribute
+  to control numbering of divisions, components, and sections on a per-element basis;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/506">#506</link>.
+  See <xref linkend="numeration-overrides"/>.</para>
+</listitem>
+<listitem>
+  <para>Added <parameter>variablelist-panelset</parameter> to 
+  support a “panel set” presentation of variable lists.</para>
+</listitem>
+<listitem>
+  <para>Simplified and corrected the selection of bibliography entry abbreviations;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/479">#479</link>.
+  Thanks, Frank!</para>
+</listitem>
+<listitem>
+  <para>Improved <filename>docbook.py</filename> script. Thanks, Rafal!</para>
+</listitem>
+<listitem>
+  <para>Added support for <tag>caption</tag> elements in CALS tables;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/472">#472</link>.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r220">
+<info>
+  <title>Changes in version 2.2.0</title>
+  <productnumber>2.2.0</productnumber>
+  <date>2024-02-03</date>
+</info>
+<itemizedlist>
+<listitem>
+  <para>Support <parameter>titleabbrev-passthrough</parameter>,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/469">#469</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Integrated support for
+  <link linkend="using-glossaries">automatic glossaries</link>
+  contributed by Frank Steimke.
+  Fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/453">#453</link>
+  and <link xlink:href="https://github.com/docbook/xslTNG/issues/445">#445</link>.
+  Extended to support automatic glossary divisions,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/453">#460</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Added support for
+  <link linkend="using-bibliographies">automatic bibliographies</link>
+  analogous to automatic glossaries.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Integrated documentation improvements contributed by Frank Steimke,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/452">#452</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Attempted to work around a scrolling issue in the persistent ToC,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/451">#451</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Corrected the image intrinsic functions so that non-integer dimensions are supported in SVG;
+  added support for dimensions with units,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/413">#413</link>,
+  <link xlink:href="https://github.com/docbook/xslTNG/issues/432">#432</link>,
+  and <link xlink:href="https://github.com/docbook/xslTNG/issues/443">#443</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Allow pre- and post-processing transforms to be specified as command line parameters,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/440">#440</link>
+  and <link xlink:href="https://github.com/docbook/xslTNG/issues/441">#441</link>
+  </para>
+</listitem>
+
+<listitem>
+  <para>Merged a fix to the German localization contributed by Tom Schraitle,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/428">#428</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Make sure <varname>v:debug</varname> is declared in <filename>print.xsl</filename>,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/420">#420</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Ensure that subtitle appears on a book titlepage,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/415">#415</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Integrated improved support for improved
+  <link linkend="customize-individual-cross-references">cross reference styles</link>
+  contributed by Frank Steimke,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/414">#414</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Merged a patch, contributed by Frank Steimke, to avoid a
+  warning when a table width is exactly the same as the nominal page
+  width,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/411">#411</link>.
+  </para>
+</listitem>
+
+<listitem>
+  <para>Corrected an error where column widths computed from CALS tables did not correctly specify units,
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/410">#410</link>.
+  </para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r219">
+<info>
+  <title>Changes in version 2.1.9</title>
+  <productnumber>2.1.9</productnumber>
+  <date>2023-08-19</date>
+</info>
+<itemizedlist>
+<listitem>
+  <para>Links added with <mode>m:head-additions</mode> were not being made relative
+  to the chunk base URI. Reworked <mode>m:html-body-script</mode> slightly so that
+  links there can also be made relative appropriately.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r218">
+<info>
+  <title>Changes in version 2.1.8</title>
+  <productnumber>2.1.8</productnumber>
+  <date>2023-08-17</date>
+</info>
+<itemizedlist>
+<listitem>
+  <para>Added <mode>m:head-additions</mode> mode for customizers. This allows a customization
+  layer to add information to the HTML <tag>head</tag>.</para>
+</listitem>
+<listitem>
+  <para>Added tunnel parameters to the list of titles templates. This allows a customization
+  to determine the parent element of the list of titles. (For example, to format the table of contents
+  for a <tag>set</tag> differently than for the contained <tag>book</tag>s.)
+  </para>
+</listitem>
+<listitem>
+  <para>When formatting a <tag>part</tag> with a <tag>partintro</tag> and a list of titles,
+  move the <tag>partintro</tag> before the list of titles. (This is technically backwards incompatible,
+  but it seems so obviously superior to the current behavior that I’m calling the current behavior
+  a bug.)
+  </para>
+</listitem>
+<listitem>
+  <para>Removed incorrect use of <code>v:</code> prefix in the documentation; fixed
+  <link xlink:href="https://github.com/docbook/xslTNG/issues/406">#406</link>.
+  </para>
+</listitem>
+<listitem>
+  <para>Added a <parameter>inline-xlink-href</parameter> parameter to control whether or not
+  XLink href attributes are printed after the link in the paged media stylesheets;
+  fixed <link xlink:href="https://github.com/docbook/xslTNG/issues/404">#404</link>.
+  Previously, this was handled in two different ways: for simple
+  links, the links where always printed; for extended links, the text
+  were actually added by CSS. Now they’re both controlled by the
+  parameter and CSS is no longer involved.
+  </para>
+</listitem>
+<listitem>
+  <para>Hacked PrismJS a bit; added support for ABNF and my own attempt at an
+  Invisible XML highlighter.
+  </para>
+</listitem>
+<listitem>
+  <para>Added CSS for lists of titles in <tag>set</tag>s.
+  </para>
+</listitem>
+</itemizedlist>
+</section>
+<section xml:id="r217">
+<info>
+  <title>Changes in version 2.1.7</title>
+  <productnumber>2.1.7</productnumber>
+  <date>2023-07-29</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Tweaks to <filename>presentation.js</filename> to make sure
+revealed elements are in view.</para>
+</listitem>
+<listitem>
+<para>Tweaks to the bundled PrismJS to support (not especially well)
+syntax highlighting Invisible XML.</para>
+</listitem>
+<listitem>
+<para>CSS improvements for footnote rendering in paged media.</para>
+</listitem>
+<listitem>
+<para>First attempt to support <link xlink:href="https://vivliostyle.org/">Vivliostyle</link>
+for rendering paged media.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r216">
+<info>
+  <title>Changes in version 2.1.6</title>
+  <productnumber>2.1.6</productnumber>
+  <date>2023-06-08</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Fixed the bug where disabling division, component, or section
+numbers didn’t change their presentation in Tables of Contents. It’s
+not especially elegant, the stylesheets simply check if
+“<literal>unnumbered</literal>” occurs in the localization group name
+for the title. If it does, then the unnumbered table of contents
+template is also selected.</para>
+</listitem>
+<listitem>
+<para>Fixed the bug where chunk navigation wasn’t localized.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r215">
+<info>
+  <title>Changes in version 2.1.5</title>
+  <productnumber>2.1.5</productnumber>
+  <date>2023-06-07</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Introduced “<link linkend="presentation-mode">presentation mode</link>” as a replacement
+for earlier “slides” and “speaker notes” customizations. Simplified the normal “chunk navigation”
+processing.</para>
+</listitem>
+<listitem>
+<para>Improved copyright handling on title pages. Removed most
+CSS <property>page-break-inside</property>: <code>avoid</code> rules. (They cause
+overflow if the space isn’t big enough.)</para>
+</listitem>
+<listitem>
+<para>Added the ability to put
+<link linkend="ad-hoc-css-styling">arbitrary CSS properties</link> on
+elements with attributes in the <uri type="xmlnamespace">https://xsltng.docbook.org/ns/css</uri>
+namespace.</para>
+</listitem>
+<listitem>
+<para>Added <code>css</code> to the set of verbatim environment
+languages that are syntax highlighted by default.</para>
+</listitem>
+<listitem>
+<para>The <parameter>output-media</parameter> is now set to “<literal>epub</literal>” when
+formatting EPUBs.</para>
+</listitem>
+<listitem>
+<para>Paged media improvements: removed body margins (they’re provided by the page setup);
+enabled hyphenation.</para>
+</listitem>
+<listitem>
+<para>Add documentation for the properties in <filename>gradle.properties</filename>.</para>
+</listitem>
+<listitem>
+<para>Yet even more fussing with the building the distribution on Windows.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r214">
+<info>
+  <title>Changes in version 2.1.4</title>
+  <productnumber>2.1.4</productnumber>
+  <date>2023-05-29</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Fixed a bug where the <citetitle>Index by module</citetitle> index in the PDF
+guide ran off the bottom of the page.</para>
+</listitem>
+<listitem>
+<para>Improved the left and right page headers in PDF output.
+</para>
+</listitem>
+<listitem>
+<para>Fixed (another) bug in <parameter>unwrap-paragraphs</parameter> support.
+</para>
+</listitem>
+<listitem>
+<para>Fixed a bug where the link for the persistent ToC was not visible. (This started 
+in 2.1.3 when a z-index was added to the page header.)
+</para>
+</listitem>
+<listitem>
+<para>Added a <mode>m:back-cover</mode> mode for producing a back
+cover. By default, this mode produces no output, but it can be changed
+an a customization layer to produce a cover.
+</para>
+</listitem>
+<listitem>
+<para>Fixed a few places where the <parameter>debug</parameter> parameter was not being
+tested correctly. Documented the <literal>templates-matches</literal> debug flag.
+</para>
+</listitem>
+<listitem>
+<para>Reworked how the change log is produced; it’s now an appendix rather than attempting
+to put it between the front cover and the table of contents.
+</para>
+</listitem>
+<listitem>
+<para>Fixed some navigation issues associated with annotations when JavaScript is being used
+to display the annotations.
+</para>
+</listitem>
+<listitem>
+<para>For convenience, the SASS SCSS stylesheets are now in the distribution ZIP archive.
+These aren’t used at runtime, but if you have plans to make extensive
+changes to the CSS, deriving those changes from the SASS sources may
+prove easier than updating the derived CSS directly.
+</para>
+</listitem>
+<listitem>
+<para>Added CSS variables: <literal>default-font-size</literal> and
+<literal>default-line-height</literal> to simplify customization.
+</para>
+</listitem>
+<listitem>
+<para>Reworked the title page for articles in books. Previously, they
+only rendered the title. An article in a book now renders the “full”
+titlepage that’s consistent with stand-alone articles.
+</para>
+</listitem>
+<listitem>
+<para>A bunch of build fixes: matrix builds work again, attempting to get the release information
+uses an authenticated request if it can, an old Xerces implementation pulled in by a transitive
+dependency is explicitly excluded (it has problems with UTF-16 encoded files, for example on Windows).
+</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r213">
+<info>
+  <title>Changes in version 2.1.3</title>
+  <productnumber>2.1.3</productnumber>
+  <date>2023-05-23</date>
+</info>
+<itemizedlist>
+<listitem>
+<para>Fixed a bug in the handling of the <parameter>unwrap-paragraphs</parameter> parameter.
+The list of “block” elements understood to be “unwrapped” was incomplete.
+</para>
+</listitem>
+<listitem>
+<para>Fixed the way <tag>title</tag> and <tag>citetitle</tag> are formatted in bibliographies.
+</para>
+</listitem>
+<listitem>
+<para>Added support for the <tag class="attribute">translate</tag>
+attribute in HTML via the
+<parameter>translate-suppress-elements</parameter> parameter and the
+<function>f:translate-attribute</function> function. Note that these
+attributes are in the HTML <emphasis>output</emphasis>, so they won’t
+directly help with translations of the source XML. Apparently, some
+production toolchains involve translating the published HTML.</para>
+</listitem>
+<listitem>
+<para>Attempt to address problems caused by Oxygen change markup in
+CALS tables. Deleted cells are now identified in the output (to keep
+the dimensions of the table valid) rather than removing them.
+</para>
+</listitem>
+<listitem>
+<para>Fixed the rendering of table footnotes in PDF.</para>
+</listitem>
+<listitem>
+<para>Added support for PDF bookmarks for H1 and H2 headings.</para>
+</listitem>
+<listitem>
+<para>Removed the <property>page-break-inside: avoid</property> property from program listings.
+The property was causing some program listings to be rendered beyond the bottom of the page
+in PDF.</para>
+</listitem>
+<listitem>
+<para>CSS has been adjusted in an attempt to avoid extra space below a <tag>calloutlist</tag>.</para>
+</listitem>
+<listitem>
+<para>Added <property>z-index</property> to avoid problems in fixed navigation headers.</para>
+</listitem>
+<listitem>
+<para>Extended the documentation about Docker and Docker alternatives;
+improved the Dockerfile, especially with respect to Linux.</para>
+</listitem>
+<listitem>
+<para>There are now two files in the GitHub distribution, the “normal”
+one and one labeled “nosaxon”. The “nosaxon” ZIP file is the same
+release, but without a copy of Saxon-HE. This release should be easier to integrate into environments,
+like <link xlink:href="https://www.oxygenxml.com/">&lt;oXygen/&gt;</link>, where a version of
+Saxon is already provided. (Having two <emphasis>different</emphasis> versions of Saxon can
+cause problems.)</para>
+</listitem>
+<listitem>
+<para>A fallback version of the “Pygments” CSS file is included in repository. This allows
+the correct formatting to be achieved even if
+<link xlink:href="https://pygments.org/">Pygments</link> (and especially 
+<command>pygmentize</command>) isn’t available locally.</para>
+</listitem>
+<listitem>
+<para>Lots (and lots) of build changes to support building the release on Windows.
+It’s now at the “works on my machine” stage, but not yet working generally. Specific
+suggestions welcome.
+</para>
+</listitem>
+<listitem>
+<para>A few other build improvements. A wholly unsuccessful attempt to
+use the matrix build in CI.</para>
+</listitem>
+<listitem>
+<para>A variety of typos have been fixed in the guide.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r212">
+<info>
+  <title>Changes in version 2.1.2</title>
+  <productnumber>2.1.2</productnumber>
+  <date>2023-04-10</date>
+</info>
+
+<itemizedlist>
+<listitem>
+<para>Added a <parameter>verbatim-trim-leading-blank-lines</parameter> parameter. This
+is analagous to the <parameter>verbatim-trim-trailing-blank-lines</parameter> parameter except
+for leading blank lines instead of trailing ones. It is false by default, for backwards
+compatibility, but note that some syntax highlighters may trim leading (and trailing)
+blank links anyway.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r211">
+<info>
+  <title>Changes in version 2.1.1</title>
+  <productnumber>2.1.1</productnumber>
+  <date>2023-04-08</date>
+</info>
+
+<itemizedlist>
+<listitem>
+<para>Added a <parameter>copy-verbatim-js</parameter> parameter. This feature 
+creates a dynamic “copy” button on verbatim listings that will copy the
+text of the listing (without callouts, line annotations, etc.) to the clipboard.</para>
+</listitem>
+<listitem>
+<para>Fixed a minor issue where some spurious namespace declarations were being copied
+into the HTML output.</para>
+</listitem>
+</itemizedlist>
+</section>
+
+<section xml:id="r210">
+<info>
+  <title>Changes in version 2.1.0</title>
+  <productnumber>2.1.0</productnumber>
+  <date>2023-04-07</date>
+</info>
+
+<para>This is the first official release of the “2.x” versions of the
+stylesheets. Version 2.1.0 introduces a number of new features and
+corrects major issues with localization and media object rendering,
+but is not entirely backwards compatible with the 1.x versions. The
+incompatibilities should mostly effect customization layers, not
+formatted documents, though the HTML output will be a little different
+in most cases. For a summary of the changes, see <xref
+linkend="intro-210"/>.</para>
+</section>
+</section>

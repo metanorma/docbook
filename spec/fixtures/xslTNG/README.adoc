@@ -1,0 +1,18 @@
+= Test fixtures from the DocBook xslTNG Stylesheets project
+
+The files in this directory are taken from the DocBook xslTNG Stylesheets
+project, available at: https://github.com/docbook/xslTNG
+
+The files included are:
+
+* DocBook xslTNG Stylesheets Guide. It is a multi-file document, with the root
+at `guide/guide.xml`.
+
+* DocBook xslTNG Stylesheets test suite, a set of DocBook XML files that are
+used to test the stylesheets. The XML files we use are `test/*.xml`.
+
+== License
+
+MIT License
+
+Copyright (c) 2020 Norman Walsh
