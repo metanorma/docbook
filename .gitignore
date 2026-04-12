@@ -16,8 +16,9 @@ docs/.jekyll-cache/
 docs/.sass-cache/
 docs/Gemfile.lock
 
-# Frontend build artifacts (committed separately from dist/)
+# Frontend build artifacts (bundled into gem, not committed)
 frontend/node_modules/
+frontend/dist/
 
 # IDE
 .idea/
