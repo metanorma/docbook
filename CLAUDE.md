@@ -17,3 +17,8 @@ You MUST NOT handle raw XML elements (such as those from Nokogiri) in HTML proce
 
 ### Image Path Resolution
 Image paths should be resolved using the Docbook element's xml:base when available, per the Docbook spec. The `process_image` method in Html class handles this by searching parent paths as a fallback when xml:base is not preserved by the parser.
+
+### Demo HTML for Local File Viewing
+When generating `demo.html` for local viewing (file:// protocol), CSS and JS **MUST** be inlined directly into the HTML. Browsers block external resources when opening HTML files directly from the filesystem.
+
+**How to apply:** The rake task `generate:demo` reads `frontend/dist/app.css` and `frontend/dist/app.iife.js` and embeds them inline using `<style>` and `<script>` tags. Do not use `<link>` or `<script src="...">` for these files in demo.html.

@@ -5,7 +5,10 @@ module Docbook
     # Pre-computes section numbering for the document
     # Handles: Roman numerals for Parts, Arabic for Chapters,
     #          Hierarchical for Sections, Alpha for Appendices
+    #          Auto-numbering for Figures, Examples, Tables
     class NumberingService
+      include ElementIdHelper
+
       def initialize(document)
         @document = document
         @numbering = []
@@ -13,6 +16,9 @@ module Docbook
         @chapter_counters = {}  # part_index => counter
         @appendix_counter = 0
         @section_counters = {}  # scope_id => [level1, level2, ...]
+        @figure_counters = {}   # scope_id => counter
+        @example_counters = {}  # scope_id => counter
+        @table_counters = {}    # scope_id => counter
       end
 
       def generate
@@ -21,6 +27,9 @@ module Docbook
         @chapter_counters = {}
         @appendix_counter = 0
         @section_counters = {}
+        @figure_counters = {}
+        @example_counters = {}
+        @table_counters = {}
 
         process_document(@document)
         @numbering
@@ -42,6 +51,12 @@ module Docbook
           process_section(element, parent_info)
         when Elements::RefEntry
           process_refentry(element, parent_info)
+        when Elements::Figure, Elements::InformalFigure
+          process_figure(element, parent_info)
+        when Elements::Example, Elements::InformalExample
+          process_example(element, parent_info)
+        when Elements::Table
+          process_table(element, parent_info)
         else
           # Process children
           process_children(element, parent_info)
@@ -68,11 +83,18 @@ module Docbook
 
         add_numbering(chapter, chapter_number, "chapter")
 
-        # Reset section counters for this chapter
-        scope_id = chapter.xml_id || "chapter-#{chapter_number}"
+        # Reset counters for this chapter
+        scope_id = element_id(chapter)
         @section_counters[scope_id] = [0, 0, 0, 0, 0]
+        @figure_counters[scope_id] = 0
+        @example_counters[scope_id] = 0
+        @table_counters[scope_id] = 0
 
-        process_children(chapter, parent_info.merge(chapter_scope: scope_id))
+        process_children(chapter, parent_info.merge(
+          chapter_scope: scope_id,
+          section_depth: 1,
+          chapter_number: chapter_number
+        ))
       end
 
       def process_appendix(appendix, parent_info)
@@ -81,25 +103,31 @@ module Docbook
 
         add_numbering(appendix, appendix_number, "appendix")
 
-        # Reset section counters for this appendix
-        scope_id = appendix.xml_id || "appendix-#{appendix_number}"
+        # Reset counters for this appendix
+        scope_id = element_id(appendix)
         @section_counters[scope_id] = [0, 0, 0, 0, 0]
+        @figure_counters[scope_id] = 0
+        @example_counters[scope_id] = 0
+        @table_counters[scope_id] = 0
 
-        process_children(appendix, parent_info.merge(appendix_scope: scope_id))
+        process_children(appendix, parent_info.merge(
+          appendix_scope: scope_id,
+          section_depth: 1,
+          appendix_number: appendix_number
+        ))
       end
 
       def process_section(section, parent_info)
         # Determine scope
         scope_id = parent_info[:chapter_scope] ||
                     parent_info[:appendix_scope] ||
-                    section.xml_id ||
-                    "section-#{@numbering.length}"
+                    element_id(section)
 
         # Initialize counters for this scope
         @section_counters[scope_id] ||= [0, 0, 0, 0, 0]
 
-        # Count nesting depth
-        depth = section_depth(section)
+        # Depth is tracked via parent_info, default to 1
+        depth = parent_info[:section_depth] || 1
 
         # Increment counter at this depth
         @section_counters[scope_id][depth - 1] += 1
@@ -113,43 +141,85 @@ module Docbook
 
         add_numbering(section, section_number, "section")
 
-        process_children(section, parent_info)
+        process_children(section, parent_info.merge(section_depth: depth + 1))
       end
 
       def process_refentry(refentry, parent_info)
-        refname = if refentry.refnamediv&.refname
-          refentry.refnamediv.refname.map(&:content).join(" ")
-        elsif refentry.refmeta&.refentrytitle
-          refentry.refmeta.refentrytitle.content
-        else
-          refentry.xml_id || "refentry"
-        end
+        process_children(refentry, parent_info)
+      end
 
-        add_numbering(refentry, refname, "refentry")
+      def process_figure(figure, parent_info)
+        scope_id = parent_info[:chapter_scope] || parent_info[:appendix_scope]
+        return unless scope_id
+
+        @figure_counters[scope_id] ||= 0
+        @figure_counters[scope_id] += 1
+        fig_num = @figure_counters[scope_id]
+
+        prefix = parent_info[:chapter_number] || parent_info[:appendix_number]
+        number = prefix ? "#{prefix}.#{fig_num}" : fig_num.to_s
+
+        add_numbering(figure, number, "figure")
+
+        process_children(figure, parent_info)
+      end
+
+      def process_example(example, parent_info)
+        scope_id = parent_info[:chapter_scope] || parent_info[:appendix_scope]
+        return unless scope_id
+
+        @example_counters[scope_id] ||= 0
+        @example_counters[scope_id] += 1
+        ex_num = @example_counters[scope_id]
+
+        prefix = parent_info[:chapter_number] || parent_info[:appendix_number]
+        number = prefix ? "#{prefix}.#{ex_num}" : ex_num.to_s
+
+        add_numbering(example, number, "example")
+
+        process_children(example, parent_info)
+      end
+
+      def process_table(table, parent_info)
+        scope_id = parent_info[:chapter_scope] || parent_info[:appendix_scope]
+        return unless scope_id
+
+        @table_counters[scope_id] ||= 0
+        @table_counters[scope_id] += 1
+        tbl_num = @table_counters[scope_id]
+
+        prefix = parent_info[:chapter_number] || parent_info[:appendix_number]
+        number = prefix ? "#{prefix}.#{tbl_num}" : tbl_num.to_s
+
+        add_numbering(table, number, "table")
+
+        process_children(table, parent_info)
       end
 
       def process_children(element, parent_info)
-        return unless element.respond_to?(:elements)
+        # Collect all child elements that need processing
+        children = all_child_elements(element)
 
-        Array(element.elements).each do |child|
+        children.each do |child|
           process_document(child, parent_info)
         end
       end
 
-      def section_depth(section)
-        # Determine section nesting depth
-        depth = 1
-        el = section
-        while el.respond_to?(:parent) && el.parent
-          depth += 1
-          el = el.parent
+      def all_child_elements(element)
+        result = []
+        return result unless element.respond_to?(:each_mixed_content)
+
+        element.each_mixed_content do |node|
+          next if node.is_a?(String)
+          result << node
         end
-        [depth, 5].min
+        result
       end
 
       def add_numbering(element, number, type)
+        id = element_id(element)
         @numbering << Models::SectionNumber.new(
-          id: element.xml_id || "element-#{@numbering.length}",
+          id: id,
           number: number.to_s,
           type: type
         )

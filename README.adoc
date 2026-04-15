@@ -325,6 +325,254 @@ The gem defines element classes for all major DocBook 5 elements:
 * **Glossary**: glossary, glossentry
 * **Metadata**: info, title, author, copyright
 
+== SPA Data Model
+
+The HTML output is a self-contained Vue 3 SPA where document data is embedded
+as a JavaScript object literal (not JSON) for zero-network-dependency rendering.
+
+=== Data Structure
+
+[source,javascript]
+----
+window.DOCBOOK_DATA = Object.assign({title: "Document Title"}, {
+  toc: {
+    sections: [
+      { id: "section-id", title: "Section Title", type: "chapter", children: [...] }
+    ],
+    numbering: [
+      { id: "section-id", value: "1.2.3" }
+    ]
+  },
+  content: {
+    entries: [
+      { key: "section-id", value: { section_id: "...", blocks: [...] } }
+    ]
+  },
+  index: { groups: [...] }
+});
+----
+
+=== TOC Section Types
+
+The `type` field indicates the structural element:
+
+[cols="1,3"]
+|===
+|Type |Description
+
+|`chapter`
+|Top-level chapter in a book
+
+|`section`
+|Nested section within a chapter
+
+|`part`
+|Part containing multiple chapters
+
+|`appendix`
+|Appendix section
+
+|`glossary`
+|Glossary section
+
+|`bibliography`
+|Bibliography/references section
+
+|`index`
+|Index section
+
+|`preface`
+|Front matter preface
+
+|`reference`
+|Reference manual entry
+|===
+
+=== Block Types
+
+Top-level content blocks include:
+
+[cols="1,3"]
+|===
+|Type |Description
+
+|`paragraph`
+|Regular paragraph with inline children
+
+|`ordered_list`
+|Numbered list with `list_item` children
+
+|`itemized_list`
+|Bullet list with `list_item` children
+
+|`definition_list`
+|Glossary/variable list with `definition_term` and `definition_description`
+
+|`code`
+|Program listing or screen output
+
+|`image`
+|Figure with caption
+
+|`blockquote`
+|Block quotation
+
+|`note`, `warning`, `tip`, etc.
+|Admonition blocks
+
+|`bibliography_entry`
+|Citation in bibliography
+
+|`section`
+|Nested section container
+|===
+
+=== Inline Content Types
+
+Inline elements within paragraph children:
+
+[cols="1,2,3"]
+|===
+|Type |Properties |Description
+
+|`text`
+|`text`
+|Plain text content
+
+|`emphasis`
+|`text`
+|Italic text (also used for glossterm, firstterm)
+
+|`strong`
+|`text`
+|Bold text
+
+|`link`
+|`text`, `src`
+|Hyperlink with URL
+
+|`xref`
+|`text`, `src`
+|Cross-reference with resolved title
+
+|`codetext`
+|`text`
+|Inline code or literal text
+
+|`biblioref`
+|`text`, `src`
+|Bibliography citation reference
+
+|`citation`
+|`text`
+|Citation (italic)
+
+|`citation_link`
+|`text`, `src`
+|Citation with link
+
+|`inline_image`
+|`src`, `alt`
+|Inline image
+|===
+
+=== Example: Rich Text Structure
+
+A paragraph with mixed content:
+
+[source,javascript]
+----
+{
+  "type": "paragraph",
+  "children": [
+    { "type": "text", "text": "The key words " },
+    { "type": "emphasis", "text": "must" },
+    { "type": "text", "text": ", " },
+    { "type": "emphasis", "text": "should" },
+    { "type": "text", "text": ", and " },
+    { "type": "xref", "text": "RFC 2119", "src": "#rfc2119" },
+    { "type": "text", "text": " are defined..." }
+  ]
+}
+----
+
+=== Comparison with ProseMirror
+
+ProseMirror and Docbook SPA use fundamentally different approaches to rich text:
+
+[cols="1,3,3"]
+|===
+|Aspect |ProseMirror |Docbook SPA
+
+|Mark model
+|Uses `marks` array on text nodes for formatting
+|Uses typed inline nodes (`emphasis`, `strong`)
+
+|Structure
+|Tree with `doc` > `paragraph` > `text` + marks
+|Flat `children` array with typed objects
+
+|Links
+|`{ type: "link", attrs: { href } }` on mark
+|`{ type: "link", text, src }` as child node
+
+|Content embedding
+|Marks attach to text nodes
+|Each inline type is a separate child node
+
+|Cross-references
+|Not built-in (requires extension)
+|`xref` type with resolved title
+|===
+
+**ProseMirror Example:**
+[source,javascript]
+----
+{
+  type: "paragraph",
+  content: [
+    { type: "text", text: "Click ", marks: [
+      { type: "link", attrs: { href: "http://example.com" } }
+    ]},
+    { type: "text", text: "here" }
+  ]
+}
+----
+
+**Docbook SPA Example:**
+[source,javascript]
+----
+{
+  type: "paragraph",
+  children: [
+    { type: "text", text: "Click " },
+    { type: "link", text: "here", src: "http://example.com" }
+  ]
+}
+----
+
+=== Xref Resolution
+
+Cross-references (`xref`) are resolved at generation time using the
+xref resolver. The `text` property contains the resolved title, and `src`
+contains the anchor link:
+
+[source,javascript]
+----
+// Before resolution (XML source)
+<xref linkend="rfc2119"/>
+
+// After resolution (SPA data)
+{ "type": "xref", "text": "RFC 2119", "src": "#rfc2119" }
+----
+
+The resolver uses the `xml:id` attribute to build a lookup table, then
+resolves titles from:
+
+1. `abbrev` element in bibliomixed
+2. `citetitle` element
+3. Formatted `xml:id` (e.g., `rfc2119` → `RFC 2119`)
+
 == Contributing
 
 Bug reports and pull requests are welcome on GitHub at

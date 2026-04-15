@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "docbook"
+require "docbook/mirror"
 require "canon"
 require "canon/rspec_matchers"
 

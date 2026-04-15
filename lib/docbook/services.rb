@@ -10,5 +10,7 @@ module Docbook
     autoload :NumberingService, "#{SERVICES_DIR}/numbering_service"
     autoload :ElementToHash, "#{SERVICES_DIR}/element_to_hash"
     autoload :DocumentBuilder, "#{SERVICES_DIR}/document_builder"
+    autoload :ElementIdHelper, "#{SERVICES_DIR}/element_id_helper"
+    autoload :ImageResolver, "#{SERVICES_DIR}/image_resolver"
   end
 end

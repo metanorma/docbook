@@ -1,8 +1,8 @@
 <template>
   <section :id="section.id" class="mb-12 scroll-mt-20">
     <div class="db-appendix-wrap">
-      <h2 class="flex items-baseline gap-3 text-xl font-bold mb-5 pb-2 border-b border-gray-200 dark:border-gray-700">
-        <span class="text-gray-500 dark:text-gray-400 text-lg font-normal">{{ numbering }}</span>
+      <h2 class="appendix-heading flex items-baseline gap-3 text-xl font-bold mb-5 pb-2 border-b">
+        <span class="appendix-number text-lg font-normal">{{ numbering }}</span>
         <span>{{ section.title }}</span>
       </h2>
       <BlockRenderer v-if="sectionContent" :blocks="sectionContent.blocks" />
@@ -37,3 +37,13 @@ function isChangelogSection(section: TocItem): boolean {
   return id === 'changelog' || /\br\d+\b/.test(id)
 }
 </script>
+
+<style scoped>
+.appendix-heading {
+  border-color: var(--ebook-border);
+}
+
+.appendix-number {
+  color: var(--ebook-text-muted);
+}
+</style>

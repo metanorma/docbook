@@ -56,7 +56,7 @@ module Docbook
       when Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Section, Docbook::Elements::Preface
         el.section&.each { |s| build_xml_id_map(s, map) }
-        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) }
+        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) } if el.respond_to?(:bibliolist)
       when Docbook::Elements::Reference
         el.refentry&.each { |r| build_xml_id_map(r, map) }
       when Docbook::Elements::Bibliolist
@@ -79,9 +79,50 @@ module Docbook
            Docbook::Elements::Preface, Docbook::Elements::Part, Docbook::Elements::Reference
         el.title&.content
       when Docbook::Elements::Bibliomixed
-        el.abbrev&.content || el.citetitle&.first&.content
+        el.abbrev&.content ||
+          el.citetitle&.first&.content ||
+          format_bibliomixed_id(el.xml_id)
       else
         el.title&.content rescue nil
+      end
+    end
+
+    # Format xml:id into a readable title for bibliography entries
+    # e.g., "rfc2119" -> "RFC 2119", "iso8879" -> "ISO 8879"
+    def format_bibliomixed_id(xml_id)
+      return nil unless xml_id
+
+      id = xml_id.to_s
+      # Handle known prefixes
+      suffix = if id.start_with?("rfc") && id.length > 3
+                 id[3..-1]
+               elsif id.start_with?("iso") && id.length > 3
+                 id[3..-1]
+               elsif id.start_with?("xml") && id.length > 3
+                 id[3..-1]
+               elsif id.start_with?("bib.")
+                 id[4..-1]
+               else
+                 id
+               end
+
+      return nil if suffix.nil? || suffix.empty?
+
+      # Clean up suffix: strip leading/trailing whitespace and hyphens
+      suffix = suffix.strip.gsub(/\A-+/, '').gsub(/-\z/, '')
+      return nil if suffix.empty?
+
+      # Apply formatting
+      if id.start_with?("rfc")
+        "RFC #{suffix}"
+      elsif id.start_with?("iso")
+        "ISO #{suffix.gsub('-', ' ')}"
+      elsif id.start_with?("xml")
+        "XML #{suffix.gsub('-', ' ')}"
+      elsif id.start_with?("bib.")
+        suffix.capitalize
+      else
+        suffix.split('-').map(&:capitalize).join(' ')
       end
     end
   end

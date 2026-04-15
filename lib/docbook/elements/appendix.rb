@@ -4,6 +4,7 @@
 module Docbook
   module Elements
     class Appendix < Lutaml::Model::Serializable
+      include HasNumber
       attribute :content, :string
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :version, :string

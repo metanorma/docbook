@@ -4,7 +4,7 @@
       <!-- Left: Menu button -->
       <button
         @click="$emit('toggle-toc')"
-        class="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+        class="topbar-btn"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -13,7 +13,7 @@
 
       <!-- Center: Title -->
       <div class="flex-1 text-center px-4">
-        <h1 class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+        <h1 class="topbar-title truncate">
           {{ title }}
         </h1>
       </div>
@@ -23,7 +23,7 @@
         <!-- Font settings -->
         <button
           @click="$emit('toggle-settings')"
-          class="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+          class="topbar-btn"
           title="Display settings"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +34,7 @@
         <!-- Theme toggle -->
         <button
           @click="cycleTheme"
-          class="p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+          class="topbar-btn"
           :title="`Theme: ${currentTheme}`"
         >
           <svg v-if="currentTheme === 'day'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,15 +88,10 @@ function cycleTheme() {
   left: 0;
   right: 0;
   z-index: 30;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--chrome-bg-glass);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  transition: left 0.2s ease;
-}
-
-:global(.dark) .ebook-topbar {
-  background: rgba(17, 24, 39, 0.9);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--chrome-border);
+  transition: left 0.2s ease, background 0.2s ease;
 }
 
 .ebook-topbar--with-sidebar {
@@ -109,8 +104,26 @@ function cycleTheme() {
   }
 }
 
-.ebook-topbar button {
+.topbar-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--chrome-text);
+}
+
+.topbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 44px;
   min-height: 44px;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--chrome-text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar-btn:hover {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
 }
 </style>

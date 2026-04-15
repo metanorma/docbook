@@ -1,7 +1,7 @@
 <template>
   <section :id="section.id" class="mb-12 scroll-mt-20">
-    <h2 class="flex items-baseline gap-3 text-xl font-bold mb-5 pb-2 border-b border-gray-200 dark:border-gray-700">
-      <span class="text-gray-500 dark:text-gray-400 text-lg font-normal">{{ numbering }}</span>
+    <h2 class="chapter-heading flex items-baseline gap-3 text-xl font-bold mb-5 pb-2 border-b">
+      <span class="chapter-number text-lg font-normal">{{ numbering }}</span>
       <span>{{ section.title }}</span>
     </h2>
     <BlockRenderer v-if="sectionContent" :blocks="sectionContent.blocks" />
@@ -30,3 +30,13 @@ const documentStore = useDocumentStore()
 const numbering = computed(() => documentStore.getNumbering(props.section.id))
 const sectionContent = computed(() => documentStore.getSectionContent(props.section.id))
 </script>
+
+<style scoped>
+.chapter-heading {
+  border-color: var(--ebook-border);
+}
+
+.chapter-number {
+  color: var(--ebook-text-muted);
+}
+</style>

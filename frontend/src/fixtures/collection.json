@@ -1,0 +1,34 @@
+{
+  "name": "Bibliotheca",
+  "description": "A curated collection of DocBook document samples demonstrating various features",
+  "books": [
+    {
+      "id": "art-of-documentation",
+      "title": "The Art of Documentation",
+      "author": "DocBook Masters",
+      "description": "A comprehensive guide to writing beautiful technical documentation. Covers DocBook fundamentals, structured content, lists, admonitions, and code examples.",
+      "source": "fixtures/art_of_documentation.json"
+    },
+    {
+      "id": "titles",
+      "title": "DocBook Titles & Structure",
+      "author": "DocBook Community",
+      "description": "Demonstrates hierarchical document structure with parts, chapters, sections, and appendices. Shows how titles and cross-references work.",
+      "source": "fixtures/titles.json"
+    },
+    {
+      "id": "admonitions",
+      "title": "Admonitions Guide",
+      "author": "DocBook Community",
+      "description": "A reference guide showing all six admonition types: note, tip, important, caution, warning, and danger.",
+      "source": "fixtures/admonitions.json"
+    },
+    {
+      "id": "orderedlist",
+      "title": "Lists & Orderings",
+      "author": "DocBook Community",
+      "description": "Various list formats including ordered lists with different numbering styles and nested structures.",
+      "source": "fixtures/orderedlist.json"
+    }
+  ]
+}

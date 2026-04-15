@@ -1,19 +1,19 @@
 <template>
   <aside
     :class="[
-      'fixed top-0 left-0 z-50 w-[280px] h-full bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto transition-transform duration-200',
+      'sidebar-panel fixed top-0 left-0 z-50 w-[280px] h-full overflow-y-auto transition-transform duration-200',
       uiStore.sidebarOpen ? 'translate-x-0' : '-translate-x-full'
     ]"
   >
     <!-- Sidebar Header -->
-    <div class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 z-10">
+    <div class="sidebar-header sticky top-0 p-4 z-10">
       <div class="flex items-center justify-between mb-3">
-        <span class="font-bold text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 truncate pr-2">
+        <span class="sidebar-title truncate pr-2">
           {{ documentStore.title }}
         </span>
         <button
           @click="uiStore.closeSidebar"
-          class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+          class="sidebar-btn"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -24,27 +24,27 @@
       <!-- Search button -->
       <button
         @click="uiStore.openSearch"
-        class="w-full flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 transition-colors"
+        class="sidebar-search w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
         <span>Search headings...</span>
-        <kbd class="ml-auto text-xs bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded">/</kbd>
+        <kbd class="sidebar-kbd ml-auto text-xs px-1.5 py-0.5 rounded">/</kbd>
       </button>
 
       <!-- Font toggle -->
       <div class="flex gap-1 mt-3">
         <button
           @click="setFontFamily('sans')"
-          :class="uiStore.fontFamily === 'sans' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
+          :class="uiStore.fontFamily === 'sans' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
           class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-sans"
         >
           Sans
         </button>
         <button
           @click="setFontFamily('serif')"
-          :class="uiStore.fontFamily === 'serif' ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
+          :class="uiStore.fontFamily === 'serif' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
           class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-serif"
         >
           Serif
@@ -54,7 +54,7 @@
       <!-- Theme toggle -->
       <button
         @click="cycleTheme"
-        class="w-full flex items-center justify-between mt-2 py-1.5 px-3 text-xs bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-300"
+        class="sidebar-theme-btn w-full flex items-center justify-between mt-2 py-1.5 px-3 text-xs rounded-md transition-colors"
       >
         <span class="flex items-center gap-2">
           <svg v-if="ebookStore.theme.value === 'day' || ebookStore.theme.value === 'sepia'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,3 +114,70 @@ function setFontFamily(font: 'sans' | 'serif') {
   uiStore.setFontFamily(font)
 }
 </script>
+
+<style scoped>
+.sidebar-panel {
+  background: var(--chrome-bg-alt);
+  border-right: 1px solid var(--chrome-border);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.sidebar-header {
+  background: var(--chrome-bg-alt);
+  border-bottom: 1px solid var(--chrome-border);
+}
+
+.sidebar-title {
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chrome-text-dim);
+}
+
+.sidebar-btn {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  color: var(--chrome-text-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-btn:hover {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
+}
+
+.sidebar-search {
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  color: var(--chrome-text-dim);
+}
+
+.sidebar-search:hover {
+  background: var(--chrome-bg-hover);
+}
+
+.sidebar-kbd {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
+}
+
+.sidebar-toggle {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
+}
+
+.sidebar-toggle-active {
+  background: var(--chrome-accent);
+  color: #ffffff;
+}
+
+.sidebar-theme-btn {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
+}
+
+.sidebar-theme-btn:hover {
+  background: var(--chrome-bg);
+}
+</style>

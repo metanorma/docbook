@@ -5,24 +5,24 @@
       class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-[10vh] transition-opacity duration-200"
       @click.self="uiStore.closeSearch"
     >
-      <div class="w-full max-w-xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transition-transform duration-200">
+      <div class="search-modal w-full max-w-xl rounded-xl shadow-xl overflow-hidden transition-transform duration-200">
         <!-- Search Input -->
-        <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-          <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="search-input-row flex items-center gap-3 p-4">
+          <svg class="w-5 h-5 flex-shrink-0 search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           <input
             ref="inputRef"
             v-model="searchQuery"
             type="text"
-            class="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 text-base"
+            class="search-input flex-1 bg-transparent border-none outline-none text-base"
             placeholder="Search headings and content..."
             @keydown="handleKeydown"
           />
           <button
             v-if="searchQuery"
             @click="searchQuery = ''"
-            class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"
+            class="search-clear p-1 rounded"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -32,10 +32,10 @@
 
         <!-- Search Results -->
         <div class="max-h-80 overflow-y-auto">
-          <div v-if="isSearching" class="p-8 text-center text-gray-500">
+          <div v-if="isSearching" class="search-empty p-8 text-center">
             Searching...
           </div>
-          <div v-else-if="searchQuery && results.length === 0" class="p-8 text-center text-gray-500">
+          <div v-else-if="searchQuery && results.length === 0" class="search-empty p-8 text-center">
             No results found for "{{ searchQuery }}"
           </div>
           <div v-else-if="results.length > 0" class="p-2">
@@ -44,30 +44,30 @@
               :key="result.id"
               :href="'#' + result.id"
               @click="selectResult(result)"
-              class="flex flex-col gap-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-              :class="{ 'bg-gray-100 dark:bg-gray-700': focusedIndex === index }"
+              class="search-result flex flex-col gap-1 px-3 py-2 rounded-lg cursor-pointer"
+              :class="{ 'search-result-focused': focusedIndex === index }"
               @mouseenter="focusedIndex = index"
             >
               <div class="flex items-center gap-3">
-                <span class="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                <span class="search-result-type text-xs px-2 py-0.5 rounded">
                   {{ result.type }}
                 </span>
-                <span class="flex-1 text-gray-900 dark:text-gray-100" v-html="highlightMatch(result.title)"></span>
+                <span class="flex-1 search-result-title" v-html="highlightMatch(result.title)"></span>
               </div>
-              <div v-if="result.snippet" class="text-xs text-gray-500 dark:text-gray-400 pl-[3.5rem] line-clamp-2" v-html="highlightMatch(result.snippet)"></div>
+              <div v-if="result.snippet" class="search-result-snippet text-xs pl-[3.5rem] line-clamp-2" v-html="highlightMatch(result.snippet)"></div>
             </a>
           </div>
-          <div v-else class="p-8 text-center text-gray-400 text-sm">
+          <div v-else class="search-empty p-8 text-center text-sm">
             Type to search...
           </div>
         </div>
 
         <!-- Footer hints -->
-        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div class="flex gap-4 text-xs text-gray-400">
-            <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300">↑</kbd><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 ml-0.5">↓</kbd> Navigate</span>
-            <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300">Enter</kbd> Select</span>
-            <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300">Esc</kbd> Close</span>
+        <div class="search-footer px-4 py-3">
+          <div class="flex gap-4 text-xs">
+            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">↑</kbd><kbd class="search-kbd px-1.5 py-0.5 rounded ml-0.5">↓</kbd> Navigate</span>
+            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">Enter</kbd> Select</span>
+            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">Esc</kbd> Close</span>
           </div>
         </div>
       </div>
@@ -281,6 +281,82 @@ function selectResult(result: SearchResult) {
 function highlightMatch(text: string): string {
   if (!searchQuery.value) return text
   const regex = new RegExp(`(${searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-  return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-600 rounded px-0.5">$1</mark>')
+  return text.replace(regex, '<mark class="search-highlight rounded px-0.5">$1</mark>')
 }
 </script>
+
+<style scoped>
+.search-modal {
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+}
+
+.search-input-row {
+  border-bottom: 1px solid var(--chrome-border);
+}
+
+.search-icon {
+  color: var(--chrome-text-dim);
+}
+
+.search-input {
+  color: var(--chrome-text);
+}
+.search-input::placeholder {
+  color: var(--chrome-text-dim);
+}
+
+.search-clear {
+  color: var(--chrome-text-dim);
+}
+.search-clear:hover {
+  background: var(--chrome-bg-hover);
+}
+
+.search-empty {
+  color: var(--chrome-text-dim);
+}
+
+.search-result {
+  text-decoration: none;
+  color: var(--chrome-text);
+}
+.search-result:hover {
+  background: var(--chrome-bg-hover);
+}
+
+.search-result-focused {
+  background: var(--chrome-bg-hover);
+}
+
+.search-result-type {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
+}
+
+.search-result-title {
+  color: var(--chrome-text);
+}
+
+.search-result-snippet {
+  color: var(--chrome-text-dim);
+}
+
+.search-footer {
+  border-top: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-alt);
+  color: var(--chrome-text-dim);
+}
+
+.search-kbd {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
+}
+
+.search-highlight {
+  background: color-mix(in srgb, #eab308 40%, transparent);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+</style>

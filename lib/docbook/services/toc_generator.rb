@@ -4,6 +4,8 @@ module Docbook
   module Services
     # Generates hierarchical TOC from document sections
     class TocGenerator
+      include ElementIdHelper
+
       def initialize(document)
         @document = document
       end
@@ -62,14 +64,7 @@ module Docbook
       def get_title(element)
         case element
         when Elements::RefEntry
-          # Use refname from refnamediv as title
-          if element.refnamediv&.refname
-            element.refnamediv.refname.map(&:content).join(" ")
-          elsif element.refmeta&.refentrytitle
-            element.refmeta.refentrytitle.content
-          else
-            "Untitled"
-          end
+          resolve_refentry_title(element) || "Untitled"
         when Elements::Reference
           element.info&.title&.content ||
             element.title&.content ||
@@ -85,12 +80,7 @@ module Docbook
       end
 
       def get_id(element)
-        element.xml_id || generate_id(element)
-      end
-
-      def generate_id(element)
-        # Generate a stable ID from class name
-        "section-#{element.class.name.split('::').last.downcase}"
+        element_id(element)
       end
 
       def element_type(element)
@@ -112,6 +102,7 @@ module Docbook
           children.concat(Array(element.article))
         when Elements::Part
           children.concat(Array(element.chapter))
+          children.concat(Array(element.reference))
           children.concat(Array(element.appendix))
         when Elements::Chapter, Elements::Appendix, Elements::Preface
           children.concat(Array(element.section))

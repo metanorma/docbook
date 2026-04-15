@@ -12,6 +12,8 @@ module Docbook
       attribute :para, Para, collection: true
       attribute :programlisting, ProgramListing, collection: true
       attribute :figure, Figure, collection: true
+      attribute :informaltable, InformalTable, collection: true
+      attribute :table, Table, collection: true
 
       xml do
         element "example"
@@ -24,6 +26,8 @@ module Docbook
         map_element "para", to: :para
         map_element "programlisting", to: :programlisting
         map_element "figure", to: :figure
+        map_element "informaltable", to: :informaltable
+        map_element "table", to: :table
       end
     end
   end

@@ -1140,8 +1140,51 @@ module Docbook
                Docbook::Elements::Dir, Docbook::Elements::Replaceable
             children << ContentBlock.new(type: :codetext, text: node.content)
           when Docbook::Elements::Quote
-            # Handle quote with nested replaceable
-            if Array(node.replaceable).any?
+            # Handle quote with nested inline elements
+            # Use each_mixed_content to get properly mapped nested elements
+            nested = []
+            node.each_mixed_content do |el|
+              nested << el
+            end
+            if nested.any? { |el| el.is_a?(String) ? el.strip.any? : true }
+              nested.each do |el|
+                case el
+                when String
+                  children << ContentBlock.new(type: :text, text: el) if el.strip.any?
+                when Docbook::Elements::Literal, Docbook::Elements::Code
+                  children << ContentBlock.new(type: :codetext, text: el.content.to_s)
+                when Docbook::Elements::Emphasis
+                  children << build_emphasis_block(el)
+                when Docbook::Elements::Link
+                  children << build_link_block(el)
+                when Docbook::Elements::Xref
+                  children << build_xref_block(el)
+                when Docbook::Elements::Replaceable
+                  children << ContentBlock.new(type: :codetext, text: el.content.to_s)
+                when Docbook::Elements::Filename, Docbook::Elements::ClassName,
+                     Docbook::Elements::Function, Docbook::Elements::Parameter,
+                     Docbook::Elements::Dir, Docbook::Elements::Att
+                  children << ContentBlock.new(type: :codetext, text: el.content.to_s)
+                when Docbook::Elements::Tag
+                  children << ContentBlock.new(type: :codetext, text: "<#{el.content}>")
+                when Docbook::Elements::UserInput, Docbook::Elements::Screen
+                  children << ContentBlock.new(type: :codetext, text: el.content.to_s)
+                when Docbook::Elements::Citetitle
+                  if el.href
+                    children << ContentBlock.new(type: :citation_link, text: el.content, src: el.href.to_s)
+                  else
+                    children << ContentBlock.new(type: :citation, text: el.content)
+                  end
+                when Docbook::Elements::Biblioref
+                  text = el.content.to_s.empty? ? el.linkend : el.content
+                  children << ContentBlock.new(type: :biblioref, text: text, src: "##{el.linkend}")
+                when Docbook::Elements::FirstTerm, Docbook::Elements::Glossterm
+                  children << ContentBlock.new(type: :emphasis, text: el.content.to_s)
+                when Docbook::Elements::Inlinemediaobject
+                  children << build_inline_image_block(el)
+                end
+              end
+            elsif Array(node.replaceable).any?
               text = node.replaceable.map(&:content).join("")
               children << ContentBlock.new(type: :text, text: "\"#{text}\"")
             else
@@ -1194,8 +1237,16 @@ module Docbook
                else
                  "#"
                end
-        text = el.content
-        text = href if text.nil? || text.strip.empty?
+        text = el.content.to_s if el.content && !el.content.to_s.empty?
+        text ||= begin
+          # Extract meaningful text from URL: filename or last path segment
+          uri = URI(href) rescue nil
+          if uri&.path && !uri.path.empty? && uri.path != "/"
+            File.basename(uri.path)
+          elsif uri&.host
+            uri.host
+          end
+        end
         ContentBlock.new(type: :link, text: text, src: href)
       end
 
@@ -1457,6 +1508,16 @@ module Docbook
         else
           "DocBook"
         end
+      end
+
+      # ── DocbookMirror JSON Output ─────────────────────────────────────
+
+      # Returns DocbookMirror JSON for the document (ProseMirror-compatible format)
+      # This can be used to embed document data for Vue frontend consumption
+      def to_docbook_mirror_json
+        require_relative "../mirror"
+        require_relative "docbook_mirror"
+        Docbook::Output::DocbookMirror.new(@document).to_pretty_json
       end
     end
   end

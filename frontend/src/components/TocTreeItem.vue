@@ -5,7 +5,7 @@
       <div class="flex items-start gap-1">
         <button
           @click="toggle"
-          class="flex-shrink-0 w-6 h-6 flex items-center justify-center p-1 text-sm text-left rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors self-center"
+          class="toc-toggle flex-shrink-0 w-6 h-6 flex items-center justify-center p-1 text-sm text-left rounded-md transition-colors self-center"
           :class="buttonClass"
         >
           <svg
@@ -20,15 +20,15 @@
         </button>
         <a
           :href="'#' + item.id"
-          class="flex items-center gap-2 py-1 px-1 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex-grow truncate"
+          class="toc-link flex items-center gap-2 py-1 px-1 text-sm rounded-md transition-colors flex-grow truncate"
           :class="linkClass"
         >
-          <span v-if="typeLabel" class="w-8 text-center text-xs px-1 py-0.5 rounded flex-shrink-0" :class="typeBadgeClass">{{ typeLabel }}</span>
-          <span class="w-10 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 font-mono text-right">{{ getNumber(item.id) }}</span>
+          <span v-if="typeLabel" class="toc-badge w-8 text-center text-xs px-1 py-0.5 rounded flex-shrink-0" :class="typeBadgeClass">{{ typeLabel }}</span>
+          <span class="toc-number w-10 text-xs flex-shrink-0 font-mono text-right">{{ getNumber(item.id) }}</span>
           <span class="truncate">{{ item.title }}</span>
         </a>
       </div>
-      <ul v-if="isOpen" class="pl-4 mt-0.5 space-y-0.5 border-l border-gray-200 dark:border-gray-700">
+      <ul v-if="isOpen" class="toc-children pl-4 mt-0.5 space-y-0.5 border-l">
         <TocTreeItem
           v-for="child in item.children"
           :key="child.id"
@@ -42,18 +42,18 @@
     <a
       v-else
       :href="'#' + item.id"
-      class="flex items-center gap-2 py-1 px-1 pl-5 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors truncate"
+      class="toc-link flex items-center gap-2 py-1 px-1 pl-5 text-sm rounded-md transition-colors truncate"
       :class="linkClass"
     >
-      <span v-if="typeLabel" class="w-8 text-center text-xs px-1 py-0.5 rounded flex-shrink-0" :class="typeBadgeClass">{{ typeLabel }}</span>
-      <span class="w-10 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 font-mono text-right">{{ getNumber(item.id) }}</span>
+      <span v-if="typeLabel" class="toc-badge w-8 text-center text-xs px-1 py-0.5 rounded flex-shrink-0" :class="typeBadgeClass">{{ typeLabel }}</span>
+      <span class="toc-number w-10 text-xs flex-shrink-0 font-mono text-right">{{ getNumber(item.id) }}</span>
       <span class="truncate">{{ item.title }}</span>
     </a>
   </li>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 
@@ -67,6 +67,21 @@ const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const isOpen = ref(props.depth <= 1)
 
+// Auto-expand when active section is within this subtree
+watch(() => uiStore.activeSectionId, (activeId) => {
+  if (activeId && hasDescendant(props.item, activeId)) {
+    isOpen.value = true
+  }
+})
+
+function hasDescendant(item: TocItem, id: string): boolean {
+  if (item.id === id) return true
+  if (item.children) {
+    return item.children.some(child => hasDescendant(child, id))
+  }
+  return false
+}
+
 const typeLabel = computed(() => {
   switch (props.item.type) {
     case 'part': return 'Pt'
@@ -78,51 +93,43 @@ const typeLabel = computed(() => {
     case 'index': return 'Idx'
     case 'preface': return 'Pref'
     case 'reference': return 'Ref'
+    case 'refentry': return 'p'
     default: return ''
   }
 })
 
 const typeBadgeClass = computed(() => {
   switch (props.item.type) {
-    case 'part':
-      return 'bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 font-medium'
-    case 'chapter':
-      return 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 font-medium'
-    case 'appendix':
-      return 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 font-medium'
-    case 'section':
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-    case 'glossary':
-      return 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 font-medium'
-    case 'bibliography':
-      return 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 font-medium'
-    case 'index':
-      return 'bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 font-medium'
-    case 'preface':
-      return 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 font-medium'
-    case 'reference':
-      return 'bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200 font-medium'
-    default:
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+    case 'part': return 'toc-badge-purple'
+    case 'chapter': return 'toc-badge-blue'
+    case 'appendix': return 'toc-badge-green'
+    case 'section': return 'toc-badge-neutral'
+    case 'glossary': return 'toc-badge-yellow'
+    case 'bibliography': return 'toc-badge-red'
+    case 'index': return 'toc-badge-indigo'
+    case 'preface': return 'toc-badge-orange'
+    case 'reference': return 'toc-badge-cyan'
+    case 'refentry': return 'toc-badge-neutral toc-badge-mono'
+    default: return 'toc-badge-neutral'
   }
 })
 
 const buttonClass = computed(() => {
   if (props.item.type === 'part') {
-    return 'font-semibold text-gray-800 dark:text-gray-100'
+    return 'toc-text-bold'
   }
-  return 'text-gray-700 dark:text-gray-300'
+  return ''
 })
 
 const linkClass = computed(() => {
   const isActive = uiStore.activeSectionId === props.item.id
   if (isActive) {
-    return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium'
+    return 'toc-active'
   }
   if (props.item.type === 'part') {
-    return 'font-semibold text-gray-800 dark:text-gray-100'
+    return 'toc-text-bold'
   }
-  return 'text-gray-600 dark:text-gray-400'
+  return 'toc-text-muted'
 })
 
 function toggle() {
@@ -133,3 +140,91 @@ function getNumber(id: string): string {
   return documentStore.getNumbering(id)
 }
 </script>
+
+<style scoped>
+.toc-toggle {
+  color: var(--chrome-text);
+}
+.toc-toggle:hover {
+  background: var(--chrome-bg-hover);
+}
+
+.toc-link {
+  color: var(--chrome-text-dim);
+  text-decoration: none;
+}
+.toc-link:hover {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
+}
+
+.toc-number {
+  color: var(--chrome-text-dim);
+}
+
+.toc-children {
+  border-color: var(--chrome-border);
+}
+
+.toc-text-bold {
+  font-weight: 600;
+  color: var(--chrome-text);
+}
+.toc-text-muted {
+  color: var(--chrome-text-dim);
+}
+
+.toc-active {
+  background: color-mix(in srgb, var(--chrome-accent) 15%, transparent);
+  color: var(--chrome-accent);
+  font-weight: 500;
+}
+.toc-active:hover {
+  background: color-mix(in srgb, var(--chrome-accent) 25%, transparent);
+}
+
+/* Type badges */
+.toc-badge {
+  font-weight: 500;
+}
+.toc-badge-purple {
+  background: color-mix(in srgb, #8b5cf6 20%, var(--chrome-bg-hover));
+  color: #8b5cf6;
+}
+.toc-badge-blue {
+  background: color-mix(in srgb, #3b82f6 20%, var(--chrome-bg-hover));
+  color: #3b82f6;
+}
+.toc-badge-green {
+  background: color-mix(in srgb, #22c55e 20%, var(--chrome-bg-hover));
+  color: #22c55e;
+}
+.toc-badge-yellow {
+  background: color-mix(in srgb, #eab308 20%, var(--chrome-bg-hover));
+  color: #eab308;
+}
+.toc-badge-red {
+  background: color-mix(in srgb, #ef4444 20%, var(--chrome-bg-hover));
+  color: #ef4444;
+}
+.toc-badge-indigo {
+  background: color-mix(in srgb, #6366f1 20%, var(--chrome-bg-hover));
+  color: #6366f1;
+}
+.toc-badge-orange {
+  background: color-mix(in srgb, #f97316 20%, var(--chrome-bg-hover));
+  color: #f97316;
+}
+.toc-badge-cyan {
+  background: color-mix(in srgb, #06b6d4 20%, var(--chrome-bg-hover));
+  color: #06b6d4;
+}
+.toc-badge-neutral {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
+}
+.toc-badge-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+</style>

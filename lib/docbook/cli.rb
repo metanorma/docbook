@@ -68,6 +68,55 @@ module Docbook
       write_output(html, options[:output], output_mode)
     end
 
+    desc "to-single-page INPUT", "Convert DocBook XML to a self-contained single-page HTML"
+    option :output, aliases: "-o", required: true, desc: "Output HTML file path"
+    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
+    option :image_search_dir, type: :array, desc: "Directories to search for images"
+    option :image_strategy, default: "data_url", desc: "Image resolution: data_url, file_url, or relative"
+    option :title, desc: "Page title"
+    def to_single_page(input)
+      xml_path = File.expand_path(input)
+      output_path = File.expand_path(options[:output])
+
+      search_dirs = (options[:image_search_dir] || []).map { |d| File.expand_path(d) }
+      # Default: search relative to the XML file's directory
+      search_dirs << File.dirname(xml_path) if search_dirs.empty?
+
+      page = Docbook::Output::SinglePage.new(
+        xml_path: xml_path,
+        output_path: output_path,
+        image_search_dirs: search_dirs,
+        image_strategy: options[:image_strategy].to_sym,
+        title: options[:title] || File.basename(xml_path, ".xml")
+      )
+
+      page.generate
+      puts "Generated #{output_path}"
+    end
+
+    desc "to-docbook-mirror INPUT", "Convert DocBook XML to DocbookMirror JSON"
+    option :output, aliases: "-o", desc: "Output file (default: stdout)"
+    option :pretty, type: :boolean, default: true, desc: "Pretty print JSON"
+    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
+    def to_docbook_mirror(input)
+      require_relative "mirror"
+      require_relative "output/docbook_mirror"
+      xml_string = read_input(input, options[:xinclude])
+      parsed = parse_input(xml_string)
+      mirror_output = Docbook::Output::DocbookMirror.new(parsed)
+      output = if options[:pretty]
+                 mirror_output.to_pretty_json
+               else
+                 mirror_output.to_json
+               end
+      if options[:output]
+        File.write(options[:output], output)
+        puts "Written to #{options[:output]}"
+      else
+        $stdout.write(output)
+      end
+    end
+
     desc "roundtrip INPUT...", "Round-trip test DocBook XML files"
     def roundtrip(*inputs)
       failures = 0

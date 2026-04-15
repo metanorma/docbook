@@ -1,6 +1,6 @@
 <template>
   <section :id="section.id" class="mb-12 scroll-mt-20">
-    <h1 class="text-2xl font-bold mb-6 pb-2 border-b-2 border-gray-300 dark:border-gray-600">
+    <h1 class="part-heading text-2xl font-bold mb-6 pb-2 border-b-2">
       {{ section.title }}
     </h1>
     <BlockRenderer v-if="sectionContent" :blocks="sectionContent.blocks" />
@@ -42,3 +42,9 @@ function getChildComponent(type: string) {
   }
 }
 </script>
+
+<style scoped>
+.part-heading {
+  border-color: var(--ebook-border);
+}
+</style>

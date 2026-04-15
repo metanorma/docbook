@@ -1,6 +1,37 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+// ============================================================
+// DocbookMirror (ProseMirror-style) Types
+// ============================================================
+
+export interface MirrorMark {
+  type: 'emphasis' | 'strong' | 'italic' | 'code' | 'link' | 'xref' | 'citation' | 'tag'
+  attrs?: Record<string, any>
+}
+
+export interface MirrorTextNode {
+  type: 'text'
+  text: string
+  marks?: MirrorMark[]
+}
+
+export interface MirrorBlockNode {
+  type: string
+  attrs?: Record<string, any>
+  content?: (MirrorTextNode | MirrorBlockNode)[]
+}
+
+export interface MirrorDocument {
+  type: 'doc'
+  attrs?: Record<string, any>
+  content?: MirrorBlockNode[]
+}
+
+// ============================================================
+// Legacy ContentBlock Types
+// ============================================================
+
 export interface TocItem {
   id: string
   title: string
@@ -116,8 +147,17 @@ export interface DocumentData {
   index: IndexData | null
 }
 
+// ============================================================
+// Document Store
+// ============================================================
+
 export const useDocumentStore = defineStore('document', () => {
   const documentData = ref<DocumentData | null>(null)
+  // Store the raw DocbookMirror format if present
+  const mirrorDocument = ref<MirrorDocument | null>(null)
+
+  // Check if we have DocbookMirror format
+  const hasMirrorFormat = computed(() => mirrorDocument.value !== null)
 
   function convertNumbering(numbering: any): Record<string, string> {
     const map: Record<string, string> = {}
@@ -138,29 +178,55 @@ export const useDocumentStore = defineStore('document', () => {
     return map
   }
 
+  function processDocbookData(data: any): Promise<void> {
+    // Detect DocbookMirror format: has type: 'doc' and content array of nodes
+    if (data.type === 'doc' && Array.isArray(data.content)) {
+      mirrorDocument.value = data as MirrorDocument
+      // Also extract sections and numbering from toc if present (for demo data)
+      if (data.toc?.sections) {
+        documentData.value = {
+          sections: data.toc.sections,
+          numbering: data.toc.numbering || {}
+        } as DocumentData
+      }
+      return Promise.resolve()
+    }
+
+    // Legacy format processing
+    // Extract sections and numbering from toc model
+    if (data.toc) {
+      data.sections = data.toc.sections || []
+      data.numbering = convertNumbering(data.toc.numbering)
+      delete data.toc
+    }
+
+    // Content from ContentData model
+    data.content = convertContent(data.content)
+
+    // Index is already a proper Index model, keep as-is
+    if (!data.index || (data.index && typeof data.index === 'object' && !Array.isArray(data.index.groups) && !Object.keys(data.index).length)) {
+      data.index = null
+    }
+
+    documentData.value = data as DocumentData
+    return Promise.resolve()
+  }
+
   function loadFromWindow(): Promise<void> {
-    // Check if DOCBOOK_DATA is set (single_file mode with inline JSON)
+    // Check for DocbookMirror format first (ProseMirror-style with type: 'doc')
     const inlineData = (window as any).DOCBOOK_DATA
     if (inlineData && inlineData !== null) {
-      const data = inlineData as any
+      return processDocbookData(inlineData)
+    }
 
-      // Extract sections and numbering from toc model
-      if (data.toc) {
-        data.sections = data.toc.sections || []
-        data.numbering = convertNumbering(data.toc.numbering)
-        delete data.toc
+    // Check for DOCBOOK_COLLECTION (multi-book format from rake task)
+    const collection = (window as any).DOCBOOK_COLLECTION
+    if (collection && collection.books && collection.books.length > 0) {
+      // Extract first book as DOCBOOK_DATA
+      const firstBook = collection.books[0]
+      if (firstBook.data) {
+        return processDocbookData(firstBook.data)
       }
-
-      // Content from ContentData model
-      data.content = convertContent(data.content)
-
-      // Index is already a proper Index model, keep as-is
-      if (!data.index || (data.index && typeof data.index === 'object' && !Array.isArray(data.index.groups) && !Object.keys(data.index).length)) {
-        data.index = null
-      }
-
-      documentData.value = data as DocumentData
-      return Promise.resolve()
     }
 
     // Otherwise try to fetch from docbook.data.json (directory mode)
@@ -171,6 +237,12 @@ export const useDocumentStore = defineStore('document', () => {
       })
       .then(data => {
         const d = data as any
+        // Detect DocbookMirror format
+        if (d.type === 'doc' && Array.isArray(d.content)) {
+          mirrorDocument.value = d as MirrorDocument
+          return
+        }
+        // Legacy format
         if (d.toc) {
           d.sections = d.toc.sections || []
           d.numbering = convertNumbering(d.toc.numbering)
@@ -186,7 +258,12 @@ export const useDocumentStore = defineStore('document', () => {
       })
   }
 
-  const title = computed(() => documentData.value?.title || 'DocBook Document')
+  const title = computed(() => {
+    if (mirrorDocument.value?.attrs?.title) {
+      return mirrorDocument.value.attrs.title
+    }
+    return documentData.value?.title || 'DocBook Document'
+  })
   const sections = computed(() => documentData.value?.sections || [])
   const numbering = computed(() => documentData.value?.numbering || {})
   const content = computed(() => documentData.value?.content || {})
@@ -208,6 +285,8 @@ export const useDocumentStore = defineStore('document', () => {
 
   return {
     documentData,
+    mirrorDocument,
+    hasMirrorFormat,
     loadFromWindow,
     title,
     sections,

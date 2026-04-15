@@ -1,0 +1,619 @@
+{
+  "name": "Bibliotheca",
+  "description": "A curated collection of DocBook document samples demonstrating various features",
+  "books": [
+    {
+      "id": "art-of-documentation",
+      "title": "The Art of Documentation",
+      "author": "DocBook Masters",
+      "description": "A comprehensive guide to writing beautiful technical documentation. Covers DocBook fundamentals, structured content, lists, admonitions, and code examples.",
+      "source": "fixtures/art_of_documentation.json",
+      "data": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "part",
+            "attrs": {
+              "title": "Foundations"
+            },
+            "content": [
+              {
+                "type": "chapter",
+                "attrs": {
+                  "title": "Getting Started",
+                  "xml_id": "ch1"
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Welcome to the world of structured documentation. This chapter introduces the fundamental concepts of DocBook and why it matters for technical writing."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "attrs": {
+                      "title": "Installation",
+                      "xml_id": "ch1-install"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Before you can begin writing DocBook documents, you need to set up your development environment. This process varies by platform."
+                          }
+                        ]
+                      },
+                      {
+                        "type": "admonition",
+                        "attrs": {
+                          "admonition_type": "note"
+                        },
+                        "content": [
+                          {
+                            "type": "paragraph",
+                            "content": [
+                              {
+                                "type": "text",
+                                "text": "Ensure you have Ruby 3.0 or later installed before proceeding."
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "attrs": {
+                      "title": "Your First Document",
+                      "xml_id": "ch1-first"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Let's create a simple \"Hello World\" document to get familiar with the DocBook syntax."
+                          }
+                        ]
+                      },
+                      {
+                        "type": "code_block",
+                        "attrs": {
+                          "language": "ruby"
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "\nputs \"Hello, DocBook!\"\n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "chapter",
+                "attrs": {
+                  "title": "Paragraphs and Text",
+                  "xml_id": "ch2"
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Text is the foundation of any document. DocBook provides rich semantics for marking up textual content."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "attrs": {
+                      "title": "Inline Elements"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "You can emphasize"
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "emphasis"
+                              }
+                            ],
+                            "text": "important"
+                          },
+                          {
+                            "type": "text",
+                            "text": "text, use"
+                          },
+                          {
+                            "type": "text",
+                            "text": "for emphasis, or write"
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "code",
+                                "attrs": {
+                                  "role": "code"
+                                }
+                              }
+                            ],
+                            "text": "inline code"
+                          },
+                          {
+                            "type": "text",
+                            "text": "for technical terms."
+                          }
+                        ]
+                      },
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Links to external resources like"
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "link",
+                                "attrs": {
+                                  "href": "https://docbook.org"
+                                }
+                              }
+                            ],
+                            "text": "the DocBook website"
+                          },
+                          {
+                            "type": "text",
+                            "text": "are also supported."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "part",
+            "attrs": {
+              "title": "Advanced Topics"
+            },
+            "content": [
+              {
+                "type": "chapter",
+                "attrs": {
+                  "title": "Lists and Collections",
+                  "xml_id": "ch3"
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Organize information using various list formats."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "attrs": {
+                      "title": "Ordered Lists"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "For sequential steps:"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ordered_list",
+                        "content": [
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "First step"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Second step"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Third step"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "For uppercase roman numerals:"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ordered_list",
+                        "content": [
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Overview"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Analysis"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Implementation"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "section",
+                    "attrs": {
+                      "title": "Unordered Lists"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "For items without specific order:"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "bullet_list",
+                        "content": [
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Bullet points"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Feature highlights"
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "list_item",
+                            "content": [
+                              {
+                                "type": "paragraph",
+                                "content": [
+                                  {
+                                    "type": "text",
+                                    "text": "Quick notes"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "chapter",
+                "attrs": {
+                  "title": "Admonitions",
+                  "xml_id": "ch4"
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Admonitions draw attention to important information."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "note"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "This is a note. Use it for helpful hints and additional information."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "tip"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Writing documentation is like gardening. Tend to it regularly and it will flourish."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "important"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Pay attention to this critical information."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "warning"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Proceed with caution. This action may have unintended consequences."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "caution"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Risk of data loss. Backup your work before proceeding."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "admonition",
+                    "attrs": {
+                      "admonition_type": "danger"
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "High voltage. Do not open under any circumstances."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "chapter",
+                "attrs": {
+                  "title": "Code Examples",
+                  "xml_id": "ch5"
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Code blocks preserve formatting and can specify language for syntax highlighting."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "code_block",
+                    "attrs": {
+                      "language": "javascript"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "\n// A simple JavaScript example\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet('DocBook'));\n"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "code_block",
+                    "attrs": {
+                      "language": "python"
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "\n# Python example\ndef fibonacci(n):\n    \"\"\"Generate Fibonacci sequence up to n terms.\"\"\"\n    a, b = 0, 1\n    for _ in range(n):\n        yield a\n        a, b = b, a + b\n\nprint(list(fibonacci(10)))\n"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "appendix",
+            "attrs": {
+              "title": "Quick Reference",
+              "xml_id": "appendix-a"
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Common DocBook elements for everyday use."
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "attrs": {
+                  "title": "Text Formatting"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "titles",
+      "title": "DocBook Titles & Structure",
+      "author": "DocBook Community",
+      "description": "Demonstrates hierarchical document structure with parts, chapters, sections, and appendices. Shows how titles and cross-references work.",
+      "source": "fixtures/titles.json"
+    },
+    {
+      "id": "admonitions",
+      "title": "Admonitions Guide",
+      "author": "DocBook Community",
+      "description": "A reference guide showing all six admonition types: note, tip, important, caution, warning, and danger.",
+      "source": "fixtures/admonitions.json"
+    },
+    {
+      "id": "orderedlist",
+      "title": "Lists & Orderings",
+      "author": "DocBook Community",
+      "description": "Various list formats including ordered lists with different numbering styles and nested structures.",
+      "source": "fixtures/orderedlist.json"
+    }
+  ]
+}

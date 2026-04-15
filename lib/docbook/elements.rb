@@ -2,6 +2,9 @@
 
 module Docbook
   module Elements
+    # Concerns (must load before elements that use them)
+    autoload :HasNumber, "#{__dir__}/elements/concerns/has_number"
+
     # Structural elements
     autoload :Article, "#{__dir__}/elements/article"
     autoload :Book, "#{__dir__}/elements/book"
@@ -92,6 +95,23 @@ module Docbook
     autoload :BuildTarget, "#{__dir__}/elements/buildtarget"
     autoload :Dir, "#{__dir__}/elements/dir"
     autoload :Replaceable, "#{__dir__}/elements/replaceable"
+    autoload :Command, "#{__dir__}/elements/command"
+    autoload :Option, "#{__dir__}/elements/option"
+    autoload :Envar, "#{__dir__}/elements/envar"
+    autoload :Varname, "#{__dir__}/elements/varname"
+    autoload :Trademark, "#{__dir__}/elements/trademark"
+    autoload :Email, "#{__dir__}/elements/email"
+    autoload :Subscript, "#{__dir__}/elements/subscript"
+    autoload :Superscript, "#{__dir__}/elements/superscript"
+    autoload :KeyCap, "#{__dir__}/elements/keycap"
+    autoload :Application, "#{__dir__}/elements/application"
+    autoload :WordAsWord, "#{__dir__}/elements/wordasword"
+    autoload :Errorcode, "#{__dir__}/elements/errorcode"
+    autoload :Errortype, "#{__dir__}/elements/errortype"
+    autoload :Exceptionname, "#{__dir__}/elements/exceptionname"
+    autoload :Constant, "#{__dir__}/elements/constant"
+    autoload :Prompt, "#{__dir__}/elements/prompt"
+    autoload :Enumvalue, "#{__dir__}/elements/enumvalue"
 
     # Media elements
     autoload :MediaObject, "#{__dir__}/elements/mediaobject"
@@ -111,6 +131,7 @@ module Docbook
 
     # Table elements
     autoload :Table, "#{__dir__}/elements/table"
+    autoload :InformalTable, "#{__dir__}/elements/informaltable"
     autoload :TGroup, "#{__dir__}/elements/tgroup"
     autoload :THead, "#{__dir__}/elements/thead"
     autoload :TBody, "#{__dir__}/elements/tbody"
@@ -201,5 +222,6 @@ module Docbook
     autoload :RefEntryTitle, "#{__dir__}/elements/refentrytitle"
     autoload :RefMiscInfo, "#{__dir__}/elements/refmiscinfo"
     autoload :FieldSynopsis, "#{__dir__}/elements/fieldsynopsis"
+    autoload :Initializer, "#{__dir__}/elements/initializer"
   end
 end

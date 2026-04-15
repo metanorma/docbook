@@ -1,7 +1,7 @@
 <template>
   <section :id="section.id" class="mb-8 scroll-mt-20">
-    <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
-      <span v-if="numbering" class="text-gray-500 dark:text-gray-400 mr-2">{{ numbering }}</span>
+    <h3 class="section-content-heading text-lg font-semibold mb-3">
+      <span v-if="numbering" class="section-number mr-2">{{ numbering }}</span>
       {{ section.title }}
     </h3>
     <BlockRenderer v-if="sectionContent" :blocks="sectionContent.blocks" />
@@ -29,3 +29,13 @@ const documentStore = useDocumentStore()
 const numbering = computed(() => documentStore.getNumbering(props.section.id))
 const sectionContent = computed(() => documentStore.getSectionContent(props.section.id))
 </script>
+
+<style scoped>
+.section-content-heading {
+  color: var(--ebook-text);
+}
+
+.section-number {
+  color: var(--ebook-text-muted);
+}
+</style>

@@ -73,10 +73,14 @@ watch(
   { immediate: true }
 )
 
-// Theme application function - applies Tailwind dark class based on theme
+// Theme application function - applies theme class to <html> so CSS variables
+// cascade to all elements including Teleported modals
 function applyTheme() {
+  const html = document.documentElement
+  html.classList.remove('theme-day', 'theme-sepia', 'theme-night', 'theme-oled')
+  html.classList.add(`theme-${state.theme}`)
   const isDark = state.theme === 'night' || state.theme === 'oled'
-  document.documentElement.classList.toggle('dark', isDark)
+  html.classList.toggle('dark', isDark)
 }
 
 // Apply theme on load and when theme changes
