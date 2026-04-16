@@ -111,5 +111,5 @@ The file works offline because all CSS, JavaScript, and (with `data_url` strateg
 === See Also
 
 * link:../demo-command[demo] -- Build a demo reader from the bundled sample
-* link:../convert-command[convert] -- Convert to static HTML (no JavaScript)
+* link:../export-command[export] -- Export as DocbookMirror JSON
 * link:../../ruby-api/single-page[Ruby API: SinglePage] -- Programmatic reader generation

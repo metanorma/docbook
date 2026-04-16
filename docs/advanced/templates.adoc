@@ -30,87 +30,17 @@ The `<head>` section includes:
   font families.
 * **Custom styles** -- Inline `<style>` block with TOC active states,
   bibliography entry indentation, and appendix border styling.
-* **App CSS** -- Conditionally inlined or linked. When `assets_inline`
-  is true (single-file mode), the CSS is embedded in a `<style>` tag.
-  In directory mode, it is loaded from `assets/app.css`.
+* **App CSS** -- The compiled `app.css` from `frontend/dist/` embedded in a `<style>` tag.
 
-=== partials/_scripts.liquid
-
-Provides the document scripts:
+== Script Content
 
 * **Prism.js** -- Core library and autoloader plugin from cdnjs for
   syntax highlighting of code blocks.
-* **App JS** -- Conditionally inlined or linked. When `assets_inline`
-  is true, the JavaScript is embedded in a `<script>` tag. In directory
-  mode, it is loaded from `assets/app.iife.js`.
+* **App JS** -- The compiled `app.iife.js` from `frontend/dist/` embedded in a `<script>` tag.
 
-== Template variables
+== Data Injection
 
-The following variables are passed to the Liquid template by the Ruby
-HTML generator:
-
-[cols="1,1,4"]
-|===
-| Variable | Type | Description
-
-| `docbook_title`
-| String
-| The document title, extracted from the root element.
-
-| `base_url`
-| String
-| The base URL for asset references. `"."` in directory mode, `""`
-  in single-file mode.
-
-| `assets_inline`
-| Boolean
-| When true, CSS and JS are inlined. When false, they are linked.
-
-| `app_css`
-| String
-| The contents of `frontend/dist/app.css`.
-
-| `app_js`
-| String
-| The contents of `frontend/dist/app.iife.js`.
-|===
-
-== Placeholder tokens
-
-The main template uses four placeholder tokens that are replaced via
-Ruby string substitution (`gsub`) after Liquid rendering:
-
-`[[DOCBOOK_DATA]]`::
-Replaced with the `DocumentData` JSON (title only) in single-file mode,
-or `null /* loaded from docbook.data.json */` in directory mode.
-
-`[[DOCBOOK_TOC]]`::
-Replaced with the full TOC JSON (sections tree + numbering) in
-single-file mode, or `null` in directory mode.
-
-`[[DOCBOOK_CONTENT]]`::
-Replaced with the content data JSON (keyed by section ID) in
-single-file mode, or `null` in directory mode.
-
-`[[DOCBOOK_INDEX]]`::
-Replaced with the index data JSON (grouped by letter) in single-file
-mode, or `null` in directory mode.
-
-The use of string substitution rather than Liquid variables is
-intentional: the JSON payloads are large and may contain characters
-(like `{%`) that would conflict with Liquid's template syntax.
-
-== Output modes
-
-=== Single-file mode
+The DocbookMirror JSON data (including TOC, numbering, and index) is embedded directly into the HTML as `window.DOCBOOK_DATA`. The Vue SPA's `documentStore` reads this data synchronously on load. The `MirrorRenderer` component then renders the DocbookMirror nodes into the interactive reader.
 
 All data is embedded inline. The resulting HTML file is self-contained
-and can be opened directly in a browser without a web server. The
-JSON is injected into `window.DOCBOOK_DATA` using `Object.assign()`.
-
-=== Directory mode
-
-The JSON is written to `docbook.data.json`. The template placeholders
-are set to `null`, and the Vue SPA's `documentStore.loadFromWindow()`
-detects that inline data is absent and fetches the external JSON file
-instead. CSS and JS assets are linked from the `assets/` subdirectory.
+and can be opened directly in a browser without a web server.

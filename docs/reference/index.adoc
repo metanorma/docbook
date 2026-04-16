@@ -8,5 +8,5 @@ has_children: true
 # Reference
 
 This section contains quick-reference material for the Metanorma
-DocBook gem: CLI options, supported elements, content block types, and
-a glossary of key terms.
+DocBook gem: CLI options, supported elements, DocbookMirror JSON schema,
+and a glossary of key terms.

@@ -60,7 +60,7 @@ The `generate` method runs an 8-step pipeline:
 . **Transform to DocbookMirror** -- Convert parsed document to DocbookMirror JSON via `Mirror::Transformer`
 . **Attach metadata** -- Attach TOC, numbering, and index to the mirror output
 . **Resolve images** -- Process image paths via `Services::ImageResolver`
-. **Write HTML** -- Render the Liquid template with all data and write to disk
+. **Write HTML** -- Assemble the HTML with all data and assets inlined, write to disk
 
 === Complete Example
 
@@ -96,6 +96,6 @@ puts "Built interactive reader at output/guide.html"
 
 === See Also
 
-* link:../html-output[HTML Output] -- Static HTML generation (no JavaScript)
+* link:../html-output[HTML Output] -- Generating interactive HTML readers
 * link:../json-export[JSON Export] -- DocbookMirror JSON export
 * link:../../cli/build-command[CLI: build] -- Equivalent CLI command

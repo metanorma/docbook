@@ -21,7 +21,6 @@ The gem has the following runtime requirements:
 | *Nokogiri* | XML parsing library (installed automatically as a dependency)
 | *lutaml-model* | Declarative XML-to-Ruby object mapping (`~> 0.8.0`, installed automatically)
 | *Thor* | CLI framework (installed automatically)
-| *Liquid* | Template engine for HTML generation (`~> 5.0`, installed automatically)
 | *Marcel* | MIME type detection for image embedding (installed automatically)
 |===
 
