@@ -74,12 +74,10 @@ You should see output listing the available commands:
 [source]
 ----
 Commands:
-  docbook build INPUT        # Build an interactive HTML reader from DocBook XML
-  docbook demo               # Build a demo reader from the bundled sample
+  docbook build [INPUT]      # Build an interactive HTML reader from DocBook XML
   docbook export INPUT       # Export DocBook XML as DocbookMirror JSON
   docbook format INPUT       # Format/prettify DocBook XML
   docbook help [COMMAND]     # Describe available commands or one specific command
-  docbook roundtrip INPUT... # Round-trip test DocBook XML files
   docbook validate INPUT     # Validate DocBook XML
 ----
 

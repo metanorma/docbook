@@ -7,6 +7,37 @@ require "tempfile"
 RSpec.describe Docbook::CLI do
   let(:sample_xml) { File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml") }
 
+  describe "build" do
+    let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
+
+    it "builds an interactive HTML reader" do
+      Tempfile.create(["test", ".html"]) do |out|
+        expect { described_class.start(["build", guide_xml, "-o", out.path]) }.to output(/Built/).to_stdout
+        content = File.read(out.path)
+        expect(content).to include("<!DOCTYPE html>")
+        expect(content).to include("window.DOCBOOK_DATA")
+      end
+    end
+
+    it "derives output path from input when -o is omitted" do
+      input = File.expand_path(guide_xml)
+      expected_output = input.sub(/\.xml$/, ".html")
+
+      expect { described_class.start(["build", input]) }.to output(/Built/).to_stdout
+      expect(File.exist?(expected_output)).to be true
+      FileUtils.rm_f(expected_output)
+    end
+
+    it "builds from --demo fixture" do
+      Tempfile.create(["demo", ".html"]) do |out|
+        expect { described_class.start(["build", "--demo", "-o", out.path]) }.to output(/Built/).to_stdout
+        content = File.read(out.path)
+        expect(content).to include("<!DOCTYPE html>")
+        expect(content).to include("window.DOCBOOK_DATA")
+      end
+    end
+  end
+
   describe "validate" do
     it "validates well-formed XML" do
       Tempfile.create(["test", ".xml"]) do |f|

@@ -63,8 +63,16 @@ The `build` command creates a self-contained interactive HTML reader from a DocB
 
 [source,bash]
 ----
-$ docbook build book.xml -o book.html
+$ docbook build book.xml
 Built /path/to/book.html
+----
+
+The output path defaults to `<input>.html`. To specify a custom path:
+
+[source,bash]
+----
+$ docbook build book.xml -o output.html
+Built /path/to/output.html
 ----
 
 This produces a single HTML file with all assets (CSS, JavaScript, images) embedded inline. The reader includes a sidebar table of contents, full-text search, and 4 color themes.
@@ -73,7 +81,7 @@ For web hosting where images are served separately:
 
 [source,bash]
 ----
-$ docbook build book.xml -o book.html --image-strategy relative
+$ docbook build book.xml --image-strategy relative
 Built /path/to/book.html
 ----
 
@@ -81,15 +89,15 @@ To skip XInclude resolution:
 
 [source,bash]
 ----
-$ docbook build article.xml -o article.html --no-xinclude
+$ docbook build article.xml --no-xinclude
 ----
 
 Or try the bundled demo:
 
 [source,bash]
 ----
-$ docbook demo -o demo.html
-Built demo at /path/to/demo.html
+$ docbook build --demo
+Built /path/to/demo.html
 ----
 
 === 3. Export as JSON

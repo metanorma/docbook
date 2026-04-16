@@ -8,13 +8,13 @@ has_children: true
 
 == CLI Reference
 
-The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides five commands for working with DocBook XML files.
+The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides four commands for working with DocBook XML files.
 
 === Global Behavior
 
 The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry point). All commands follow a consistent pattern:
 
-* Accept an `INPUT` file path as the primary argument (except `demo`)
+* Accept an `INPUT` file path as the primary argument
 * Support common options like `--output` / `-o` for specifying output destinations
 * Exit with code 0 on success and code 1 on failure
 * Print error messages to stderr and informational messages to stdout
@@ -25,12 +25,10 @@ The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry 
 |===
 | Command | Since | Description
 
-| `build` | 0.1.0 | Build an interactive HTML reader from DocBook XML (self-contained, works offline)
+| `build` | 0.1.0 | Build an interactive HTML reader from DocBook XML (self-contained, works offline). Use `--demo` to try the bundled sample.
 | `export` | 0.1.0 | Export DocBook XML as DocbookMirror JSON (ProseMirror-compatible)
 | `validate` | 0.1.0 | Validate DocBook XML against RELAX NG schema
 | `format` | 0.1.0 | Reformat and prettify DocBook XML
-| `demo` | 0.1.0 | Build a demo reader from the bundled sample
-| `roundtrip` | 0.1.0 | Round-trip test XML files (development)
 |===
 
 === Getting Help
@@ -41,10 +39,11 @@ Each command has built-in help accessible via `docbook help COMMAND`:
 ----
 $ docbook help build
 Commands:
-  docbook build INPUT  # Build an interactive HTML reader from DocBook XML
+  docbook build [INPUT]  # Build an interactive HTML reader from DocBook XML
 
 Options:
-  -o, --output=OUTPUT                # Output HTML file path (required)
+  -o, --output=OUTPUT                # Output HTML file path
+      --demo                         # Build using the bundled DocBook sample
       --xinclude=XINCLUDE            # Resolve XIncludes before processing
                                        # Default: true
       --image-search-dir=DIR [...]   # Directories to search for images
@@ -61,7 +60,6 @@ Select a command for detailed usage instructions, options, and examples:
 * link:export-command[export] -- Export as DocbookMirror JSON
 * link:validate-command[validate] -- Validate DocBook XML
 * link:format-command[format] -- Format DocBook XML
-* link:demo-command[demo] -- Build the demo reader
 * link:roundtrip-command[roundtrip] -- Round-trip test (development)
 
 === Exit Codes

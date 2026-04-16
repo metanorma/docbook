@@ -66,9 +66,9 @@ and generator version.
 === Docbook::CLI
 
 A Thor-based command-line interface that provides the `build`,
-`export`, `validate`, `format`, `demo`, and `roundtrip`
-commands. It wires together the parsing, resolution, and output modules
-based on user options.
+`export`, `validate`, and `format` commands (plus `--demo` on `build`
+for the bundled sample). It wires together the parsing, resolution, and
+output modules based on user options.
 
 == Data flow
 

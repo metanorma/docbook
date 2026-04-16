@@ -37,16 +37,23 @@ Build an interactive reader from any DocBook XML:
 
 [source,bash]
 ----
-$ docbook build guide.xml -o guide.html
+$ docbook build guide.xml
 ----
 
-Open `guide.html` in a browser -- it works offline with no server required.
+This produces `guide.html` in the same directory. Open it in a browser -- it works offline with no server required.
+
+Specify a custom output path:
+
+[source,bash]
+----
+$ docbook build guide.xml -o output.html
+----
 
 Try the bundled demo:
 
 [source,bash]
 ----
-$ docbook demo -o demo.html
+$ docbook build --demo
 ----
 
 === Ruby API
@@ -76,7 +83,7 @@ File.write('guide.json', json)
 |Command |Description
 
 |`build`
-|Build an interactive HTML reader from DocBook XML
+|Build an interactive HTML reader from DocBook XML. Pass `--demo` for the bundled sample.
 
 |`export`
 |Export as DocbookMirror JSON
@@ -86,12 +93,6 @@ File.write('guide.json', json)
 
 |`format`
 |Format/prettify DocBook XML
-
-|`demo`
-|Build a demo reader from the bundled sample
-
-|`roundtrip`
-|Round-trip test DocBook XML files
 |===
 
 === build
@@ -101,12 +102,14 @@ that works offline (CSS, JS, and images are all inlined).
 
 [source,bash]
 ----
-$ docbook build INPUT -o OUTPUT [options]
+$ docbook build [INPUT] [options]
+$ docbook build --demo [options]
 ----
 
 Options:
 
-* `-o, --output FILE` (required) -- Output HTML file path
+* `-o, --output FILE` -- Output HTML file path (default: `<input>.html` or `demo.html`)
+* `--demo` -- Use the bundled DocBook sample as input
 * `--image-search-dir DIR` -- Directories to search for images (default: XML file directory)
 * `--image-strategy STRATEGY` -- Image handling: `data_url` (default), `file_url`, or `relative`
 * `--title TITLE` -- Page title (default: derived from document)
@@ -116,23 +119,20 @@ Examples:
 
 [source,bash]
 ----
-# Basic
-$ docbook build book.xml -o book.html
+# Basic (output defaults to book.html)
+$ docbook build book.xml
+
+# Custom output path
+$ docbook build book.xml -o output.html
 
 # With custom image paths
-$ docbook build book.xml -o book.html --image-search-dir media/ images/
+$ docbook build book.xml --image-search-dir media/ images/
 
 # For web hosting (external image files)
-$ docbook build book.xml -o book.html --image-strategy relative
-----
+$ docbook build book.xml --image-strategy relative
 
-=== demo
-
-Build a demo reader from the bundled DocBook sample:
-
-[source,bash]
-----
-$ docbook demo -o demo.html
+# Bundled demo
+$ docbook build --demo
 ----
 
 === export
@@ -369,9 +369,10 @@ CLI Commands:
 
 [source]
 ----
-  docbook build    INPUT -o out.html   →  SinglePage (Vue SPA bundled)
-  docbook export   INPUT -o out.json   →  DocbookMirror JSON
-  docbook validate INPUT               →  RELAX NG schema validation
+  docbook build    [INPUT] [-o out.html]  →  SinglePage (Vue SPA bundled)
+  docbook build    --demo                 →  Demo from bundled sample
+  docbook export   INPUT [-o out.json]    →  DocbookMirror JSON
+  docbook validate INPUT                  →  RELAX NG schema validation
 ----
 
 Key relationships:

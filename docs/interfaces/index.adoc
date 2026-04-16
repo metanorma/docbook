@@ -28,17 +28,16 @@ The `docbook` gem provides two complementary interfaces for working with DocBook
 
 ==== Command-Line Interface
 
-The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides five commands:
+The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides four commands:
 
 [cols="2,5"]
 |===
 | Command | Description
 
-| `docbook build INPUT` | Build an interactive HTML reader
+| `docbook build [INPUT]` | Build an interactive HTML reader. Pass `--demo` for the bundled sample.
 | `docbook export INPUT` | Export as DocbookMirror JSON
 | `docbook validate INPUT` | Validate DocBook XML
 | `docbook format INPUT` | Prettify DocBook XML
-| `docbook demo` | Build the bundled demo reader
 |===
 
 All commands accept file paths as arguments. The CLI handles XInclude resolution, cross-reference resolution, and output generation automatically.

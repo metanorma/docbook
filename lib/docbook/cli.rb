@@ -6,25 +6,28 @@ require "fileutils"
 
 module Docbook
   class CLI < Thor
-    desc "build INPUT", "Build an interactive HTML reader from DocBook XML"
-    option :output, aliases: "-o", required: true, desc: "Output HTML file path"
+    desc "build [INPUT]", "Build an interactive HTML reader from DocBook XML"
+    option :output, aliases: "-o", desc: "Output HTML file path (default: <input>.html or demo.html with --demo)"
+    option :demo, type: :boolean, desc: "Build using the bundled DocBook sample"
     option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
     option :image_search_dir, type: :array, desc: "Directories to search for images"
     option :image_strategy, default: "data_url", desc: "Image resolution: data_url, file_url, or relative"
     option :title, desc: "Page title (default: derived from document)"
-    def build(input)
-      xml_path = File.expand_path(input)
-      output_path = File.expand_path(options[:output])
+    def build(input = nil)
+      xml_path, output_path, search_dirs, title = if options[:demo]
+                                                    build_demo_params
+                                                  else
+                                                    abort "INPUT is required (or use --demo for the bundled sample)" unless input
 
-      search_dirs = (options[:image_search_dir] || []).map { |d| File.expand_path(d) }
-      search_dirs << File.dirname(xml_path) if search_dirs.empty?
+                                                    build_file_params(input)
+                                                  end
 
       page = Docbook::Output::SinglePage.new(
         xml_path: xml_path,
         output_path: output_path,
         image_search_dirs: search_dirs,
         image_strategy: options[:image_strategy].to_sym,
-        title: options[:title] || File.basename(xml_path, ".xml")
+        title: title
       )
 
       page.generate
@@ -92,30 +95,9 @@ module Docbook
       end
     end
 
-    desc "demo", "Build a demo reader from the bundled DocBook sample"
-    option :output, aliases: "-o", default: "demo.html", desc: "Output HTML file path"
-    def demo
-      fixture_xml = File.expand_path("../../spec/fixtures/xslTNG/guide/xml/guide.xml", __dir__)
-      media_dir = File.expand_path("../../spec/fixtures/xslTNG/guide/resources/media", __dir__)
-      output_path = File.expand_path(options[:output])
+    # ---- Development commands (hidden from help) ----
 
-      abort "Demo fixture not found: #{fixture_xml}" unless File.exist?(fixture_xml)
-
-      page = Docbook::Output::SinglePage.new(
-        xml_path: fixture_xml,
-        output_path: output_path,
-        image_search_dirs: [media_dir],
-        image_strategy: :data_url,
-        title: "DocBook XSLT 2.0 Stylesheet Reference"
-      )
-
-      page.generate
-      puts "Built demo at #{output_path}"
-    end
-
-    # ---- Development commands ----
-
-    desc "roundtrip INPUT...", "Round-trip test DocBook XML files"
+    desc "roundtrip INPUT...", "Round-trip test DocBook XML files", hide: true
     def roundtrip(*inputs)
       failures = 0
       inputs.each do |input|
@@ -169,6 +151,33 @@ module Docbook
 
     def input_xinclude?(doc)
       doc.root.namespace_definitions.any? { |ns| ns.href == "http://www.w3.org/2001/XInclude" }
+    end
+
+    def build_demo_params
+      fixture_xml = File.expand_path("../../spec/fixtures/xslTNG/guide/xml/guide.xml", __dir__)
+      abort "Demo fixture not found: #{fixture_xml}" unless File.exist?(fixture_xml)
+
+      xml_dir = File.dirname(fixture_xml)
+      resources_dir = File.join(xml_dir, "..", "resources")
+
+      output_path = File.expand_path(options[:output] || "demo.html")
+      title = options[:title] || "DocBook XSLT 2.0 Stylesheet Reference"
+
+      [fixture_xml, output_path, [resources_dir], title]
+    end
+
+    def build_file_params(input)
+      xml_path = File.expand_path(input)
+      output_path = File.expand_path(options[:output] || derive_output_path(input))
+      search_dirs = (options[:image_search_dir] || []).map { |d| File.expand_path(d) }
+      title = options[:title] || File.basename(xml_path, ".xml")
+
+      [xml_path, output_path, search_dirs, title]
+    end
+
+    def derive_output_path(input)
+      base = File.basename(input, ".*")
+      File.join(File.dirname(File.expand_path(input)), "#{base}.html")
     end
   end
 end
