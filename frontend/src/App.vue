@@ -26,27 +26,9 @@
 
       <div class="px-6 py-10 lg:px-8 lg:py-12 mx-auto" :style="{ maxWidth: '72rem', margin: '0 auto' }">
         <!-- DocbookMirror format (ProseMirror-style) -->
-        <div v-if="documentStore.hasMirrorFormat" class="db-content">
-          <MirrorRenderer v-if="documentStore.mirrorDocument" :blocks="documentStore.mirrorDocument.content || []" />
+        <div v-if="documentStore.mirrorDocument" class="db-content">
+          <MirrorRenderer :blocks="documentStore.mirrorDocument.content || []" />
         </div>
-
-        <!-- Legacy format -->
-        <template v-else>
-          <!-- Article content (no sections) -->
-          <div v-if="!hasSections" class="db-content">
-            <BlockRenderer v-if="articleContent" :blocks="articleContent.blocks" />
-          </div>
-
-          <!-- Section content -->
-          <template v-else>
-            <div v-for="section in documentStore.sections" :key="section.id">
-              <ChapterSection v-if="section.type === 'chapter'" :section="section" />
-              <AppendixSection v-else-if="section.type === 'appendix'" :section="section" />
-              <PartSection v-else-if="section.type === 'part'" :section="section" />
-              <SectionContent v-else :section="section" />
-            </div>
-          </template>
-        </template>
 
         <!-- Footer -->
         <footer class="app-footer mt-16 pt-8 border-t text-center text-sm">
@@ -73,11 +55,6 @@ import { useEbookStore } from '@/composables/useEbookStore'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
-import ChapterSection from '@/components/ChapterSection.vue'
-import AppendixSection from '@/components/AppendixSection.vue'
-import PartSection from '@/components/PartSection.vue'
-import SectionContent from '@/components/SectionContent.vue'
-import BlockRenderer from '@/components/BlockRenderer.vue'
 import MirrorRenderer from '@/components/MirrorRenderer.vue'
 import EbookTopBar from '@/components/EbookTopBar.vue'
 import EbookContainer from '@/components/EbookContainer.vue'
@@ -92,11 +69,6 @@ const mainContent = ref<HTMLElement | null>(null)
 function toggleToc() {
   uiStore.toggleSidebar()
 }
-
-const hasSections = computed(() => documentStore.sections && documentStore.sections.length > 0)
-
-// Article content for documents without sections
-const articleContent = computed(() => documentStore.getSectionContent('article-content'))
 
 // Build ancestor chain for breadcrumb
 const ancestorChain = computed(() => {

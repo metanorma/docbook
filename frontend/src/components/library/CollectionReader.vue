@@ -34,25 +34,9 @@
     <main ref="mainContent" class="reader-content" @scroll="handleScroll">
       <div class="reader-content__inner">
         <!-- DocbookMirror format -->
-        <div v-if="documentStore.hasMirrorFormat" class="db-content">
-          <MirrorRenderer v-if="documentStore.mirrorDocument" :blocks="documentStore.mirrorDocument.content || []" />
+        <div v-if="documentStore.mirrorDocument" class="db-content">
+          <MirrorRenderer :blocks="documentStore.mirrorDocument.content || []" />
         </div>
-
-        <!-- Legacy format -->
-        <template v-else>
-          <div v-if="!hasSections" class="db-content">
-            <BlockRenderer v-if="articleContent" :blocks="articleContent.blocks" />
-          </div>
-
-          <template v-else>
-            <div v-for="section in documentStore.sections" :key="section.id">
-              <ChapterSection v-if="section.type === 'chapter'" :section="section" />
-              <AppendixSection v-else-if="section.type === 'appendix'" :section="section" />
-              <PartSection v-else-if="section.type === 'part'" :section="section" />
-              <SectionContent v-else :section="section" />
-            </div>
-          </template>
-        </template>
 
         <!-- Footer -->
         <footer class="reader-footer">
@@ -64,26 +48,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useCollectionStore } from '@/stores/collectionStore'
 import { useDocumentStore } from '@/stores/documentStore'
 import { useEbookStore } from '@/composables/useEbookStore'
 import EbookContainer from '@/components/EbookContainer.vue'
 import MirrorRenderer from '@/components/MirrorRenderer.vue'
-import BlockRenderer from '@/components/BlockRenderer.vue'
-import ChapterSection from '@/components/ChapterSection.vue'
-import AppendixSection from '@/components/AppendixSection.vue'
-import PartSection from '@/components/PartSection.vue'
-import SectionContent from '@/components/SectionContent.vue'
 
 const collectionStore = useCollectionStore()
 const documentStore = useDocumentStore()
 const ebookStore = useEbookStore()
 const mainContent = ref<HTMLElement | null>(null)
 const isDark = ref(false)
-
-const hasSections = computed(() => documentStore.sections && documentStore.sections.length > 0)
-const articleContent = computed(() => documentStore.getSectionContent('article-content'))
 
 watch(() => collectionStore.currentBookId, async (bookId) => {
   if (bookId) {
@@ -97,14 +73,12 @@ async function loadBook() {
 
   isDark.value = document.documentElement.classList.contains('dark')
 
-  // Check if book has inline data first
   if (book.data) {
     ;(window as any).DOCBOOK_DATA = book.data
     documentStore.loadFromWindow()
     return
   }
 
-  // Otherwise try to fetch from source
   if (book.source && (book.source.startsWith('http') || book.source.startsWith('/'))) {
     try {
       const res = await fetch(book.source)

@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick } from 'vue'
-import { useDocumentStore, type TocItem, type ContentBlock } from '@/stores/documentStore'
+import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import FlexSearch from 'flexsearch'
 
@@ -127,56 +127,6 @@ function addToIndex(items: TocItem[]) {
   })
 }
 
-function extractTextFromBlocks(blocks: ContentBlock[]): string {
-  return blocks.map(block => {
-    let text = block.text || ''
-    if (block.children) {
-      text += ' ' + extractTextFromBlocks(block.children)
-    }
-    return text
-  }).join(' ')
-}
-
-function searchContent(query: string): SearchResult[] {
-  const content = documentStore.content
-  const searchResults: SearchResult[] = []
-  const lowerQuery = query.toLowerCase()
-
-  for (const [id, sectionContent] of Object.entries(content)) {
-    const text = extractTextFromBlocks(sectionContent.blocks || []).toLowerCase()
-    if (text.includes(lowerQuery)) {
-      // Find the snippet around the match
-      const matchPos = text.indexOf(lowerQuery)
-      const start = Math.max(0, matchPos - 50)
-      const end = Math.min(text.length, matchPos + query.length + 100)
-      let snippet = extractTextFromBlocks(sectionContent.blocks || []).substring(start, end)
-      if (start > 0) snippet = '...' + snippet
-      if (end < text.length) snippet = snippet + '...'
-
-      // Get section info from TOC
-      const section = findSection(documentStore.sections, id)
-      searchResults.push({
-        id,
-        title: section?.title || id,
-        type: (section?.type || 'section') as SearchResult['type'],
-        snippet
-      })
-    }
-  }
-  return searchResults
-}
-
-function findSection(items: TocItem[], id: string): TocItem | null {
-  for (const item of items) {
-    if (item.id === id) return item
-    if (item.children && item.children.length > 0) {
-      const found = findSection(item.children, id)
-      if (found) return found
-    }
-  }
-  return null
-}
-
 function search() {
   if (!searchQuery.value.trim()) {
     results.value = []
@@ -185,10 +135,9 @@ function search() {
 
   isSearching.value = true
 
-  // Search titles with FlexSearch
   const searchResults = index.search(searchQuery.value, { limit: 30, enrich: true })
 
-  const titleResults: Map<string, TocItem> = new Map()
+  const combined: SearchResult[] = []
   const seen = new Set<string>()
 
   if (Array.isArray(searchResults)) {
@@ -197,36 +146,17 @@ function search() {
         field.result.forEach((r: { id: string; doc?: TocItem }) => {
           if (r.doc && !seen.has(r.id)) {
             seen.add(r.id)
-            titleResults.set(r.id, r.doc)
+            combined.push({
+              id: r.doc.id,
+              title: r.doc.title,
+              type: r.doc.type,
+              children: r.doc.children
+            })
           }
         })
       }
     })
   }
-
-  // Search full content
-  const contentResults = searchContent(searchQuery.value)
-
-  // Combine results, prioritizing title matches
-  const combined: SearchResult[] = []
-
-  // First add title matches
-  titleResults.forEach((tocItem) => {
-    combined.push({
-      id: tocItem.id,
-      title: tocItem.title,
-      type: tocItem.type,
-      children: tocItem.children
-    })
-  })
-
-  // Then add content-only matches
-  contentResults.forEach((cr) => {
-    if (!seen.has(cr.id)) {
-      seen.add(cr.id)
-      combined.push(cr)
-    }
-  })
 
   results.value = combined.slice(0, 50)
   isSearching.value = false
@@ -241,7 +171,7 @@ watch(searchQuery, () => {
 
 // Watch for document data changes to rebuild indexes
 watch(
-  () => documentStore.documentData,
+  () => documentStore.mirrorDocument,
   () => {
     buildIndexes()
   },

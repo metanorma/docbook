@@ -2,8 +2,6 @@
 
 require "docbook"
 require "docbook/mirror"
-require "canon"
-require "canon/rspec_matchers"
 
 require_relative "support/shared_examples"
 
@@ -17,6 +15,4 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
-
-  config.include Canon::RSpecMatchers
 end

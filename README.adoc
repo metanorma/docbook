@@ -71,21 +71,15 @@ File.write('guide.json', json)
 
 == CLI reference
 
-[cols="1,4,1"]
+[cols="1,4"]
 |===
-|Command |Description |Aliases
+|Command |Description
 
 |`build`
 |Build an interactive HTML reader from DocBook XML
-|`to-single-page` (deprecated)
-
-|`convert`
-|Convert DocBook XML to static HTML
-|`to-html` (deprecated)
 
 |`export`
 |Export as DocbookMirror JSON
-|`to-docbook-mirror` (deprecated)
 
 |`validate`
 |Validate DocBook XML against RELAX NG schema
@@ -139,15 +133,6 @@ Build a demo reader from the bundled DocBook sample:
 [source,bash]
 ----
 $ docbook demo -o demo.html
-----
-
-=== convert
-
-Convert DocBook XML to static HTML (no JavaScript, no interactivity):
-
-[source,bash]
-----
-$ docbook convert INPUT -o OUTPUT [options]
 ----
 
 === export
@@ -308,18 +293,19 @@ After building, `docbook build` automatically includes the compiled assets.
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │                        Output Layer                               │  │
 │  │                                                                   │  │
-│  │  ┌──────────────────┐  ┌────────────────────┐  ┌──────────────┐   │  │
-│  │  │  Output::Html    │  │  Output::SinglePage│  │ Output::Data │   │  │
-│  │  │                  │  │                    │  │              │   │  │
-│  │  │ XML→HTML via     │  │ Html + Vue SPA     │  │ Structured   │   │  │
-│  │  │ Liquid templates │  │ bundled into one   │  │ JSON output  │   │  │
-│  │  │ (convert cmd)    │  │ .html (build cmd)  │  │              │   │  │
-│  │  └────────┬─────────┘  └──────────┬─────────┘  └──────────────┘   │  │
-│  │           │                       │                               │  │
-│  └───────────┼───────────────────────┼───────────────────────────────┘  │
-│              │                       │                                  │
-│  ┌───────────┼───────────────────────┼───────────────────────────────┐  │
-│  │           ▼                       ▼                               │  │
+│  │  ┌──────────────────┐  ┌──────────────────────────────────────┐  │  │
+│  │  │  Output::Single  │  │  Output::DocbookMirror               │  │  │
+│  │  │  Page            │  │                                      │  │  │
+│  │  │                  │  │  Docbook Element objects →            │  │  │
+│  │  │  Bundles Vue SPA │  │  ProseMirror-compatible JSON         │  │  │
+│  │  │  + DocbookMirror │  │  (doc > nodes > text, with marks)    │  │  │
+│  │  │  into one .html  │  │                                      │  │  │
+│  │  └────────┬─────────┘  └──────────────────────────────────────┘  │  │
+│  │           │                                                       │  │
+│  └───────────┼───────────────────────────────────────────────────────┘  │
+│              │                                                          │
+│  ┌───────────┼───────────────────────────────────────────────────────┐  │
+│  │           ▼                                                       │  │
 │  │  ┌─────────────────────────────────────────────────────────────┐  │  │
 │  │  │             DocbookMirror (Mirror::Transformer)             │  │  │
 │  │  │                                                             │  │  │
@@ -349,23 +335,19 @@ After building, `docbook build` automatically includes the compiled assets.
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │                      Pinia Stores                                │  │
-│  │  • documentStore  (document data, TOC, numbering, content)       │  │
+│  │  • documentStore  (document data, TOC, numbering)                │  │
 │  │  • uiStore        (sidebar, search, active section state)        │  │
 │  │  • ebookStore     (themes, settings)                             │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 │                                                                        │
-│  ┌──────────────────────┐    ┌──────────────────────────────────────┐  │
-│  │  Legacy Path         │    │  DocbookMirror Path (preferred)      │  │
-│  │                      │    │                                      │  │
-│  │  BlockRenderer.vue   │    │  MirrorRenderer.vue                  │  │
-│  │  SectionContent.vue  │    │  ├─ doc, section, chapter, appendix  │  │
-│  │  ChapterSection.vue  │    │  │  part, reference, refentry        │  │
-│  │  AppendixSection.vue │    │  ├─ paragraph, heading, code_block   │  │
-│  │  PartSection.vue     │    │  │  list, table, blockquote, image   │  │
-│  │  TextRenderer.vue    │    │  │  admonition, footnote             │  │
-│  │                      │    │  └─ text nodes with marks (emphasis, │  │
-│  │                      │    │     code, link, xref, citation...)   │  │
-│  └──────────────────────┘    └──────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │  MirrorRenderer.vue + TextRenderer.vue                           │  │
+│  │  Renders DocbookMirror JSON:                                      │  │
+│  │  ├─ doc, section, chapter, appendix, part, reference, refentry   │  │
+│  │  ├─ paragraph, heading, code_block, list, table, blockquote      │  │
+│  │  ├─ image, admonition, footnote                                  │  │
+│  │  └─ text nodes with marks (emphasis, code, link, xref, citation) │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │  UI Shell                                                        │  │
@@ -388,7 +370,6 @@ CLI Commands:
 [source]
 ----
   docbook build    INPUT -o out.html   →  SinglePage (Vue SPA bundled)
-  docbook convert  INPUT -o out.html   →  Static HTML via Liquid templates
   docbook export   INPUT -o out.json   →  DocbookMirror JSON
   docbook validate INPUT               →  RELAX NG schema validation
 ----
@@ -403,9 +384,8 @@ DocbookMirror::  A ProseMirror-compatible intermediate JSON format. The Ruby
                  Mirror::Transformer walks Docbook element objects and produces
                  a {doc: {content: [nodes]}} tree with typed nodes and marks.
 
-Vue SPA::        Has two rendering paths: legacy BlockRenderer for older
-                 HTML-based data, and MirrorRenderer for DocbookMirror JSON.
-                 The mirror path is the preferred/active one.
+Vue SPA::        Renders DocbookMirror JSON via MirrorRenderer and TextRenderer
+                 components. The data is embedded as window.DOCBOOK_DATA.
 
 SinglePage::     Bundles the Vue SPA build artifacts inline into a single HTML
                  file, with DocbookMirror JSON embedded as window.DOCBOOK_DATA

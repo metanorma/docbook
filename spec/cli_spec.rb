@@ -76,20 +76,6 @@ RSpec.describe Docbook::CLI do
     end
   end
 
-  describe "convert (to-html)" do
-    let(:frontend_css) { File.join(__dir__, "..", "frontend", "dist", "app.css") }
-
-    it "converts to HTML" do
-      skip "Frontend not built (missing frontend/dist/app.css)" unless File.exist?(frontend_css)
-
-      Tempfile.create(["test", ".xml"]) do |f|
-        f.write(sample_xml)
-        f.flush
-        expect { described_class.start(["convert", f.path]) }.to output(/<!DOCTYPE html>/).to_stdout
-      end
-    end
-  end
-
   describe "roundtrip" do
     it "round-trips valid DocBook files" do
       Tempfile.create(["test", ".xml"]) do |f|

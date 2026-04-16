@@ -6,8 +6,6 @@ require "fileutils"
 
 module Docbook
   class CLI < Thor
-    # ---- Primary commands (user-facing) ----
-
     desc "build INPUT", "Build an interactive HTML reader from DocBook XML"
     option :output, aliases: "-o", required: true, desc: "Output HTML file path"
     option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
@@ -31,33 +29,6 @@ module Docbook
 
       page.generate
       puts "Built #{output_path}"
-    end
-
-    desc "convert INPUT", "Convert DocBook XML to static HTML"
-    option :output, aliases: "-o", desc: "Output file or directory"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
-    option :output_type, default: :single_file, desc: "Output type: single_file or directory"
-    def convert(input)
-      xml_string = read_input(input, options[:xinclude])
-      parsed = parse_input(xml_string)
-      xref_resolver = Docbook::XrefResolver.new(parsed).resolve!
-      base_path = File.dirname(File.expand_path(input))
-      output_mode = options[:output_type].to_sym
-      output_path = if output_mode == :directory && options[:output]
-                      File.expand_path(options[:output])
-                    elsif output_mode == :single_file && options[:output]
-                      File.dirname(File.expand_path(options[:output]))
-                    end
-
-      html = Docbook::Output::Html.new(
-        parsed,
-        xref_resolver: xref_resolver,
-        output_mode: output_mode,
-        base_path: base_path,
-        output_path: output_path
-      ).to_html
-
-      write_output(html, options[:output], output_mode)
     end
 
     desc "export INPUT", "Export DocBook XML as DocbookMirror JSON"
@@ -113,7 +84,12 @@ module Docbook
       xml_string = read_input(input, options[:xinclude])
       parsed = parse_input(xml_string)
       output = parsed.to_xml(pretty: true, declaration: true, encoding: "utf-8")
-      write_output(output, options[:output], :single_file)
+      if options[:output]
+        File.write(options[:output], output)
+        puts "Written to #{options[:output]}"
+      else
+        $stdout.write(output)
+      end
     end
 
     desc "demo", "Build a demo reader from the bundled DocBook sample"
@@ -158,45 +134,11 @@ module Docbook
       exit 1 if failures.positive?
     end
 
-    # ---- Backward-compatible aliases (hidden) ----
-    # These map the old command names to the new ones.
-
-    desc "to-html INPUT", "Alias for 'convert'", hide: true
-    option :output, aliases: "-o", desc: "Output file or directory"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes"
-    option :output_type, default: :single_file, desc: "Output type"
-    def to_html(input)
-      warn "[DEPRECATED] Use 'docbook convert' instead of 'docbook to-html'"
-      convert(input)
-    end
-
-    desc "to-single-page INPUT", "Alias for 'build'", hide: true
-    option :output, aliases: "-o", required: true, desc: "Output HTML file"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes"
-    option :image_search_dir, type: :array, desc: "Image search directories"
-    option :image_strategy, default: "data_url", desc: "Image strategy"
-    option :title, desc: "Page title"
-    def to_single_page(input)
-      warn "[DEPRECATED] Use 'docbook build' instead of 'docbook to-single-page'"
-      build(input)
-    end
-
-    desc "to-docbook-mirror INPUT", "Alias for 'export'", hide: true
-    option :output, aliases: "-o", desc: "Output file"
-    option :pretty, type: :boolean, default: true, desc: "Pretty print"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes"
-    def to_docbook_mirror(input)
-      warn "[DEPRECATED] Use 'docbook export' instead of 'docbook to-docbook-mirror'"
-      export(input)
-    end
-
     def self.exit_on_failure?
       true
     end
 
     private
-
-    FRONTEND_ROOT = File.expand_path("../../frontend/dist", __dir__)
 
     def read_input(input, resolve_xinclude = false)
       xml_string = File.read(input)
@@ -227,27 +169,6 @@ module Docbook
 
     def input_xinclude?(doc)
       doc.root.namespace_definitions.any? { |ns| ns.href == "http://www.w3.org/2001/XInclude" }
-    end
-
-    def write_output(content, output_path, output_type)
-      if output_type == :directory
-        raise ArgumentError, "Output path required for directory mode" unless output_path
-
-        FileUtils.mkdir_p(output_path)
-        File.write(File.join(output_path, "index.html"), content)
-
-        assets_dir = File.join(output_path, "assets")
-        FileUtils.mkdir_p(assets_dir)
-        FileUtils.cp(File.join(FRONTEND_ROOT, "app.css"), File.join(assets_dir, "app.css"))
-        FileUtils.cp(File.join(FRONTEND_ROOT, "app.iife.js"), File.join(assets_dir, "app.iife.js"))
-
-        puts "Written to #{File.join(output_path, "index.html")} and assets/"
-      elsif output_path
-        File.write(output_path, content)
-        puts "Written to #{output_path}"
-      else
-        $stdout.write(content)
-      end
     end
   end
 end
