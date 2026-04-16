@@ -10,7 +10,10 @@ RSpec.describe "xslTNG test fixtures" do
 
     # Detect root element via Nokogiri
     input = File.read(file, encoding: "bom|utf-8")
-    input = input.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?") unless input.valid_encoding?
+    unless input.valid_encoding?
+      input = input.encode("UTF-8", invalid: :replace, undef: :replace,
+                                    replace: "?")
+    end
 
     doc = Nokogiri::XML(input)
     root = doc.root

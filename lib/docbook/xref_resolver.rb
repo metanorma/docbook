@@ -57,14 +57,22 @@ module Docbook
       when Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Section, Docbook::Elements::Preface
         el.section&.each { |s| build_xml_id_map(s, map) }
-        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) } if el.respond_to?(:bibliolist)
+        if el.respond_to?(:bibliolist)
+          el.bibliolist&.each do |bl|
+            build_xml_id_map(bl, map)
+          end
+        end
       when Docbook::Elements::Reference
         el.refentry&.each { |r| build_xml_id_map(r, map) }
       when Docbook::Elements::Bibliolist
         el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
       when Docbook::Elements::Bibliography
         el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
-        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) } if el.respond_to?(:bibliolist)
+        if el.respond_to?(:bibliolist)
+          el.bibliolist&.each do |bl|
+            build_xml_id_map(bl, map)
+          end
+        end
       end
 
       map
@@ -112,7 +120,7 @@ module Docbook
       return nil if suffix.nil? || suffix.empty?
 
       # Clean up suffix: strip leading/trailing whitespace and hyphens
-      suffix = suffix.strip.gsub(/\A-+/, "").gsub(/-\z/, "")
+      suffix = suffix.strip.gsub(/\A-+/, "").delete_suffix("-")
       return nil if suffix.empty?
 
       # Apply formatting

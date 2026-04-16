@@ -34,7 +34,7 @@ module Docbook
       "refsect3" => Elements::RefSect3,
       "setindex" => Elements::SetIndex,
       "para" => Elements::Para,
-      "simplesect" => Elements::Simplesect
+      "simplesect" => Elements::Simplesect,
     }.freeze
 
     class << self
@@ -43,7 +43,10 @@ module Docbook
         raise Docbook::Error, "Empty or invalid XML document" unless root_name
 
         klass = ROOT_ELEMENT_MAP[root_name]
-        raise Docbook::Error, "Unsupported DocBook root element: #{root_name}" unless klass
+        unless klass
+          raise Docbook::Error,
+                "Unsupported DocBook root element: #{root_name}"
+        end
 
         klass.from_xml(xml_string)
       end

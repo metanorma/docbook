@@ -21,7 +21,9 @@ module Docbook
           result["marks"] = marks.map { |m| m.respond_to?(:to_h) ? m.to_h : m }
         end
         if content && !content.empty?
-          result["content"] = content.map { |i| i.respond_to?(:to_h) ? i.to_h : i }
+          result["content"] = content.map do |i|
+            i.respond_to?(:to_h) ? i.to_h : i
+          end
         end
         result
       end
@@ -48,7 +50,7 @@ module Docbook
           klass.new(
             attrs: attrs.transform_keys(&:to_sym),
             content: content.map { |c| Node.from_h(c) },
-            marks: marks.map { |m| Docbook::Mirror::Mark.from_h(m) }
+            marks: marks.map { |m| Docbook::Mirror::Mark.from_h(m) },
           )
         end
       end
@@ -93,7 +95,9 @@ module Docbook
           new(
             text: hash["text"] || "",
             attrs: (hash["attrs"] || {}).transform_keys(&:to_sym),
-            marks: (hash["marks"] || []).map { |m| Docbook::Mirror::Mark.from_h(m) }
+            marks: (hash["marks"] || []).map do |m|
+              Docbook::Mirror::Mark.from_h(m)
+            end,
           )
         end
       end

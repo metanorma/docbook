@@ -5,14 +5,19 @@ require "docbook/cli"
 require "tempfile"
 
 RSpec.describe Docbook::CLI do
-  let(:sample_xml) { File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml") }
+  let(:sample_xml) do
+    File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml")
+  end
 
   describe "build" do
     let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
 
     it "builds an interactive HTML reader" do
       Tempfile.create(["test", ".html"]) do |out|
-        expect { described_class.start(["build", guide_xml, "-o", out.path]) }.to output(/Built/).to_stdout
+        expect do
+          described_class.start(["build", guide_xml, "-o",
+                                 out.path])
+        end.to output(/Built/).to_stdout
         content = File.read(out.path)
         expect(content).to include("<!DOCTYPE html>")
         expect(content).to include("window.DOCBOOK_DATA")
@@ -23,14 +28,19 @@ RSpec.describe Docbook::CLI do
       input = File.expand_path(guide_xml)
       expected_output = input.sub(/\.xml$/, ".html")
 
-      expect { described_class.start(["build", input]) }.to output(/Built/).to_stdout
+      expect do
+        described_class.start(["build", input])
+      end.to output(/Built/).to_stdout
       expect(File.exist?(expected_output)).to be true
       FileUtils.rm_f(expected_output)
     end
 
     it "builds from --demo fixture" do
       Tempfile.create(["demo", ".html"]) do |out|
-        expect { described_class.start(["build", "--demo", "-o", out.path]) }.to output(/Built/).to_stdout
+        expect do
+          described_class.start(["build", "--demo", "-o",
+                                 out.path])
+        end.to output(/Built/).to_stdout
         content = File.read(out.path)
         expect(content).to include("<!DOCTYPE html>")
         expect(content).to include("window.DOCBOOK_DATA")
@@ -43,7 +53,9 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(sample_xml)
         f.flush
-        expect { described_class.start(["validate", f.path]) }.to output(/valid/).to_stdout
+        expect do
+          described_class.start(["validate", f.path])
+        end.to output(/valid/).to_stdout
       end
     end
 
@@ -51,7 +63,9 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(sample_xml)
         f.flush
-        expect { described_class.start(["validate", f.path]) }.to output(/valid/).to_stdout
+        expect do
+          described_class.start(["validate", f.path])
+        end.to output(/valid/).to_stdout
       end
     end
 
@@ -66,7 +80,9 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(invalid_xml)
         f.flush
-        expect { described_class.start(["validate", f.path]) }.to raise_error(SystemExit)
+        expect do
+          described_class.start(["validate", f.path])
+        end.to raise_error(SystemExit)
       end
     end
 
@@ -81,7 +97,10 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(invalid_xml)
         f.flush
-        expect { described_class.start(["validate", "--wellformed", f.path]) }.to output(/valid/).to_stdout
+        expect do
+          described_class.start(["validate", "--wellformed",
+                                 f.path])
+        end.to output(/valid/).to_stdout
       end
     end
   end
@@ -91,7 +110,9 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(sample_xml)
         f.flush
-        expect { described_class.start(["format", f.path]) }.to output(/<article/).to_stdout
+        expect do
+          described_class.start(["format", f.path])
+        end.to output(/<article/).to_stdout
       end
     end
 
@@ -112,7 +133,9 @@ RSpec.describe Docbook::CLI do
       Tempfile.create(["test", ".xml"]) do |f|
         f.write(sample_xml)
         f.flush
-        expect { described_class.start(["roundtrip", f.path]) }.to output(/OK/).to_stdout
+        expect do
+          described_class.start(["roundtrip", f.path])
+        end.to output(/OK/).to_stdout
       end
     end
   end

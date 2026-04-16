@@ -117,7 +117,7 @@ module Docbook
         attrs = { language: language }.compact
         Docbook::Mirror::Node::CodeBlock.new(
           attrs: attrs,
-          content: [Docbook::Mirror::Node::Text.new(text: text)]
+          content: [Docbook::Mirror::Node::Text.new(text: text)],
         )
       end
 
@@ -129,14 +129,14 @@ module Docbook
       end
 
       def ordered_list_node(el)
-        items = el.listitem.to_a.map { |li| list_item_node(li) }.compact
+        items = el.listitem.to_a.filter_map { |li| list_item_node(li) }
         return nil if items.empty?
 
         Docbook::Mirror::Node::OrderedList.new(content: items)
       end
 
       def bullet_list_node(el)
-        items = el.listitem.to_a.map { |li| list_item_node(li) }.compact
+        items = el.listitem.to_a.filter_map { |li| list_item_node(li) }
         return nil if items.empty?
 
         Docbook::Mirror::Node::BulletList.new(content: items)
@@ -150,7 +150,9 @@ module Docbook
       end
 
       def definition_list_node(vl)
-        entries = vl.varlistentry.to_a.map { |ve| definition_entry_node(ve) }.compact
+        entries = vl.varlistentry.to_a.filter_map do |ve|
+          definition_entry_node(ve)
+        end
         return nil if entries.empty?
 
         Docbook::Mirror::Node::DefinitionList.new(content: entries)
@@ -204,7 +206,7 @@ module Docbook
           attrs = { xml_id: xml_id, title: title_text, language: lang }.compact
           return Docbook::Mirror::Node::CodeBlock.new(
             attrs: attrs,
-            content: [Docbook::Mirror::Node::Text.new(text: code_text)]
+            content: [Docbook::Mirror::Node::Text.new(text: code_text)],
           )
         end
 
@@ -227,7 +229,7 @@ module Docbook
           attrs = { xml_id: xml_id, title: title_text }.compact
           return Docbook::Mirror::Node::Paragraph.new(
             attrs: attrs,
-            content: [Docbook::Mirror::Node::Text.new(text: "[#{title_text || xml_id}]")]
+            content: [Docbook::Mirror::Node::Text.new(text: "[#{title_text || xml_id}]")],
           )
         end
         attrs = { xml_id: xml_id, title: title_text, src: href }.compact
@@ -237,7 +239,10 @@ module Docbook
       def table_node(el)
         attrs = {}
         attrs[:xml_id] = el.xml_id if el.respond_to?(:xml_id) && el.xml_id
-        attrs[:title] = el.title.content.to_s if el.respond_to?(:title) && el.title
+        if el.respond_to?(:title) && el.title
+          attrs[:title] =
+            el.title.content.to_s
+        end
         attrs[:frame] = el.frame if el.respond_to?(:frame) && el.frame
         attrs[:colsep] = el.colsep if el.respond_to?(:colsep) && el.colsep
         attrs[:rowsep] = el.rowsep if el.respond_to?(:rowsep) && el.rowsep
@@ -259,7 +264,8 @@ module Docbook
           table_content << Docbook::Mirror::Node::TableBody.new(content: body_rows) unless body_rows.empty?
         end
 
-        Docbook::Mirror::Node::Table.new(attrs: attrs.compact, content: table_content)
+        Docbook::Mirror::Node::Table.new(attrs: attrs.compact,
+                                         content: table_content)
       end
 
       def build_table_rows(rows)
@@ -274,7 +280,8 @@ module Docbook
             cell_attrs[:namest] = entry.namest if entry.namest
             cell_attrs[:nameend] = entry.nameend if entry.nameend
             cell_attrs[:morerows] = entry.morerows if entry.morerows
-            Docbook::Mirror::Node::TableCell.new(attrs: cell_attrs.compact, content: cell_content)
+            Docbook::Mirror::Node::TableCell.new(attrs: cell_attrs.compact,
+                                                 content: cell_content)
           end
           Docbook::Mirror::Node::TableRow.new(content: cells)
         end
@@ -293,7 +300,7 @@ module Docbook
 
         Docbook::Mirror::Node::CodeBlock.new(
           attrs: attrs,
-          content: content
+          content: content,
         )
       end
 
@@ -315,7 +322,7 @@ module Docbook
 
         Docbook::Mirror::Node::Admonition.new(
           attrs: { admonition_type: type },
-          content: content
+          content: content,
         )
       end
 
@@ -331,7 +338,7 @@ module Docbook
         attrs = {
           number: section.number,
           title: section.title&.content,
-          xml_id: section.xml_id || "elem-#{section.object_id}"
+          xml_id: section.xml_id || "elem-#{section.object_id}",
         }.compact
 
         content = extract_content(section)
@@ -342,7 +349,7 @@ module Docbook
         attrs = {
           number: chapter.number,
           title: chapter.title&.content,
-          xml_id: chapter.xml_id || "elem-#{chapter.object_id}"
+          xml_id: chapter.xml_id || "elem-#{chapter.object_id}",
         }.compact
 
         content = extract_content(chapter)
@@ -353,7 +360,7 @@ module Docbook
         attrs = {
           number: appendix.number,
           title: appendix.title&.content,
-          xml_id: appendix.xml_id || "elem-#{appendix.object_id}"
+          xml_id: appendix.xml_id || "elem-#{appendix.object_id}",
         }.compact
 
         content = extract_content(appendix)
@@ -365,7 +372,7 @@ module Docbook
         attrs = {
           number: part.number,
           title: part.title&.content,
-          xml_id: id
+          xml_id: id,
         }.compact
 
         content = extract_content(part)
@@ -375,7 +382,7 @@ module Docbook
       def reference_node(ref)
         attrs = {
           xml_id: ref.xml_id || "elem-#{ref.object_id}",
-          title: ref.title&.content || ref.info&.title&.content
+          title: ref.title&.content || ref.info&.title&.content,
         }.compact
 
         content = extract_content(ref)
@@ -388,7 +395,7 @@ module Docbook
 
         attrs = {
           xml_id: id,
-          title: title
+          title: title,
         }.compact
 
         content = []
@@ -400,25 +407,25 @@ module Docbook
             parts = []
             if fs.type && !fs.type.content.to_s.empty?
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.type.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "type")]
+                text: fs.type.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "type")],
               )
             end
             parts << Docbook::Mirror::Node::Text.new(text: " ")
             if fs.varname && !fs.varname.content.to_s.empty?
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.varname.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "varname")]
+                text: fs.varname.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "varname")],
               )
             end
             if fs.initializer && !fs.initializer.content.to_s.empty?
               parts << Docbook::Mirror::Node::Text.new(text: " = ")
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.initializer.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "literal")]
+                text: fs.initializer.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "literal")],
               )
             end
             unless parts.empty?
               content << Docbook::Mirror::Node::Paragraph.new(
                 attrs: { class: "refmeta-synopsis" },
-                content: parts
+                content: parts,
               )
             end
           elsif ref.refmeta.refentrytitle
@@ -427,13 +434,15 @@ module Docbook
             manvol = ref.refmeta.manvolnum
             synopsis_parts << "#{reftitle}(#{manvol})" if reftitle && manvol
             synopsis_parts << reftitle.to_s if reftitle && !manvol
-            Array(ref.refmeta.refmiscinfo).each { |info| synopsis_parts << info.content.to_s if info.content }
+            Array(ref.refmeta.refmiscinfo).each do |info|
+              synopsis_parts << info.content.to_s if info.content
+            end
             unless synopsis_parts.empty?
               content << Docbook::Mirror::Node::Paragraph.new(
                 content: [Docbook::Mirror::Node::Text.new(
                   text: synopsis_parts.join(" — "),
-                  marks: [Docbook::Mirror::Mark::Code.new]
-                )]
+                  marks: [Docbook::Mirror::Mark::Code.new],
+                )],
               )
             end
           end
@@ -634,7 +643,8 @@ module Docbook
         resolved_title = @xml_id_map[linkend] || linkend
         text_node(
           resolved_title,
-          marks: [Docbook::Mirror::Mark::Xref.new(linkend: linkend, resolved: resolved_title)]
+          marks: [Docbook::Mirror::Mark::Xref.new(linkend: linkend,
+                                                  resolved: resolved_title)],
         )
       end
 
@@ -681,7 +691,8 @@ module Docbook
       def biblioref_node(el)
         linkend = el.linkend.to_s
         text = el.content.to_s.empty? ? linkend : el.content.to_s
-        text_node(text, marks: [Docbook::Mirror::Mark::Citation.new(bibref: linkend)])
+        text_node(text,
+                  marks: [Docbook::Mirror::Mark::Citation.new(bibref: linkend)])
       end
 
       def firstterm_node(el)
@@ -691,7 +702,8 @@ module Docbook
 
       def citetitle_node(el)
         text = el.content.to_s
-        text_node(text, marks: [Docbook::Mirror::Mark::Citation.new(bibref: el.href)])
+        text_node(text,
+                  marks: [Docbook::Mirror::Mark::Citation.new(bibref: el.href)])
       end
 
       def inline_image_node(el)
@@ -710,7 +722,8 @@ module Docbook
                  end
         full_text = text + suffix
         if el.href
-          text_node(full_text, marks: [Docbook::Mirror::Mark::Link.new(attrs: { href: el.href })])
+          text_node(full_text,
+                    marks: [Docbook::Mirror::Mark::Link.new(attrs: { href: el.href })])
         else
           text_node(full_text, marks: [Docbook::Mirror::Mark::Strong.new])
         end
@@ -730,7 +743,8 @@ module Docbook
 
       def email_node(el)
         text = el.content.to_s
-        text_node(text, marks: [Docbook::Mirror::Mark::Link.new(href: "mailto:#{text}")])
+        text_node(text,
+                  marks: [Docbook::Mirror::Mark::Link.new(href: "mailto:#{text}")])
       end
 
       def uri_node(el)
@@ -750,7 +764,8 @@ module Docbook
 
       def keycap_node(el)
         text = el.content.to_s
-        text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: "keycap")])
+        text_node(text,
+                  marks: [Docbook::Mirror::Mark::Code.new(role: "keycap")])
       end
 
       def plain_text_node(el)
@@ -889,7 +904,11 @@ module Docbook
         end
         doc.info = info
 
-        doc.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          doc.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
 
         doc
       end
@@ -1055,39 +1074,67 @@ module Docbook
 
       def docbook_blockquote(mirror_node)
         bq = Docbook::Elements::BlockQuote.new
-        bq.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          bq.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         bq
       end
 
       def docbook_itemized_list(mirror_node)
         list = Docbook::Elements::ItemizedList.new
-        list.listitem = mirror_node.content.to_a.compact.map { |n| docbook_list_item(n) } if mirror_node.content
+        if mirror_node.content
+          list.listitem = mirror_node.content.to_a.compact.map do |n|
+            docbook_list_item(n)
+          end
+        end
         list
       end
 
       def docbook_ordered_list(mirror_node)
         list = Docbook::Elements::OrderedList.new
-        list.listitem = mirror_node.content.to_a.compact.map { |n| docbook_list_item(n) } if mirror_node.content
+        if mirror_node.content
+          list.listitem = mirror_node.content.to_a.compact.map do |n|
+            docbook_list_item(n)
+          end
+        end
         list
       end
 
       def docbook_list_item(mirror_node)
         li = Docbook::Elements::ListItem.new
-        li.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          li.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         li
       end
 
       def docbook_variable_list(mirror_node)
         vl = Docbook::Elements::VariableList.new
-        vl.varlistentry = mirror_node.content.to_a.compact.map { |n| docbook_varlistentry(n) } if mirror_node.content
+        if mirror_node.content
+          vl.varlistentry = mirror_node.content.to_a.compact.map do |n|
+            docbook_varlistentry(n)
+          end
+        end
         vl
       end
 
       def docbook_varlistentry(mirror_node)
         ve = Docbook::Elements::Varlistentry.new
         # Find term and description children
-        term_node = mirror_node.content.to_a.find { |n| n.type == "definition_term" } if mirror_node.content
-        desc_node = mirror_node.content.to_a.find { |n| n.type == "definition_description" } if mirror_node.content
+        if mirror_node.content
+          term_node = mirror_node.content.to_a.find do |n|
+            n.type == "definition_term"
+          end
+        end
+        if mirror_node.content
+          desc_node = mirror_node.content.to_a.find do |n|
+            n.type == "definition_description"
+          end
+        end
 
         ve.term = docbook_definition_term(term_node) if term_node
         ve.definition = [docbook_definition_description(desc_node)] if desc_node
@@ -1117,7 +1164,7 @@ module Docbook
         "tip" => Docbook::Elements::Tip,
         "caution" => Docbook::Elements::Caution,
         "important" => Docbook::Elements::Important,
-        "danger" => Docbook::Elements::Danger
+        "danger" => Docbook::Elements::Danger,
       }.freeze
 
       def docbook_admonition(mirror_node)
@@ -1126,7 +1173,11 @@ module Docbook
 
         adm_class = ADMONITION_TYPES[type] || Docbook::Elements::Note
         adm = adm_class.new
-        adm.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          adm.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         adm
       end
 
@@ -1140,7 +1191,11 @@ module Docbook
           title.content = attrs[:title] || attrs["title"]
           chapter.title = title
         end
-        chapter.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          chapter.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         chapter
       end
 
@@ -1154,7 +1209,11 @@ module Docbook
           title.content = attrs[:title] || attrs["title"]
           section.title = title
         end
-        section.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          section.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         section
       end
 
@@ -1167,7 +1226,11 @@ module Docbook
           title.content = attrs[:title] || attrs["title"]
           part.title = title
         end
-        part.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          part.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         part
       end
 
@@ -1181,7 +1244,11 @@ module Docbook
           title.content = attrs[:title] || attrs["title"]
           appendix.title = title
         end
-        appendix.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
+        if mirror_node.content
+          appendix.para = mirror_node.content.to_a.compact.map do |n|
+            to_docbook(n)
+          end
+        end
         appendix
       end
 

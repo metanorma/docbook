@@ -107,55 +107,81 @@ module Docbook
       def traverse_article(article, section_info)
         each_attr(article, :section) { |s| traverse_element(s, section_info) }
         each_attr(article, :glossary) { |g| traverse_element(g, section_info) }
-        each_attr(article, :bibliography) { |b| traverse_element(b, section_info) }
+        each_attr(article, :bibliography) do |b|
+          traverse_element(b, section_info)
+        end
         each_attr(article, :index) { |i| traverse_element(i, section_info) }
       end
 
       def traverse_chapter(chapter, section_info)
         each_attr(chapter, :section) { |s| traverse_element(s, section_info) }
-        each_attr(chapter, :simplesect) { |ss| traverse_element(ss, section_info) }
+        each_attr(chapter, :simplesect) do |ss|
+          traverse_element(ss, section_info)
+        end
         each_attr(chapter, :para) { |p| traverse_element(p, section_info) }
-        each_attr(chapter, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(chapter, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_appendix(appendix, section_info)
         each_attr(appendix, :section) { |s| traverse_element(s, section_info) }
-        each_attr(appendix, :simplesect) { |ss| traverse_element(ss, section_info) }
+        each_attr(appendix, :simplesect) do |ss|
+          traverse_element(ss, section_info)
+        end
         each_attr(appendix, :para) { |p| traverse_element(p, section_info) }
-        each_attr(appendix, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(appendix, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_section(section, section_info)
         each_attr(section, :section) { |s| traverse_element(s, section_info) }
-        each_attr(section, :simplesect) { |ss| traverse_element(ss, section_info) }
+        each_attr(section, :simplesect) do |ss|
+          traverse_element(ss, section_info)
+        end
         each_attr(section, :para) { |p| traverse_element(p, section_info) }
-        each_attr(section, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(section, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_simplesect(simplesect, section_info)
         each_attr(simplesect, :para) { |p| traverse_element(p, section_info) }
-        each_attr(simplesect, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(simplesect, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_refentry(refentry, section_info)
-        each_attr(refentry, :refsection) { |rs| traverse_element(rs, section_info) }
+        each_attr(refentry, :refsection) do |rs|
+          traverse_element(rs, section_info)
+        end
       end
 
       def traverse_refsection(refsection, section_info)
         new_info = update_section_info(refsection, section_info)
         each_attr(refsection, :para) { |p| traverse_element(p, new_info) }
-        each_attr(refsection, :indexterm) { |it| process_indexterm(it, new_info) }
+        each_attr(refsection, :indexterm) do |it|
+          process_indexterm(it, new_info)
+        end
       end
 
       def traverse_listitem(listitem, section_info)
         each_attr(listitem, :para) { |p| traverse_element(p, section_info) }
-        each_attr(listitem, :simplesect) { |ss| traverse_element(ss, section_info) }
-        each_attr(listitem, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(listitem, :simplesect) do |ss|
+          traverse_element(ss, section_info)
+        end
+        each_attr(listitem, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_entry(entry, section_info)
         each_attr(entry, :para) { |p| traverse_element(p, section_info) }
-        each_attr(entry, :indexterm) { |it| process_indexterm(it, section_info) }
+        each_attr(entry, :indexterm) do |it|
+          process_indexterm(it, section_info)
+        end
       end
 
       def traverse_mixed_content(element, section_info)
@@ -173,15 +199,23 @@ module Docbook
 
       def process_indexterm(indexterm, section_info)
         # Skip if no primary (required for meaningful index entry)
-        primaries = Array(indexterm.primary).map { |p| p.content.to_s.strip }.compact
+        primaries = Array(indexterm.primary).filter_map do |p|
+          p.content.to_s.strip
+        end
         return if primaries.empty?
 
         primary_text = primaries.first
-        secondaries = Array(indexterm.secondary).map { |s| s.content.to_s.strip }.compact
-        tertiaries = Array(indexterm.tertiary).map { |t| t.content.to_s.strip }.compact
+        secondaries = Array(indexterm.secondary).filter_map do |s|
+          s.content.to_s.strip
+        end
+        tertiaries = Array(indexterm.tertiary).filter_map do |t|
+          t.content.to_s.strip
+        end
 
-        sees = Array(indexterm.see).map { |s| s.content.to_s.strip }.compact
-        see_alsos = Array(indexterm.see_also).map { |sa| sa.content.to_s.strip }.compact
+        sees = Array(indexterm.see).filter_map { |s| s.content.to_s.strip }
+        see_alsos = Array(indexterm.see_also).filter_map do |sa|
+          sa.content.to_s.strip
+        end
 
         term_info = {
           primary: primary_text,
@@ -196,7 +230,7 @@ module Docbook
           class_value: indexterm.class_value,
           section_id: section_info[:id],
           section_title: section_info[:title],
-          section_info: section_info
+          section_info: section_info,
         }
 
         @index_terms << term_info
@@ -245,12 +279,14 @@ module Docbook
       # Generate index data structure grouped by letter
       def generate
         by_letter = group_by_letter
-        by_letter.sort_by { |letter, _| letter == "SYMBOLS" ? "{" : letter.downcase }
-                 .to_h
-                 .map do |letter, terms|
+        by_letter.sort_by do |letter, _|
+          letter == "SYMBOLS" ? "{" : letter.downcase
+        end
+          .to_h
+          .map do |letter, terms|
           {
             letter: letter,
-            entries: sort_entries(terms)
+            entries: sort_entries(terms),
           }
         end
       end

@@ -12,7 +12,7 @@ module Docbook
 
       def generate
         root_elements = get_root_elements
-        root_elements.map { |element| build_toc_node(element) }.compact
+        root_elements.filter_map { |element| build_toc_node(element) }
       end
 
       private
@@ -43,12 +43,16 @@ module Docbook
           id: get_id(element),
           title: get_title(element),
           type: element_type(element),
-          number: nil # Numbering added separately
+          number: nil, # Numbering added separately
         )
 
         # Recursively add children
         children = get_child_sections(element)
-        node.children = children.map { |child| build_toc_node(child) }.compact if children.any?
+        if children.any?
+          node.children = children.filter_map do |child|
+            build_toc_node(child)
+          end
+        end
 
         node
       end

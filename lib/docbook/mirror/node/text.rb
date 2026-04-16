@@ -31,7 +31,9 @@ module Docbook
           new(
             text: hash["text"] || "",
             attrs: (hash["attrs"] || {}).transform_keys(&:to_sym),
-            marks: (hash["marks"] || []).map { |m| Docbook::Mirror::Mark.from_h(m) }
+            marks: (hash["marks"] || []).map do |m|
+              Docbook::Mirror::Mark.from_h(m)
+            end,
           )
         end
       end

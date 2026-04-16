@@ -32,7 +32,7 @@ module Docbook
 
         mark_class = MARK_TYPES[type] || Mark
         mark_class.new(
-          attrs: attrs.transform_keys(&:to_sym)
+          attrs: attrs.transform_keys(&:to_sym),
         )
       end
 

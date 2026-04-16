@@ -93,7 +93,7 @@ module Docbook
         process_children(chapter, parent_info.merge(
                                     chapter_scope: scope_id,
                                     section_depth: 1,
-                                    chapter_number: chapter_number
+                                    chapter_number: chapter_number,
                                   ))
       end
 
@@ -113,15 +113,15 @@ module Docbook
         process_children(appendix, parent_info.merge(
                                      appendix_scope: scope_id,
                                      section_depth: 1,
-                                     appendix_number: appendix_number
+                                     appendix_number: appendix_number,
                                    ))
       end
 
       def process_section(section, parent_info)
         # Determine scope
         scope_id = parent_info[:chapter_scope] ||
-                   parent_info[:appendix_scope] ||
-                   element_id(section)
+          parent_info[:appendix_scope] ||
+          element_id(section)
 
         # Initialize counters for this scope
         @section_counters[scope_id] ||= [0, 0, 0, 0, 0]
@@ -222,7 +222,7 @@ module Docbook
         @numbering << Models::SectionNumber.new(
           id: id,
           number: number.to_s,
-          type: type
+          type: type,
         )
       end
 

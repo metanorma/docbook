@@ -22,7 +22,8 @@ module Docbook
     #   page.generate
     #
     class SinglePage
-      attr_reader :xml_path, :dist_dir, :output_path, :image_search_dirs, :image_strategy
+      attr_reader :xml_path, :dist_dir, :output_path, :image_search_dirs,
+                  :image_strategy
 
       # @param xml_path [String] path to the DocBook XML file
       # @param dist_dir [String] path to the frontend dist directory (defaults to gem's bundled frontend)
@@ -62,7 +63,8 @@ module Docbook
         index_terms = index_collector.collect
         index_generator = Docbook::Output::IndexGenerator.new(index_terms)
         index_data = index_generator.generate
-        index_hash = { "title" => "Index", "type" => "index", "groups" => index_data }
+        index_hash = { "title" => "Index", "type" => "index",
+                       "groups" => index_data }
 
         # 5. Transform to DocbookMirror JSON
         require_relative "../mirror"
@@ -71,13 +73,14 @@ module Docbook
         guide = JSON.parse(mirror_output.to_pretty_json)
 
         # 6. Attach TOC, numbering, and index
-        guide["toc"] = { "sections" => toc_sections, "numbering" => numbering_hash }
+        guide["toc"] =
+          { "sections" => toc_sections, "numbering" => numbering_hash }
         guide["index"] = index_hash
 
         # 7. Resolve image paths
         Services::ImageResolver.new(
           search_dirs: @image_search_dirs + [xml_dir],
-          strategy: @image_strategy
+          strategy: @image_strategy,
         ).resolve(guide)
 
         # 8. Build HTML
@@ -90,7 +93,8 @@ module Docbook
 
       def parse_xml
         xml_string = File.read(@xml_path)
-        resolved_xml = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: @xml_path)
+        resolved_xml = Docbook::XIncludeResolver.resolve_string(xml_string,
+                                                                base_path: @xml_path)
         Docbook::Document.from_xml(resolved_xml.to_xml)
       end
 
@@ -99,9 +103,13 @@ module Docbook
           "id" => node.id,
           "title" => node.title,
           "type" => node.type,
-          "number" => node.number
+          "number" => node.number,
         }
-        result["children"] = node.children.map { |c| toc_node_to_hash(c) } if node.children&.any?
+        if node.children&.any?
+          result["children"] = node.children.map do |c|
+            toc_node_to_hash(c)
+          end
+        end
         result.compact
       end
 

@@ -7,11 +7,15 @@ require "fileutils"
 module Docbook
   class CLI < Thor
     desc "build [INPUT]", "Build an interactive HTML reader from DocBook XML"
-    option :output, aliases: "-o", desc: "Output HTML file path (default: <input>.html or demo.html with --demo)"
+    option :output, aliases: "-o",
+                    desc: "Output HTML file path (default: <input>.html or demo.html with --demo)"
     option :demo, type: :boolean, desc: "Build using the bundled DocBook sample"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
-    option :image_search_dir, type: :array, desc: "Directories to search for images"
-    option :image_strategy, default: "data_url", desc: "Image resolution: data_url, file_url, or relative"
+    option :xinclude, type: :boolean, default: true,
+                      desc: "Resolve XIncludes before processing"
+    option :image_search_dir, type: :array,
+                              desc: "Directories to search for images"
+    option :image_strategy, default: "data_url",
+                            desc: "Image resolution: data_url, file_url, or relative"
     option :title, desc: "Page title (default: derived from document)"
     def build(input = nil)
       xml_path, output_path, search_dirs, title = if options[:demo]
@@ -27,7 +31,7 @@ module Docbook
         output_path: output_path,
         image_search_dirs: search_dirs,
         image_strategy: options[:image_strategy].to_sym,
-        title: title
+        title: title,
       )
 
       page.generate
@@ -37,7 +41,8 @@ module Docbook
     desc "export INPUT", "Export DocBook XML as DocbookMirror JSON"
     option :output, aliases: "-o", desc: "Output file (default: stdout)"
     option :pretty, type: :boolean, default: true, desc: "Pretty print JSON"
-    option :xinclude, type: :boolean, default: true, desc: "Resolve XIncludes before processing"
+    option :xinclude, type: :boolean, default: true,
+                      desc: "Resolve XIncludes before processing"
     def export(input)
       require_relative "mirror"
       require_relative "output/docbook_mirror"
@@ -58,8 +63,10 @@ module Docbook
     end
 
     desc "validate INPUT", "Validate DocBook XML"
-    option :schema, type: :boolean, default: true, desc: "Validate against DocBook 5 RELAX NG schema"
-    option :wellformed, type: :boolean, default: false, desc: "Check well-formedness only (no schema)"
+    option :schema, type: :boolean, default: true,
+                    desc: "Validate against DocBook 5 RELAX NG schema"
+    option :wellformed, type: :boolean, default: false,
+                        desc: "Check well-formedness only (no schema)"
     def validate(input)
       xml_string = File.read(input)
       doc = Nokogiri::XML(xml_string)
@@ -82,7 +89,8 @@ module Docbook
 
     desc "format INPUT", "Format/prettify DocBook XML"
     option :output, aliases: "-o", desc: "Output file (default: stdout)"
-    option :xinclude, type: :boolean, default: false, desc: "Resolve XIncludes before processing"
+    option :xinclude, type: :boolean, default: false,
+                      desc: "Resolve XIncludes before processing"
     def format(input)
       xml_string = read_input(input, options[:xinclude])
       parsed = parse_input(xml_string)
@@ -125,7 +133,8 @@ module Docbook
     def read_input(input, resolve_xinclude = false)
       xml_string = File.read(input)
       if resolve_xinclude
-        resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: input)
+        resolved = Docbook::XIncludeResolver.resolve_string(xml_string,
+                                                            base_path: input)
         resolved.to_xml
       else
         xml_string
@@ -154,7 +163,9 @@ module Docbook
     end
 
     def build_demo_params
-      fixture_xml = File.expand_path("../../spec/fixtures/xslTNG/guide/xml/guide.xml", __dir__)
+      fixture_xml = File.expand_path(
+        "../../spec/fixtures/xslTNG/guide/xml/guide.xml", __dir__
+      )
       abort "Demo fixture not found: #{fixture_xml}" unless File.exist?(fixture_xml)
 
       xml_dir = File.dirname(fixture_xml)
@@ -169,7 +180,9 @@ module Docbook
     def build_file_params(input)
       xml_path = File.expand_path(input)
       output_path = File.expand_path(options[:output] || derive_output_path(input))
-      search_dirs = (options[:image_search_dir] || []).map { |d| File.expand_path(d) }
+      search_dirs = (options[:image_search_dir] || []).map do |d|
+        File.expand_path(d)
+      end
       title = options[:title] || File.basename(xml_path, ".xml")
 
       [xml_path, output_path, search_dirs, title]

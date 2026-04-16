@@ -53,7 +53,7 @@ module Docbook
         node_class.new(
           attrs: attrs.transform_keys(&:to_sym),
           content: content.map { |c| Node.from_h(c) },
-          marks: marks.map { |m| Mark.from_h(m) }
+          marks: marks.map { |m| Mark.from_h(m) },
         )
       end
 

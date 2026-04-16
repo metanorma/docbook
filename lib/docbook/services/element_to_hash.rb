@@ -50,7 +50,7 @@ module Docbook
         # Flatten for Vue - extract key fields
         result = {
           type: "refentry",
-          id: @element.xml_id
+          id: @element.xml_id,
         }
 
         # Extract refmeta info
@@ -61,7 +61,8 @@ module Docbook
 
         # Extract refnamediv info
         if @element.refnamediv
-          result[:refname] = @element.refnamediv.refname&.map(&:content)&.join(" ")
+          result[:refname] =
+            @element.refnamediv.refname&.map(&:content)&.join(" ")
           result[:refpurpose] = @element.refnamediv.refpurpose&.content
           result[:refclass] = @element.refnamediv.refclass&.content
         end
@@ -93,7 +94,7 @@ module Docbook
         content = extract_inline_content(@element)
         {
           type: "para",
-          content: content
+          content: content,
         }
       end
 
@@ -103,14 +104,18 @@ module Docbook
           items: @element.varlistentry.map do |ve|
             terms = ve.term&.map { |t| extract_inline_content(t) } || []
             definition = if ve.listitem.respond_to?(:para)
-                           ve.listitem.para.map { |p| extract_inline_content(p) }
+                           ve.listitem.para.map do |p|
+                             extract_inline_content(p)
+                           end
                          elsif ve.listitem.respond_to?(:elements)
-                           ve.listitem.elements.map { |e| ElementToHash.new(e).to_h }
+                           ve.listitem.elements.map do |e|
+                             ElementToHash.new(e).to_h
+                           end
                          else
                            []
                          end
             { terms: terms, definition: definition }
-          end
+          end,
         }
       end
 
@@ -125,7 +130,7 @@ module Docbook
               items = li.elements.map { |e| ElementToHash.new(e).to_h }
             end
             items
-          end
+          end,
         }
       end
 
@@ -140,7 +145,7 @@ module Docbook
               items = li.elements.map { |e| ElementToHash.new(e).to_h }
             end
             items
-          end
+          end,
         }
       end
 
@@ -149,21 +154,21 @@ module Docbook
         {
           type: "code",
           text: code_text,
-          language: @element.language
+          language: @element.language,
         }
       end
 
       def example_to_h
         {
           type: "example",
-          content: @element.elements.map { |e| ElementToHash.new(e).to_h }
+          content: @element.elements.map { |e| ElementToHash.new(e).to_h },
         }
       end
 
       def figure_to_h
         result = {
           type: "figure",
-          id: @element.xml_id
+          id: @element.xml_id,
         }
 
         if @element.respond_to?(:mediaobject) && @element.mediaobject
@@ -183,29 +188,37 @@ module Docbook
         {
           type: "table",
           id: @element.xml_id,
-          rows: [] # Would need complex traversal
+          rows: [], # Would need complex traversal
         }
       end
 
       def admonition_to_h
         title = @element.respond_to?(:title) ? @element.title&.content : nil
-        content = @element.elements.map { |e| ElementToHash.new(e).to_h } if @element.elements
+        if @element.elements
+          content = @element.elements.map do |e|
+            ElementToHash.new(e).to_h
+          end
+        end
 
         {
           type: @element.class.name.split("::").last.downcase,
           title: title,
-          content: content
+          content: content,
         }
       end
 
       def blockquote_to_h
         attribution = @element.attribution&.content if @element.attribution
-        content = @element.elements.map { |e| ElementToHash.new(e).to_h } if @element.elements
+        if @element.elements
+          content = @element.elements.map do |e|
+            ElementToHash.new(e).to_h
+          end
+        end
 
         {
           type: "blockquote",
           attribution: attribution,
-          content: content
+          content: content,
         }
       end
 
@@ -245,19 +258,19 @@ module Docbook
           {
             type: "emphasis",
             role: item.role,
-            content: extract_inline_content(item)
+            content: extract_inline_content(item),
           }
         when Elements::Link
           {
             type: "link",
             href: item.href,
-            content: extract_inline_content(item)
+            content: extract_inline_content(item),
           }
         when Elements::Xref
           {
             type: "xref",
             linkend: item.linkend,
-            content: item.content || item.linkend
+            content: item.content || item.linkend,
           }
         when Elements::Literal, Elements::Code
           { type: "codetext", value: item.content }

@@ -42,7 +42,8 @@ module Docbook
       def walk(obj)
         case obj
         when Hash
-          resolve_image(obj) if obj["type"] == "image" && obj.dig("attrs", "src")
+          resolve_image(obj) if obj["type"] == "image" && obj.dig("attrs",
+                                                                  "src")
           obj.each_value { |v| walk(v) }
         when Array
           obj.each { |v| walk(v) }
