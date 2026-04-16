@@ -1,33 +1,26 @@
 ---
 layout: default
-title: Liquid Templates
+title: HTML Generation
 parent: Advanced
 nav_order: 1
 ---
 
-# Liquid Templates
+# HTML Generation
 
-The HTML output is generated using the Liquid template engine. Templates
-are located in `lib/docbook/templates/`. The system uses Liquid's
-`LocalFileSystem` for partial resolution, so `{% include 'partials/head' %}`
-resolves to `templates/partials/_head.liquid`.
+The `Output::SinglePage` class generates a self-contained HTML file by assembling the HTML shell, embedding all CSS and JavaScript inline, and injecting the DocbookMirror JSON data directly into the page.
 
-== Template files
+== HTML Structure
 
-=== document.html.liquid
+The generated HTML file contains:
 
-The main template. It produces a complete HTML5 document with:
-
-* A `<head>` section that includes the `_head` partial (fonts, Tailwind
-  CSS, Prism.js styles, and the app CSS).
+* A `<head>` section with fonts, Prism.js styles, Tailwind CSS, and the compiled app CSS all inlined.
 * A `<div id="docbook-app">` mount point for the Vue SPA.
-* An inline `<script>` block that defines `window.DOCBOOK_DATA` with
-  placeholder tokens for JSON data.
-* The `_scripts` partial (Prism.js and the app JavaScript).
+* An inline `<script>` block that defines `window.DOCBOOK_DATA` containing the DocbookMirror JSON, TOC, numbering, and index data.
+* The compiled app JavaScript and Prism.js scripts inlined at the end of the body.
 
-=== partials/_head.liquid
+== Head Content
 
-Provides the document head content:
+The `<head>` section includes:
 
 * **Prism.js CSS** -- Syntax highlighting theme loaded from cdnjs.
 * **Google Fonts** -- Inter (sans-serif), Merriweather (serif), and

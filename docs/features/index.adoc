@@ -70,7 +70,7 @@ The interactive HTML reader built by `docbook build` includes:
 
 ## Child Pages
 
-- <<html-output/index,HTML Output>> -- Single-file and directory output modes, data model
+- <<html-output/index,HTML Output>> -- Single-file output mode and data model
 - <<xinclude/index,XInclude Resolution>> -- XML includes, text includes, fragid schemes
 - <<numbering,Section Numbering>> -- Roman, Arabic, hierarchical, and Alpha numbering
 - <<toc-generation,TOC Generation>> -- Table of contents tree structure and rendering

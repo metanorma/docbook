@@ -8,48 +8,67 @@ nav_order: 3
 
 # Output Data Model
 
-The output data model defines the JSON structure produced by the Ruby backend and consumed by the Vue 3 SPA frontend. All models are implemented as `Lutaml::Model::Serializable` classes, providing type-safe serialization to JSON.
+The output data model defines the JSON structure produced by the Ruby backend and consumed by the Vue 3 SPA frontend. The primary content representation uses DocbookMirror (ProseMirror-compatible) nodes and marks, supplemented by metadata models for TOC, numbering, and index.
 
-## Top-Level Model: DocbookMirror
+## DocbookMirror Node Types
 
-The output uses a ProseMirror-compatible JSON document produced by `Mirror::Transformer`. The `DocbookMirror` class wraps this output:
+The `Mirror::Transformer` converts DocBook elements into ProseMirror-compatible nodes. See link:../../understanding/docbook-mirror/node-types[Node Types] for the full specification.
 
-[cols="1,1,3"]
+### Structural Nodes
+
+[cols="1,3"]
 |===
-| Field | Type | Description
+| Node Type | Description
 
-| `title` | `String` | Document title (from `Book.info.title` or `Article.info.title`)
-| `toc` | `Toc` | Table of contents tree and numbering map
-| `content` | `DocbookMirror doc` | All section content as ProseMirror node trees
-| `index` | `Index` | Generated index data (may be empty)
+| `doc` | Root document node
+| `chapter` | Chapter within a book
+| `part` | Major division within a book
+| `section` | Generic section
+| `appendix` | Appendix division
+| `preface` | Front matter preface
+| `refentry` | Reference manual page entry
+| `reference` | Collection of reference entries
 |===
 
-[source,ruby]
-----
-# DocbookMirror output structure
-{
-  doc: {
-    type: "doc",
-    content: [node, node, ...]   # ProseMirror nodes
-  }
-}
-----
+### Block Nodes
+
+[cols="1,3"]
+|===
+| Node Type | Description
+
+| `paragraph` | Standard paragraph with inline content
+| `heading` | Section heading with level
+| `code_block` | Code listing with optional language
+| `blockquote` | Extended quotation with attribution
+| `image` | Image block with src and alt
+| `table` | CALS table with rows and cells
+| `ordered_list` | Numbered list
+| `itemized_list` | Bulleted list
+| `definition_list` | Term/description pairs
+| `example` | Titled example block
+| `admonition` | Note, warning, caution, important, tip, or danger
+| `footnote` | Inline footnote
+|===
+
+### Inline Nodes and Marks
+
+Text content uses marks for inline formatting:
+
+[cols="1,3"]
+|===
+| Mark Type | Description
+
+| `emphasis` | Emphasized text (italic)
+| `strong` | Bold text
+| `code` | Inline monospace code
+| `link` | Hyperlink with href
+| `xref` | Internal cross-reference
+| `citation` | Bibliographic citation
+|===
 
 ## TOC Model
 
-The `Toc` model contains the document structure tree and section numbering:
-
-[cols="1,1,3"]
-|===
-| Field | Type | Description
-
-| `sections` | `SectionData[]` | Recursive tree of document sections
-| `numbering` | `NumberingEntry[]` | Flat map of section ID to formatted number
-|===
-
-### SectionData
-
-Each node in the TOC tree is a `SectionData`:
+The table of contents uses `SectionData` nodes:
 
 [cols="1,1,3"]
 |===
@@ -62,9 +81,9 @@ Each node in the TOC tree is a `SectionData`:
 | `children` | `SectionData[]` | Nested child sections
 |===
 
-### NumberingEntry
+## Numbering Model
 
-A key-value pair mapping a section ID to its formatted number:
+Section numbering is stored as a flat map of section ID to formatted number:
 
 [cols="1,1,3"]
 |===
@@ -74,159 +93,14 @@ A key-value pair mapping a section ID to its formatted number:
 | `value` | `String` | Formatted number (e.g., `"I"`, `"1"`, `"1.2.3"`, `"Appendix A"`)
 |===
 
-## ContentData Model
+The `NumberingBuilder` computes section numbering using independent counters:
 
-The `ContentData` model holds all section content as a collection of entries:
+- **Parts** -- Roman numerals (I, II, III, ...) via `next_part`
+- **Chapters** -- Arabic numerals scoped per part (resets at each new part) via `next_chapter(part_index)`
+- **Sections** -- Flat sequential numbering per parent scope, combined into hierarchical dot notation (1.1, 1.2.3)
+- **Appendices** -- Alpha letters (A, B, C, ...) via `next_appendix`
 
-[cols="1,1,3"]
-|===
-| Field | Type | Description
-
-| `entries` | `ContentEntry[]` | Array of section ID to `SectionContent` mappings
-|===
-
-### ContentEntry
-
-A key-value pair mapping a section ID to its content:
-
-[cols="1,1,3"]
-|===
-| Field | Type | Description
-
-| `key` | `String` | Section `xml:id`
-| `value` | `SectionContent` | The section's content nodes
-|===
-
-### SectionContent
-
-The content for a single section:
-
-[cols="1,1,3"]
-|===
-| Field | Type | Description
-
-| `section_id` | `String` | Section's `xml:id`
-| `blocks` | `DocbookMirror node[]` | Tree of DocbookMirror nodes
-|===
-
-## DocbookMirror Node Model
-
-DocbookMirror uses ProseMirror-compatible nodes as the core building blocks for all rendered content. Each node is a recursive structure that can represent paragraphs, images, code listings, lists, admonitions, and more:
-
-[cols="1,1,3"]
-|===
-| Field | Type | Description
-
-| `type` | `String` | Node type (40+ types, see below)
-| `text` | `String` | Primary text content (paragraph text, code content, title, etc.)
-| `attrs` | `Object` | Node attributes (src, alt, title, language, className, etc.)
-| `content` | `Node[]` | Nested child nodes (recursive)
-| `marks` | `Mark[]` | Inline marks (bold, italic, code, link, etc.)
-|===
-
-### Block Types
-
-The `type` field determines how the block is rendered. There are over 40 block types:
-
-**Block-Level Types:**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `paragraph` | Standard paragraph with inline content in children
-| `code` | Code listing (from `programlisting`, `screen`, or `literallayout`)
-| `image` | Image block with `src` (base64 or path) and `alt` text
-| `inline_image` | Inline image within a paragraph
-| `blockquote` | Quoted text with optional attribution in `text`
-| `ordered_list` | Numbered list with `list_item` children
-| `itemized_list` | Bulleted list with `list_item` children
-| `list_item` | Single list item containing block content
-| `definition_list` | Definition list with alternating term/description children
-| `definition_term` | Term being defined
-| `definition_description` | Definition content
-| `example` | Titled example block (from `example` element)
-| `example_output` | Untitled example block (from `informalexample`)
-| `section` | Nested section with heading and child blocks
-| `heading` | Section heading text
-|===
-
-**Admonition Types:**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `note` | Note admonition
-| `warning` | Warning admonition
-| `caution` | Caution admonition
-| `important` | Important admonition
-| `tip` | Tip admonition
-| `danger` | Danger admonition
-|===
-
-**Reference Entry Types:**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `reference_entry` | Top-level reference page entry
-| `reference_badge` | Category badge (e.g., "pi", "param")
-| `reference_name` | Entry headword/name
-| `reference_definition` | Short definition/purpose
-| `reference_meta` | Metadata (miscinfo, manvolnum)
-| `description_section` | Content section within a reference entry
-|===
-
-**Inline Types (used in `paragraph` children):**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `text` | Plain text content
-| `strong` | Bold/strong text (from `emphasis role="bold"`)
-| `italic` | Italic text (from `emphasis role="italic"`)
-| `emphasis` | Emphasized text (default emphasis)
-| `codetext` | Inline code (from `code`, `literal`, `filename`, `classname`, etc.)
-| `link` | Hyperlink with `src` as URL
-| `xref` | Internal cross-reference with resolved title
-| `citation` | Citation text (from `citetitle` without href)
-| `citation_link` | Cititation with external link
-| `biblioref` | Bibliography reference with linkend
-|===
-
-**Bibliography Types:**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `bibliography_entry` | Top-level bibliography entry
-| `biblio_abbrev` | Bibliography abbreviation
-| `biblio_citetitle` | Citation title
-| `biblio_personname` | Author name
-| `biblio_firstname` | First name
-| `biblio_surname` | Surname
-| `biblio_publishername` | Publisher name
-| `biblio_pubdate` | Publication date
-| `biblio_orgname` | Organization name
-|===
-
-**Index Types:**
-
-[cols="1,3"]
-|===
-| Type | Description
-
-| `index_section` | Index section container
-| `index_letter` | Letter group within the index
-| `index_entry` | Individual index term entry
-| `index_reference` | Link to the section containing the term
-| `index_see` | "see" cross-reference
-| `index_see_also` | "see also" cross-reference
-|===
+Preface, glossary, bibliography, and index sections are explicitly unnumbered.
 
 ## Index Model
 
@@ -270,14 +144,3 @@ A single index term entry:
 | `sees` | `String[]` | "see" cross-references
 | `see_alsos` | `String[]` | "see also" cross-references
 |===
-
-## NumberingBuilder
-
-The `NumberingBuilder` class computes section numbering during the output build. It maintains independent counters for each numbering scope:
-
-- **Parts** -- Roman numerals (I, II, III, ...) via `next_part`
-- **Chapters** -- Arabic numerals scoped per part (resets at each new part) via `next_chapter(part_index)`
-- **Sections** -- Flat sequential numbering per parent scope (1, 2, 3, ...) via `next_section(scope_id)`, combined into hierarchical dot notation (1.1, 1.2.3)
-- **Appendices** -- Alpha letters (A, B, C, ...) via `next_appendix`
-
-Preface, glossary, bibliography, and index sections are explicitly unnumbered.

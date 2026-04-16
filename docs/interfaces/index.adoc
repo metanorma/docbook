@@ -28,7 +28,7 @@ The `docbook` gem provides two complementary interfaces for working with DocBook
 
 ==== Command-Line Interface
 
-The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides six commands:
+The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides five commands:
 
 [cols="2,5"]
 |===
@@ -52,7 +52,7 @@ The Ruby API gives you fine-grained control over every stage of the DocBook proc
 1. *Parsing* -- `Docbook::Document.from_xml(xml_string)` parses XML into typed Ruby objects
 2. *XInclude Resolution* -- `Docbook::XIncludeResolver` resolves `xi:include` elements before parsing
 3. *Cross-Reference Resolution* -- `Docbook::XrefResolver` builds an ID map for `xref` and `linkend` lookups
-4. *Output* -- Generate interactive HTML readers, static HTML, or DocbookMirror JSON
+4. *Output* -- Generate interactive HTML readers or DocbookMirror JSON
 
 The core classes are:
 

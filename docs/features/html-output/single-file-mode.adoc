@@ -8,48 +8,41 @@ nav_order: 1
 
 # Single File Mode
 
-Single file mode (`output_mode: :single_file`) produces a single, self-contained HTML file with all assets inlined. This is the default output mode and is ideal for distributing documents that can be opened directly in any browser, including via the `file://` protocol.
+The `build` command produces a single, self-contained HTML file with all assets inlined. This is the default and only output mode, ideal for distributing documents that can be opened directly in any browser, including via the `file://` protocol.
 
 ## How It Works
 
-When single file mode is active, the `Output::SinglePage` class inlines every asset directly into the HTML:
+When building, the `Output::SinglePage` class inlines every asset directly into the HTML:
 
 . **CSS** -- The compiled `app.css` from `frontend/dist/` is injected inline via a `<style>` tag
 . **JavaScript** -- The compiled `app.iife.js` from `frontend/dist/` is injected inline via a `<script>` tag
 . **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN
-. **JSON Data** -- All document data (TOC, DocbookMirror content, index) is serialized to JSON and embedded in the HTML, with `</script>` tags escaped to `<\/script>`
+. **DocbookMirror JSON** -- All document data (TOC, content, index) is serialized to DocbookMirror JSON and embedded as `window.DOCBOOK_DATA`
 
 ## Image Embedding
 
-Images are embedded as base64 data URIs. The `process_image` method in `Output::SinglePage` handles this:
+Images are embedded as base64 data URIs by default. The image strategy can be configured:
 
-[source,ruby]
-----
-# When image_strategy is :data_url, images are base64-encoded
-def process_image(fileref)
-  if @image_strategy == :data_url
-    embed_image_base64(fileref)
-  else
-    find_file_path(fileref) || fileref
-  end
-end
+- `:data_url` -- Base64-encoded and embedded (default)
+- `:file_url` -- Absolute file system paths
+- `:relative` -- Relative paths for web hosting
 
-def embed_image_base64(fileref)
-  full_path = find_file_path(fileref)
-  data = File.binread(full_path)
-  mime = Marcel::MimeType.for(data)          # MIME detection via Marcel
-  encoded = Base64.strict_encode64(data)
-  "data:#{mime};base64,#{encoded}"
-end
-----
-
-The MIME type is detected automatically using the https://github.com/rails/marcel[Marcel] gem, which examines the file's magic bytes rather than relying on file extensions. This ensures correct MIME types even when file extensions are missing or incorrect.
+The MIME type is detected automatically using the https://github.com/rails/marcel[Marcel] gem, which examines the file's magic bytes rather than relying on file extensions.
 
 Image paths are resolved by searching the document's base path and its parent directories, trying common prefixes like `resources/` and `../resources/`. This accommodates the various directory structures used in DocBook projects.
 
 ## Data Injection
 
-The document data is embedded directly in the HTML. In single-file mode, the JSON data is injected inline so the Vue SPA loads it synchronously without any network requests. The `documentStore` detects `window.DOCBOOK_DATA` and loads the data immediately.
+The DocbookMirror JSON data is embedded in the HTML:
+
+[source,html]
+----
+<script>
+window.DOCBOOK_DATA = { /* DocbookMirror JSON + TOC + numbering + index */ };
+</script>
+----
+
+The Vue SPA's `documentStore` detects `window.DOCBOOK_DATA` and loads the data synchronously without any network requests. The `MirrorRenderer` component renders the DocbookMirror nodes into HTML.
 
 ## Use Case
 
@@ -63,11 +56,14 @@ Single file mode is designed for:
 ## CLI Usage
 
 ```bash
-# Build an interactive reader (default)
+# Build an interactive reader
 docbook build document.xml -o output.html
 
-# With explicit image strategy
-docbook build document.xml -o output.html --image-strategy data_url
+# With custom image paths
+docbook build document.xml -o output.html --image-search-dir media/ images/
+
+# For web hosting (external image files)
+docbook build document.xml -o output.html --image-strategy relative
 ```
 
 ## Programmatic Usage
@@ -78,21 +74,9 @@ require "docbook"
 
 Docbook::Output::SinglePage.new(
   xml_path: "book.xml",
-  output_path: "book.html",
-  image_strategy: :data_url
+  output_path: "output/book.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "My Book"
 ).generate
 ----
-
-## Template Rendering Details
-
-In single-file mode, the HTML is generated with these settings:
-
-[cols="1,2,3"]
-|===
-| Setting | Value | Purpose
-
-| `docbook_title` | Document title | Page `<title>` element
-| `base_url` | `""` (empty string) | Relative URL base (not needed for single file)
-| `assets_inline` | `true` | CSS and JS are inlined directly
-| `data_url` | Not used | Only relevant for directory mode
-|===
