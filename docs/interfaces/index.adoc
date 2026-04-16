@@ -28,16 +28,18 @@ The `docbook` gem provides two complementary interfaces for working with DocBook
 
 ==== Command-Line Interface
 
-The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides four commands:
+The `docbook` CLI is a Thor-based command-line tool installed with the gem. It provides six commands:
 
 [cols="2,5"]
 |===
 | Command | Description
 
-| `docbook validate INPUT` | Check XML well-formedness
-| `docbook to-html INPUT` | Convert DocBook XML to HTML
-| `docbook format INPUT` | Prettify (reformat) DocBook XML
-| `docbook roundtrip INPUT...` | Round-trip test for regression testing
+| `docbook build INPUT` | Build an interactive HTML reader
+| `docbook convert INPUT` | Convert DocBook XML to static HTML
+| `docbook export INPUT` | Export as DocbookMirror JSON
+| `docbook validate INPUT` | Validate DocBook XML
+| `docbook format INPUT` | Prettify DocBook XML
+| `docbook demo` | Build the bundled demo reader
 |===
 
 All commands accept file paths as arguments. The CLI handles XInclude resolution, cross-reference resolution, and output generation automatically.
@@ -51,7 +53,7 @@ The Ruby API gives you fine-grained control over every stage of the DocBook proc
 1. *Parsing* -- `Docbook::Document.from_xml(xml_string)` parses XML into typed Ruby objects
 2. *XInclude Resolution* -- `Docbook::XIncludeResolver` resolves `xi:include` elements before parsing
 3. *Cross-Reference Resolution* -- `Docbook::XrefResolver` builds an ID map for `xref` and `linkend` lookups
-4. *HTML Output* -- `Docbook::Output::Html` generates HTML in single-file or directory mode
+4. *Output* -- Generate interactive HTML readers, static HTML, or DocbookMirror JSON
 
 The core classes are:
 
@@ -60,9 +62,11 @@ The core classes are:
 | Class | Purpose
 
 | `Docbook::Document` | Entry point for parsing XML into element models
+| `Docbook::Output::SinglePage` | Full pipeline for interactive HTML readers
+| `Docbook::Output::Html` | Static HTML generation in single-file or directory mode
+| `Docbook::Output::DocbookMirror` | ProseMirror-compatible JSON export
 | `Docbook::XIncludeResolver` | Resolves XInclude elements in XML documents
 | `Docbook::XrefResolver` | Builds xml:id lookup map and resolves cross-references
-| `Docbook::Output::Html` | Generates HTML from parsed document models
 |===
 
 See <<ruby-api/index,Ruby API>> for detailed documentation of each component.
@@ -77,25 +81,14 @@ A typical Ruby workflow looks like this:
 ----
 require "docbook"
 
-# 1. Resolve XIncludes (before parsing)
-xml_string = File.read("book.xml")
-resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
-
-# 2. Parse into Ruby objects
-document = Docbook::Document.from_xml(resolved.to_xml)
-
-# 3. Resolve cross-references
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-
-# 4. Generate HTML
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("book.xml"))
-).to_html
-
-File.write("output.html", html)
+# Full pipeline: build an interactive reader
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  image_search_dirs: ["media/"],
+  image_strategy: :data_url,
+  title: "My Book"
+).generate
 ----
 
 Explore the <<cli/index,CLI Reference>> and <<ruby-api/index,Ruby API>> pages for comprehensive documentation.

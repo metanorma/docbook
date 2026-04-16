@@ -1,0 +1,135 @@
+---
+layout: default
+title: Full-Text Search
+parent: Features
+nav_order: 8
+---
+
+= Full-Text Search
+
+The interactive reader includes a client-side full-text search engine powered
+by https://github.com/nextapps-de/flexsearch[FlexSearch].  Because the index is
+built entirely in the browser, no server is required -- search works offline in
+the self-contained HTML file.
+
+== How it works
+
+=== Index construction
+
+When the document data loads, the `SearchModal.vue` component walks the table of
+contents (TOC) tree and adds every section to a FlexSearch `Document` index:
+
+[source,javascript]
+----
+const index = new FlexSearch.Document({
+  document: {
+    id: 'id',
+    index: ['title'],
+    store: ['id', 'title', 'type']
+  },
+  tokenize: 'forward',
+  resolution: 9
+})
+----
+
+The index is keyed by section `id` and indexes the `title` field.  The
+`forward` tokenizer matches prefixes and substrings, so typing "chap" matches
+"Chapter".
+
+=== Two-tier search
+
+Search is performed across two data sources simultaneously:
+
+Title index (FlexSearch):: The TOC section titles are indexed with FlexSearch
+for fast fuzzy matching.  Results are returned first and ranked by relevance.
+
+Content scan:: The full text of every section in the DocbookMirror JSON is
+scanned for case-insensitive substring matches.  Content results are returned
+after title results and include a context snippet showing the match location.
+
+Results are deduplicated -- a section that matches in both its title and its
+content appears only once, prioritized as a title match.
+
+=== Result display
+
+Each result shows:
+
+* A **type badge** (e.g., `chapter`, `section`, `appendix`) indicating the
+  section type from the TOC.
+* The section **title** with the matching text highlighted in yellow.
+* An optional **context snippet** (for content matches) showing surrounding
+  text with the match highlighted.
+
+[source,javascript]
+----
+function highlightMatch(text) {
+  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi')
+  return text.replace(regex, '<mark class="search-highlight">$1</mark>')
+}
+----
+
+=== Keyboard navigation
+
+The search modal supports full keyboard navigation:
+
+[cols="1,3"]
+|===
+|Key |Action
+
+|`/`
+|Open the search modal (when no input is focused)
+
+|`Esc`
+|Close the search modal
+
+|`Up` / `Down`
+|Move focus between results
+
+|`Enter`
+|Navigate to the focused result
+|===
+
+The `/` key binding is registered as a global keyboard listener in `App.vue`:
+
+[source,javascript]
+----
+function handleGlobalKeydown(e) {
+  if (e.key === '/' && !isInputFocused()) {
+    e.preventDefault()
+    uiStore.openSearch()
+  }
+  if (e.key === 'Escape') {
+    uiStore.closeSearch()
+  }
+}
+----
+
+== Offline support
+
+The search index is built from the `window.DOCBOOK_DATA` JSON payload that is
+embedded in the HTML file at build time.  This means:
+
+* No network requests are needed for search.
+* The entire search experience works from `file://` URLs.
+* The self-contained HTML file can be distributed and searched offline.
+
+== Index persistence
+
+The `useSearch` composable optionally persists the FlexSearch index to
+`IndexedDB` so that it does not need to be rebuilt on every page load:
+
+[source,javascript]
+----
+// On first load, build and save
+buildIndexes()
+saveToDb()
+
+// On subsequent loads, try loading from IndexedDB first
+const loaded = await loadFromDb()
+if (!loaded) {
+  requestIdleCallback(() => buildIndexes(), { timeout: 2000 })
+}
+----
+
+This optimization is particularly valuable for large documents where indexing
+may take a noticeable amount of time.

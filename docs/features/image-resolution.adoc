@@ -1,0 +1,180 @@
+---
+layout: default
+title: Image Resolution
+parent: Features
+nav_order: 10
+---
+
+= Image Resolution
+
+DocBook XML documents reference images with relative paths.  The
+`Docbook::Services::ImageResolver` class resolves these paths at build time
+using one of three strategies, controlling how images appear in the generated
+HTML.
+
+== Resolution strategies
+
+=== data\_url (default)
+
+Images are read from disk, Base64-encoded, and embedded directly in the HTML as
+`data:` URIs.
+
+*Produces a fully self-contained HTML file.*
+
+Best for offline use, single-file distribution, and `file://` viewing.
+
+[source,ruby]
+----
+Docbook::Output::SinglePage.new(
+  xml_path: 'guide.xml',
+  output_path: 'guide.html',
+  image_strategy: :data_url    # default
+).generate
+----
+
+Under this strategy, an image node in the DocbookMirror JSON is transformed
+like this:
+
+[source,json]
+----
+// Before resolution
+{ "type": "image", "attrs": { "src": "media/diagram.png" } }
+
+// After resolution
+{ "type": "image", "attrs": { "src": "data:image/png;base64,iVBOR..." } }
+----
+
+=== file\_url
+
+Images are referenced by absolute `file://` URLs pointing to the image on the
+local filesystem.
+
+*Best for local viewing where the HTML is opened from disk.*
+
+[source,bash]
+----
+$ docbook build book.xml -o book.html --image-strategy file_url
+----
+
+Result:
+
+[source,json]
+----
+{ "type": "image", "attrs": { "src": "file:///home/user/docs/media/diagram.png" } }
+----
+
+=== relative
+
+Images keep their original relative paths.  The HTML file expects image files
+to be deployed alongside it at the same relative locations.
+
+*Best for web hosting* where the HTML and image files are served together over
+HTTP.
+
+[source,bash]
+----
+$ docbook build book.xml -o /var/www/html/book.html --image-strategy relative
+----
+
+Result:
+
+[source,json]
+----
+{ "type": "image", "attrs": { "src": "media/diagram.png" } }
+----
+
+== Image search directories
+
+The resolver walks a list of search directories to locate each image file.  By
+default, the directory containing the source XML file is always included.
+
+Additional directories can be specified via the CLI or the Ruby API:
+
+=== CLI
+
+[source,bash]
+----
+# Search in the XML directory AND two extra directories
+$ docbook build book.xml -o book.html \
+    --image-search-dir media/ \
+    --image-search-dir resources/images/
+----
+
+=== Ruby API
+
+[source,ruby]
+----
+Docbook::Output::SinglePage.new(
+  xml_path: 'guide.xml',
+  output_path: 'guide.html',
+  image_search_dirs: ['media/', 'resources/images/']
+).generate
+----
+
+The resolver searches directories in order and uses the first match:
+
+[source,ruby]
+----
+# From Docbook::Services::ImageResolver
+def find_image(src)
+  @search_dirs.each do |dir|
+    abs_path = File.expand_path(src, dir)
+    return abs_path if File.exist?(abs_path)
+  end
+  nil
+end
+----
+
+== How it works
+
+The `ImageResolver` walks the entire DocbookMirror JSON structure and finds
+every node with `"type": "image"` that has a `src` attribute.  For each image:
+
+. Skip if `src` already starts with `http`, `data:`, or `file://`.
+. Search each directory in `search_dirs` for the file.
+. If found, transform `src` according to the active strategy.
+
+[source,ruby]
+----
+resolver = Docbook::Services::ImageResolver.new(
+  search_dirs: ["/path/to/xml", "/path/to/resources"],
+  strategy: :data_url
+)
+resolver.resolve(guide_json)   # mutates in place
+----
+
+== Supported image formats
+
+The `data_url` strategy encodes images with the correct MIME type:
+
+[cols="1,1"]
+|===
+
+|Extension |MIME type
+
+|`.png`
+|`image/png`
+
+|`.jpg`, `.jpeg`
+|`image/jpeg`
+
+|`.gif`
+|`image/gif`
+
+|`.svg`
+|`image/svg+xml`
+
+|`.webp`
+|`image/webp`
+
+|===
+
+If the file extension is not recognized, the original path is left unchanged.
+
+== In the reader
+
+In the generated HTML, the DocbookMirror JSON is embedded as
+`window.DOCBOOK_DATA`.  The Vue 3 frontend renders `image` nodes from this
+JSON.  Because image resolution happens at build time (step 7 in the
+`SinglePage` pipeline), the reader simply displays whatever `src` value is in
+the JSON -- whether that is a data URI, a file URL, or a relative path.

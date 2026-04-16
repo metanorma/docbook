@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Docbook
   module Elements
     class Xref < Lutaml::Model::Serializable

@@ -7,10 +7,10 @@ module Docbook
     module Mark
       # Link mark - represents both internal (linkend) and external (href) links
       class Link < Base
-        PM_TYPE = 'link'
+        PM_TYPE = "link"
 
-        def initialize(href: nil, linkend: nil, **kwargs)
-          super(**kwargs)
+        def initialize(href: nil, linkend: nil, **)
+          super(**)
           @attrs[:href] = href if href
           @attrs[:linkend] = linkend if linkend
         end
@@ -26,10 +26,10 @@ module Docbook
 
       # Xref mark - cross-reference with resolved title
       class Xref < Base
-        PM_TYPE = 'xref'
+        PM_TYPE = "xref"
 
-        def initialize(linkend:, resolved: nil, **kwargs)
-          super(**kwargs)
+        def initialize(linkend:, resolved: nil, **)
+          super(**)
           @attrs[:linkend] = linkend
           @attrs[:resolved] = resolved if resolved
         end
@@ -45,10 +45,10 @@ module Docbook
 
       # Citation mark for bibliography references
       class Citation < Base
-        PM_TYPE = 'citation'
+        PM_TYPE = "citation"
 
-        def initialize(bibref:, **kwargs)
-          super(**kwargs)
+        def initialize(bibref:, **)
+          super(**)
           @attrs[:bibref] = bibref
         end
 

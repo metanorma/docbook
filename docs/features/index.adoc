@@ -53,6 +53,21 @@ The processing pipeline follows these stages:
   * `Index` -- grouped index entries
 . **Render** -- A Liquid template produces the HTML shell, and the Vue 3 SPA renders the content client-side
 
+## Reader Features
+
+The interactive HTML reader built by `docbook build` includes:
+
+[cols="2,4"]
+|===
+| Feature | Description
+
+| <<themes,Themes>> | 4 themes (Day, Sepia, Night, OLED) with CSS custom properties
+| <<search,Search>> | Full-text search powered by FlexSearch
+| <<breadcrumb-navigation,Breadcrumb Navigation>> | Ancestor chain breadcrumb bar
+| <<image-resolution,Image Resolution>> | 3 image strategies: data_url, file_url, relative
+| <<reference-entries,Reference Entries>> | Specialized rendering for refentry (man-page style)
+|===
+
 ## Child Pages
 
 - <<html-output/index,HTML Output>> -- Single-file and directory output modes, data model
@@ -61,3 +76,8 @@ The processing pipeline follows these stages:
 - <<toc-generation,TOC Generation>> -- Table of contents tree structure and rendering
 - <<index-generation,Index Generation>> -- Index collection, grouping, and cross-references
 - <<element-coverage,Element Coverage>> -- Full list of supported DocBook element classes
+- <<themes,Themes>> -- 4-color theme system with CSS custom properties
+- <<search,Full-Text Search>> -- Client-side search with FlexSearch
+- <<breadcrumb-navigation,Breadcrumb Navigation>> -- Ancestor chain navigation bar
+- <<image-resolution,Image Resolution>> -- Image handling strategies
+- <<reference-entries,Reference Entries>> -- Reference manual page rendering

@@ -1,0 +1,156 @@
+---
+layout: default
+title: DocbookMirror JSON Schema
+parent: Reference
+nav_order: 5
+---
+
+# DocbookMirror JSON Schema
+
+Quick reference for the DocbookMirror JSON format. See link:../understanding/docbook-mirror/[DocbookMirror JSON] for detailed explanations.
+
+== Top-level structure
+
+[source,json]
+----
+{
+  "type": "doc",
+  "attrs": { "title": "Document Title" },
+  "content": [ /* node array */ ]
+}
+----
+
+== Node types
+
+[cols="1,1,3"]
+|===
+| Type | PM_TYPE | Description
+
+| `doc` | `doc` | Document root. Contains structural or block nodes.
+| `text` | `text` | Leaf text node. Has `text` attribute and optional `marks` array.
+| `paragraph` | `paragraph` | Block paragraph.
+| `heading` | `heading` | Heading with `level` attribute (1-6).
+| `code_block` | `code_block` | Code listing with optional `language` attribute.
+| `blockquote` | `blockquote` | Block quotation.
+| `bullet_list` | `bullet_list` | Unordered list of `list_item` children.
+| `ordered_list` | `ordered_list` | Ordered list of `list_item` children.
+| `list_item` | `list_item` | List item containing block content.
+| `dl` | `dl` | Definition list with `definition_term` / `definition_description` children.
+| `definition_term` | `definition_term` | Term in a definition list.
+| `definition_description` | `definition_description` | Definition in a definition list.
+| `image` | `image` | Image with `src`, `alt`, `title`, `xml_id` attributes.
+| `admonition` | `admonition` | Admonition with `admonition_type` (note, warning, caution, important, tip, danger).
+| `chapter` | `chapter` | Book chapter. Has `title`, `xml_id` attributes.
+| `part` | `part` | Book part grouping chapters.
+| `section` | `section` | Generic section container.
+| `appendix` | `appendix` | Appendix section.
+| `reference` | `reference` | Reference page collection.
+| `refentry` | `refentry` | Single reference entry (man-page style).
+| `refsection` | `refsection` | Section within a reference entry.
+| `table` | `table` | Table with `frame`, `colsep`, `rowsep`, `cols` attributes.
+| `table_head` | `table_head` | Table header section.
+| `table_body` | `table_body` | Table body section.
+| `table_row` | `table_row` | Table row containing `table_cell` children.
+| `table_cell` | `table_cell` | Table cell with `namest`, `nameend`, `morerows` attributes for spanning.
+|===
+
+== Mark types
+
+[cols="1,1,3,3"]
+|===
+| Type | PM_TYPE | Attributes | Source DocBook Elements
+
+| `emphasis` | `emphasis` | _(none)_ | `emphasis`
+| `strong` | `strong` | _(none)_ | `emphasis role="strong"`
+| `italic` | `italic` | _(none)_ | `emphasis role="italic"`
+| `code` | `code` | `role` | `code`, `literal`, `filename`, `classname`, `function`, `command`, `userinput`, `replaceable`, `option`, `parameter`, `envar`, `varname`, `type`, `tag`, `att`, `sgmltag`, `constant`, `returnvalue`, `symbol`, `systemitem`, `email`, `uri`, `interfacename`, `prompt`, `literal`, `markup`
+| `link` | `link` | `href` or `linkend` | `link`
+| `xref` | `xref` | `linkend`, `resolved` | `xref`
+| `citation` | `citation` | `bibref` | `citation`
+|===
+
+== Common JSON patterns
+
+=== Text with marks
+
+[source,json]
+----
+{
+  "type": "text",
+  "text": "inline code",
+  "marks": [{ "type": "code", "attrs": { "role": "filename" } }]
+}
+----
+
+=== Paragraph with mixed inline content
+
+[source,json]
+----
+{
+  "type": "paragraph",
+  "content": [
+    { "type": "text", "text": "See " },
+    { "type": "text", "text": "Chapter 1", "marks": [{ "type": "xref", "attrs": { "linkend": "ch1", "resolved": "Introduction" } }] },
+    { "type": "text", "text": " for details." }
+  ]
+}
+----
+
+=== Chapter with sections
+
+[source,json]
+----
+{
+  "type": "chapter",
+  "attrs": { "title": "Getting Started", "xml_id": "ch-getting-started" },
+  "content": [
+    { "type": "paragraph", "content": [{ "type": "text", "text": "Welcome." }] }
+  ]
+}
+----
+
+=== Table with header and body
+
+[source,json]
+----
+{
+  "type": "table",
+  "attrs": { "frame": "all", "colsep": "1", "rowsep": "1", "cols": 2 },
+  "content": [
+    { "type": "table_head", "content": [
+      { "type": "table_row", "content": [
+        { "type": "table_cell", "content": [{ "type": "text", "text": "Name" }] },
+        { "type": "table_cell", "content": [{ "type": "text", "text": "Value" }] }
+      ]}
+    ]},
+    { "type": "table_body", "content": [
+      { "type": "table_row", "content": [
+        { "type": "table_cell", "content": [{ "type": "text", "text": "Key" }] },
+        { "type": "table_cell", "content": [{ "type": "text", "text": "1" }] }
+      ]}
+    ]}
+  ]
+}
+----
+
+=== Admonition
+
+[source,json]
+----
+{
+  "type": "admonition",
+  "attrs": { "admonition_type": "warning" },
+  "content": [
+    { "type": "paragraph", "content": [
+      { "type": "text", "text": "Do not delete this file." }
+    ]}
+  ]
+}
+----
+
+== See Also
+
+* link:../understanding/docbook-mirror/index[DocbookMirror JSON] -- Full documentation
+* link:../understanding/docbook-mirror/node-types[Node Types] -- Detailed node reference
+* link:../understanding/docbook-mirror/mark-types[Mark Types] -- Detailed mark reference
+* link:../understanding/docbook-mirror/comparison-prosemirror[Comparison with ProseMirror] -- Design rationale

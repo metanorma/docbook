@@ -10,7 +10,7 @@ module Docbook
       end
 
       def build
-        doc_root = Models::DocumentRoot.new(
+        Models::DocumentRoot.new(
           title: extract_title,
           metadata: build_metadata,
           toc: generate_toc,
@@ -25,8 +25,8 @@ module Docbook
       private
 
       def extract_title
-        @document.respond_to?(:title) && @document.title&.content ||
-          @document.respond_to?(:info) && @document.info&.title&.content ||
+        (@document.respond_to?(:title) && @document.title&.content) ||
+          (@document.respond_to?(:info) && @document.info&.title&.content) ||
           "Untitled Document"
       end
 
@@ -39,7 +39,9 @@ module Docbook
           metadata.title = info.title&.content if info.respond_to?(:title)
           metadata.subtitle = info.subtitle&.content if info.respond_to?(:subtitle)
           metadata.productname = info.productname&.content if info.respond_to?(:productname)
-          metadata.pubdate = info.date&.content || info.pubdate&.content if info.respond_to?(:date) || info.respond_to?(:pubdate)
+          if info.respond_to?(:date) || info.respond_to?(:pubdate)
+            metadata.pubdate = info.date&.content || info.pubdate&.content
+          end
         end
 
         metadata
@@ -77,21 +79,21 @@ module Docbook
         sections = []
 
         root_elements = case @document
-        when Elements::Book
-          roots = []
-          roots.concat(Array(@document.part))
-          roots.concat(Array(@document.chapter))
-          roots.concat(Array(@document.appendix))
-          roots.concat(Array(@document.preface))
-          roots
-        when Elements::Article
-          roots = []
-          roots.concat(Array(@document.section))
-          roots.concat(Array(@document.article))
-          roots
-        else
-          Array(@document.elements)
-        end
+                        when Elements::Book
+                          roots = []
+                          roots.concat(Array(@document.part))
+                          roots.concat(Array(@document.chapter))
+                          roots.concat(Array(@document.appendix))
+                          roots.concat(Array(@document.preface))
+                          roots
+                        when Elements::Article
+                          roots = []
+                          roots.concat(Array(@document.section))
+                          roots.concat(Array(@document.article))
+                          roots
+                        else
+                          Array(@document.elements)
+                        end
 
         root_elements.each do |element|
           section = build_section(element)
@@ -139,7 +141,6 @@ module Docbook
         when Elements::Preface then "preface"
         when Elements::Article then "article"
         when Elements::Book then "book"
-        else nil
         end
       end
 
@@ -159,10 +160,10 @@ module Docbook
       end
 
       def generate_id(element)
-        "section-#{element.class.name.split('::').last.downcase}-#{element.object_id}"
+        "section-#{element.class.name.split("::").last.downcase}-#{element.object_id}"
       end
 
-      def get_section_number(element)
+      def get_section_number(_element)
         # Will be filled in by numbering service
         nil
       end
@@ -174,6 +175,7 @@ module Docbook
         if element.respond_to?(:elements)
           element.elements.each do |child|
             next if skip_element?(child)
+
             block = ElementToHash.new(child).to_h
             blocks << block if block
           end
@@ -184,6 +186,7 @@ module Docbook
           element.refsection&.each do |rs|
             rs.elements&.each do |child|
               next if skip_element?(child)
+
               block = ElementToHash.new(child).to_h
               blocks << block if block
             end
@@ -197,7 +200,7 @@ module Docbook
         element.is_a?(Elements::Title) ||
           element.is_a?(Elements::Info) ||
           element.is_a?(Elements::IndexTerm) ||
-          element.is_a?(Elements::Simplesect) && element.title.nil?
+          (element.is_a?(Elements::Simplesect) && element.title.nil?)
       end
 
       def build_child_sections(element)
@@ -207,6 +210,7 @@ module Docbook
 
         child_elements.each do |child|
           next unless section_like?(child)
+
           section = build_section(child)
           children << section if section
         end

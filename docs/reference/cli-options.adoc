@@ -7,8 +7,8 @@ nav_order: 1
 
 # CLI Options
 
-The `docbook` command-line tool is built on Thor. It provides four
-commands: `format`, `validate`, `to-html`, and `roundtrip`.
+The `docbook` command-line tool is built on Thor. It provides six
+primary commands plus a development-only `roundtrip` command.
 
 == Global behavior
 
@@ -17,9 +17,171 @@ commands: `format`, `validate`, `to-html`, and `roundtrip`.
 * The tool exits with code 0 on success and code 1 on failure.
 * Error messages are written to stderr.
 
+== build
+
+Build an interactive HTML reader from DocBook XML. Produces a self-contained
+file that works offline.
+
+....
+docbook build INPUT -o OUTPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--output PATH`
+| `-o`
+| _(required)_
+| Output HTML file path.
+
+| `--xinclude`
+| _(none)_
+| `true`
+| Resolve XInclude directives before processing.
+
+| `--image-search-dir DIR [...]`
+| _(none)_
+| XML file directory
+| Additional directories to search for image files.
+
+| `--image-strategy STRATEGY`
+| _(none)_
+| `data_url`
+| Image handling: `data_url` (Base64 embed), `file_url` (absolute path), or `relative` (web-friendly).
+
+| `--title TITLE`
+| _(none)_
+| Derived from document
+| Page title shown in the browser tab.
+|===
+
+=== Examples
+
+....
+# Basic usage
+docbook build book.xml -o book.html
+
+# Custom image paths
+docbook build book.xml -o book.html --image-search-dir media/ images/
+
+# For web hosting
+docbook build book.xml -o book.html --image-strategy relative
+
+# Build the bundled demo
+docbook demo -o demo.html
+....
+
+== convert
+
+Convert DocBook XML to static HTML (no JavaScript).
+
+....
+docbook convert INPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--output PATH`
+| `-o`
+| stdout
+| Output file path (single-file mode) or directory path (directory mode).
+
+| `--xinclude`
+| _(none)_
+| `true`
+| Resolve XInclude directives before processing.
+
+| `--output-type TYPE`
+| _(none)_
+| `single_file`
+| Output type: `single_file` or `directory`.
+|===
+
+=== Single-file mode
+
+....
+docbook convert book.xml -o output.html
+....
+
+Produces a single `output.html` with all JSON data, CSS, and JavaScript
+embedded inline.
+
+=== Directory mode
+
+....
+docbook convert book.xml -o my-book --output-type directory
+....
+
+Creates a directory with `index.html`, `docbook.data.json`, and `assets/`.
+
+== export
+
+Export DocBook XML as DocbookMirror JSON (ProseMirror-compatible).
+
+....
+docbook export INPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--output PATH`
+| `-o`
+| stdout
+| Output JSON file path.
+
+| `--pretty`
+| _(none)_
+| `true`
+| Pretty-print the JSON output.
+
+| `--xinclude`
+| _(none)_
+| `true`
+| Resolve XInclude directives before processing.
+|===
+
+=== Examples
+
+....
+docbook export book.xml -o book.json
+docbook export book.xml --no-pretty
+....
+
+== validate
+
+Validate DocBook XML against the RELAX NG schema.
+
+....
+docbook validate INPUT [options]
+....
+
+[cols="1,1,1,1,3"]
+|===
+| Option | Alias | Default | Description
+
+| `--schema`
+| _(none)_
+| `true`
+| Validate against DocBook 5 RELAX NG schema.
+
+| `--wellformed`
+| _(none)_
+| `false`
+| Check well-formedness only (skip schema validation).
+|===
+
+When `--wellformed` is used, only XML parsing errors are checked.
+Otherwise, the document is also validated against the bundled DocBook 5
+RELAX NG schema.
+
 == format
 
-Formats and prettifies a DocBook XML file.
+Format and prettify a DocBook XML file.
 
 ....
 docbook format INPUT [options]
@@ -32,7 +194,7 @@ docbook format INPUT [options]
 | `--output PATH`
 | `-o`
 | stdout
-| Output file path. When omitted, the formatted XML is written to
+| Output file path. When omitted, formatted XML is written to
   standard output.
 
 | `--xinclude`
@@ -41,31 +203,12 @@ docbook format INPUT [options]
 | Resolve XInclude directives before formatting.
 |===
 
-The command parses the input XML, then re-serializes it with pretty
-printing (indentation) and an XML declaration with UTF-8 encoding.
+== demo
 
-== validate
-
-Checks whether a DocBook XML file is well-formed.
+Build a demo reader from the bundled DocBook sample.
 
 ....
-docbook validate INPUT
-....
-
-This command has no options. It reads the file, parses it with
-Nokogiri, and checks for parse errors. If the document is well-formed,
-it prints `INPUT: valid`. If errors are found, each error is printed
-to stderr and the command exits with code 1.
-
-Note: this validates XML well-formedness only, not DocBook schema
-conformance.
-
-== to-html
-
-Converts a DocBook XML file to an interactive HTML page.
-
-....
-docbook to-html INPUT [options]
+docbook demo [options]
 ....
 
 [cols="1,1,1,1,3"]
@@ -74,62 +217,39 @@ docbook to-html INPUT [options]
 
 | `--output PATH`
 | `-o`
-| stdout
-| Output file path (single-file mode) or output directory path
-  (directory mode).
-
-| `--xinclude`
-| _(none)_
-| `true`
-| Resolve XInclude directives before processing. Enabled by default
-  for the `to-html` command.
-
-| `--output-type TYPE`
-| _(none)_
-| `single_file`
-| Output type: `single_file` or `directory`. In single-file mode,
-  all data is inlined into one HTML file. In directory mode, JSON
-  data and assets are written as separate files.
+| `demo.html`
+| Output HTML file path.
 |===
-
-=== Single-file mode
-
-....
-docbook to-html book.xml -o output.html
-...
-
-Produces a single `output.html` file with all JSON data, CSS, and
-JavaScript embedded inline. The file can be opened directly in a
-browser without a web server.
-
-=== Directory mode
-
-....
-docbook to-html book.xml -o my-book --output-type directory
-....
-
-Creates a `my-book/` directory containing:
-
-* `index.html` -- HTML shell with Vue SPA mount point
-* `docbook.data.json` -- Full document data as JSON
-* `assets/app.css` -- Compiled stylesheet
-* `assets/app.iife.js` -- Bundled JavaScript
-
-The directory mode requires the `--output` option.
 
 == roundtrip
 
-Tests that DocBook XML files can be parsed and re-serialized
-successfully.
+Round-trip test one or more DocBook XML files.
 
 ....
 docbook roundtrip INPUT [INPUT...]
 ....
 
-This command has no options. It accepts one or more file paths. For
-each file, it parses the XML, serializes it back, re-parses the output,
-and reports success or failure. At the end, it prints a summary of
-total files and failure count.
+This command has no options. It parses each file, serializes it,
+re-parses the output, and reports success or failure.
+
+== Deprecated commands
+
+[cols="1,1,3"]
+|===
+| Deprecated | Use Instead | Notes
+
+| `to-single-page`
+| `build`
+| Prints deprecation warning
+
+| `to-html`
+| `convert`
+| Prints deprecation warning
+
+| `to-docbook-mirror`
+| `export`
+| Prints deprecation warning
+|===
 
 == Quick reference table
 
@@ -137,17 +257,29 @@ total files and failure count.
 |===
 | Command | Input | Output
 
-| `format`
+| `build`
 | File path
-| Pretty-printed XML (file or stdout)
+| Self-contained interactive HTML
+
+| `convert`
+| File path
+| Static HTML (file or directory)
+
+| `export`
+| File path
+| DocbookMirror JSON (file or stdout)
 
 | `validate`
 | File path
 | Pass/fail status
 
-| `to-html`
+| `format`
 | File path
-| HTML file or directory
+| Pretty-printed XML (file or stdout)
+
+| `demo`
+| _(none)_
+| Interactive HTML from bundled sample
 
 | `roundtrip`
 | One or more file paths

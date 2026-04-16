@@ -24,7 +24,7 @@ module Docbook
       # =========================================
 
       def document_node(docbook_doc)
-        title = if docbook_doc.respond_to?(:info) && docbook_doc.info&.respond_to?(:title)
+        title = if docbook_doc.respond_to?(:info) && docbook_doc.info.respond_to?(:title)
                   docbook_doc.info.title&.content
                 elsif docbook_doc.respond_to?(:title)
                   docbook_doc.title&.content
@@ -53,9 +53,9 @@ module Docbook
           when Docbook::Elements::Code, Docbook::Elements::ProgramListing
             content << code_block_node(node)
           when Docbook::Elements::Screen
-            content << code_block_node(node, language: 'text')
+            content << code_block_node(node, language: "text")
           when Docbook::Elements::LiteralLayout
-            content << code_block_node(node, language: 'text')
+            content << code_block_node(node, language: "text")
           when Docbook::Elements::BlockQuote
             content << blockquote_node(node)
           when Docbook::Elements::OrderedList
@@ -177,9 +177,9 @@ module Docbook
         return nil unless ve.respond_to?(:definition)
 
         desc_content = []
-        ve.definition.each do |d|
+        ve.definition&.each do |d|
           desc_content.concat(extract_content(d))
-        end if ve.definition
+        end
 
         return nil if desc_content.empty?
 
@@ -217,12 +217,13 @@ module Docbook
           media = el
         end
 
-        image_obj = media&.imageobject&.first if media&.respond_to?(:imageobject)
-        href = image_obj&.imagedata&.fileref if image_obj&.respond_to?(:imagedata)
+        image_obj = media&.imageobject&.first if media.respond_to?(:imageobject)
+        href = image_obj&.imagedata&.fileref if image_obj.respond_to?(:imagedata)
 
         # Emit placeholder with xml_id even without image, for xref anchoring
         unless href
           return nil unless xml_id
+
           attrs = { xml_id: xml_id, title: title_text }.compact
           return Docbook::Mirror::Node::Paragraph.new(
             attrs: attrs,
@@ -236,9 +237,7 @@ module Docbook
       def table_node(el)
         attrs = {}
         attrs[:xml_id] = el.xml_id if el.respond_to?(:xml_id) && el.xml_id
-        if el.respond_to?(:title) && el.title
-          attrs[:title] = el.title.content.to_s
-        end
+        attrs[:title] = el.title.content.to_s if el.respond_to?(:title) && el.title
         attrs[:frame] = el.frame if el.respond_to?(:frame) && el.frame
         attrs[:colsep] = el.colsep if el.respond_to?(:colsep) && el.colsep
         attrs[:rowsep] = el.rowsep if el.respond_to?(:rowsep) && el.rowsep
@@ -251,17 +250,13 @@ module Docbook
 
           if tg.respond_to?(:thead) && tg.thead
             head_rows = build_table_rows(tg.thead.row)
-            unless head_rows.empty?
-              table_content << Docbook::Mirror::Node::TableHead.new(content: head_rows)
-            end
+            table_content << Docbook::Mirror::Node::TableHead.new(content: head_rows) unless head_rows.empty?
           end
 
-          if tg.respond_to?(:tbody) && tg.tbody
-            body_rows = build_table_rows(tg.tbody.row)
-            unless body_rows.empty?
-              table_content << Docbook::Mirror::Node::TableBody.new(content: body_rows)
-            end
-          end
+          next unless tg.respond_to?(:tbody) && tg.tbody
+
+          body_rows = build_table_rows(tg.tbody.row)
+          table_content << Docbook::Mirror::Node::TableBody.new(content: body_rows) unless body_rows.empty?
         end
 
         Docbook::Mirror::Node::Table.new(attrs: attrs.compact, content: table_content)
@@ -272,9 +267,7 @@ module Docbook
           cells = row.entry.map do |entry|
             cell_content = []
             text = entry.content.to_s.strip
-            unless text.empty?
-              cell_content << Docbook::Mirror::Node::Text.new(text: text)
-            end
+            cell_content << Docbook::Mirror::Node::Text.new(text: text) unless text.empty?
             cell_attrs = {}
             cell_attrs[:align] = entry.align if entry.align
             cell_attrs[:valign] = entry.valign if entry.valign
@@ -405,22 +398,26 @@ module Docbook
           if ref.refmeta.fieldsynopsis && !ref.refmeta.fieldsynopsis.empty?
             fs = ref.refmeta.fieldsynopsis.first
             parts = []
-            parts << Docbook::Mirror::Node::Text.new(
-              text: fs.type.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: 'type')]
-            ) if fs.type && !fs.type.content.to_s.empty?
+            if fs.type && !fs.type.content.to_s.empty?
+              parts << Docbook::Mirror::Node::Text.new(
+                text: fs.type.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "type")]
+              )
+            end
             parts << Docbook::Mirror::Node::Text.new(text: " ")
-            parts << Docbook::Mirror::Node::Text.new(
-              text: fs.varname.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: 'varname')]
-            ) if fs.varname && !fs.varname.content.to_s.empty?
+            if fs.varname && !fs.varname.content.to_s.empty?
+              parts << Docbook::Mirror::Node::Text.new(
+                text: fs.varname.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "varname")]
+              )
+            end
             if fs.initializer && !fs.initializer.content.to_s.empty?
               parts << Docbook::Mirror::Node::Text.new(text: " = ")
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.initializer.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: 'literal')]
+                text: fs.initializer.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "literal")]
               )
             end
             unless parts.empty?
               content << Docbook::Mirror::Node::Paragraph.new(
-                attrs: { class: 'refmeta-synopsis' },
+                attrs: { class: "refmeta-synopsis" },
                 content: parts
               )
             end
@@ -543,7 +540,7 @@ module Docbook
 
       def emphasis_node(el)
         role = el.role
-        mark = if role == "bold" || role == "strong"
+        mark = if %w[bold strong].include?(role)
                  Docbook::Mirror::Mark::Strong.new
                elsif role == "italic"
                  Docbook::Mirror::Mark::Italic.new
@@ -562,29 +559,29 @@ module Docbook
 
       def code_role(el)
         case el
-        when Docbook::Elements::Literal then 'literal'
-        when Docbook::Elements::Code then 'code'
-        when Docbook::Elements::UserInput then 'userinput'
-        when Docbook::Elements::ComputerOutput then 'computeroutput'
-        when Docbook::Elements::Filename then 'filename'
-        when Docbook::Elements::ClassName then 'classname'
-        when Docbook::Elements::Function then 'function'
-        when Docbook::Elements::Parameter then 'parameter'
-        when Docbook::Elements::Replaceable then 'replaceable'
-        when Docbook::Elements::Command then 'command'
-        when Docbook::Elements::Option then 'option'
-        when Docbook::Elements::Envar then 'envar'
-        when Docbook::Elements::Property then 'property'
-        when Docbook::Elements::Varname then 'varname'
-        when Docbook::Elements::Type then 'type'
-        when Docbook::Elements::Errortype then 'errortype'
-        when Docbook::Elements::Errorcode then 'errorcode'
-        when Docbook::Elements::Exceptionname then 'exceptionname'
-        when Docbook::Elements::Constant then 'constant'
-        when Docbook::Elements::Prompt then 'prompt'
-        when Docbook::Elements::BuildTarget then 'buildtarget'
-        when Docbook::Elements::Enumvalue then 'enumvalue'
-        else 'literal'
+        when Docbook::Elements::Literal then "literal"
+        when Docbook::Elements::Code then "code"
+        when Docbook::Elements::UserInput then "userinput"
+        when Docbook::Elements::ComputerOutput then "computeroutput"
+        when Docbook::Elements::Filename then "filename"
+        when Docbook::Elements::ClassName then "classname"
+        when Docbook::Elements::Function then "function"
+        when Docbook::Elements::Parameter then "parameter"
+        when Docbook::Elements::Replaceable then "replaceable"
+        when Docbook::Elements::Command then "command"
+        when Docbook::Elements::Option then "option"
+        when Docbook::Elements::Envar then "envar"
+        when Docbook::Elements::Property then "property"
+        when Docbook::Elements::Varname then "varname"
+        when Docbook::Elements::Type then "type"
+        when Docbook::Elements::Errortype then "errortype"
+        when Docbook::Elements::Errorcode then "errorcode"
+        when Docbook::Elements::Exceptionname then "exceptionname"
+        when Docbook::Elements::Constant then "constant"
+        when Docbook::Elements::Prompt then "prompt"
+        when Docbook::Elements::BuildTarget then "buildtarget"
+        when Docbook::Elements::Enumvalue then "enumvalue"
+        else "literal"
         end
       end
 
@@ -597,7 +594,11 @@ module Docbook
           if el.linkend
             text = @xml_id_map[el.linkend.to_s] || el.linkend.to_s
           else
-            uri = URI(href) rescue nil
+            uri = begin
+              URI(href)
+            rescue StandardError
+              nil
+            end
             text = if uri&.path && !uri.path.empty? && uri.path != "/"
                      File.basename(uri.path)
                    elsif uri&.host
@@ -674,7 +675,7 @@ module Docbook
       def tag_node(el)
         tag_name = el.content.to_s
         text = "<#{tag_name}>"
-        text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: 'tag')])
+        text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: "tag")])
       end
 
       def biblioref_node(el)
@@ -701,10 +702,10 @@ module Docbook
       def productname_node(el)
         text = el.content.to_s
         suffix = case el.class_name
-                 when 'trade' then "\u2122"
-                 when 'registered' then "\u00AE"
-                 when 'copyright' then "\u00A9"
-                 when 'service' then "\u2120"
+                 when "trade" then "\u2122"
+                 when "registered" then "\u00AE"
+                 when "copyright" then "\u00A9"
+                 when "service" then "\u2120"
                  else ""
                  end
         full_text = text + suffix
@@ -718,10 +719,10 @@ module Docbook
       def trademark_node(el)
         text = el.content.to_s
         suffix = case el.class_name
-                 when 'trade' then "\u2122"
-                 when 'registered' then "\u00AE"
-                 when 'copyright' then "\u00A9"
-                 when 'service' then "\u2120"
+                 when "trade" then "\u2122"
+                 when "registered" then "\u00AE"
+                 when "copyright" then "\u00A9"
+                 when "service" then "\u2120"
                  else "\u2122"
                  end
         text_node(text + suffix)
@@ -749,7 +750,7 @@ module Docbook
 
       def keycap_node(el)
         text = el.content.to_s
-        text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: 'keycap')])
+        text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: "keycap")])
       end
 
       def plain_text_node(el)
@@ -830,41 +831,41 @@ module Docbook
 
       def to_docbook(mirror_node)
         case mirror_node.type
-        when 'doc'
+        when "doc"
           docbook_document(mirror_node)
-        when 'paragraph'
+        when "paragraph"
           docbook_paragraph(mirror_node)
-        when 'text'
+        when "text"
           docbook_text(mirror_node)
-        when 'code_block'
+        when "code_block"
           docbook_code_block(mirror_node)
-        when 'blockquote'
+        when "blockquote"
           docbook_blockquote(mirror_node)
-        when 'bullet_list'
+        when "bullet_list"
           docbook_itemized_list(mirror_node)
-        when 'ordered_list'
+        when "ordered_list"
           docbook_ordered_list(mirror_node)
-        when 'list_item'
+        when "list_item"
           docbook_list_item(mirror_node)
-        when 'dl'
+        when "dl"
           docbook_variable_list(mirror_node)
-        when 'definition_term'
+        when "definition_term"
           docbook_definition_term(mirror_node)
-        when 'definition_description'
+        when "definition_description"
           docbook_definition_description(mirror_node)
-        when 'admonition'
+        when "admonition"
           docbook_admonition(mirror_node)
-        when 'chapter'
+        when "chapter"
           docbook_chapter(mirror_node)
-        when 'section'
+        when "section"
           docbook_section(mirror_node)
-        when 'part'
+        when "part"
           docbook_part(mirror_node)
-        when 'appendix'
+        when "appendix"
           docbook_appendix(mirror_node)
-        when 'reference'
+        when "reference"
           docbook_reference(mirror_node)
-        when 'image'
+        when "image"
           docbook_image(mirror_node)
         else
           raise Error, "Unknown node type: #{mirror_node.type}"
@@ -877,7 +878,7 @@ module Docbook
 
       def docbook_document(mirror_node)
         attrs = mirror_node.attrs || {}
-        title = attrs[:title] || attrs['title']
+        title = attrs[:title] || attrs["title"]
 
         doc = Docbook::Elements::Article.new
         info = Docbook::Elements::Info.new
@@ -912,7 +913,7 @@ module Docbook
 
         mirror_node.content.each do |child|
           case child.type
-          when 'text'
+          when "text"
             marks = child.marks || []
             if marks.empty?
               # Plain text - add to text parts
@@ -923,7 +924,7 @@ module Docbook
                 inline_elements << { mark: mark, text: child.text }
               end
             end
-          when 'soft_break'
+          when "soft_break"
             text_parts << "\n"
           end
         end
@@ -989,58 +990,56 @@ module Docbook
 
       def apply_mark_to_element(text, mark)
         case mark.type
-        when 'emphasis'
+        when "emphasis"
           el = Docbook::Elements::Emphasis.new
           el.content = text
           el
-        when 'strong'
+        when "strong"
           el = Docbook::Elements::Emphasis.new
-          el.role = 'bold'
+          el.role = "bold"
           el.content = text
           el
-        when 'italic'
+        when "italic"
           el = Docbook::Elements::Emphasis.new
-          el.role = 'italic'
+          el.role = "italic"
           el.content = text
           el
-        when 'code'
-          role = mark.attrs && (mark.attrs[:role] || mark.attrs['role']) || 'literal'
+        when "code"
+          role = (mark.attrs && (mark.attrs[:role] || mark.attrs["role"])) || "literal"
           el = role_to_class(role).new
           el.content = text
           el
-        when 'link'
-          href = mark.attrs && (mark.attrs[:href] || mark.attrs['href'])
+        when "link"
+          href = mark.attrs && (mark.attrs[:href] || mark.attrs["href"])
           el = Docbook::Elements::Link.new
           el.xlink_href = href
           el.content = text
           el
-        when 'xref'
-          linkend = mark.attrs && (mark.attrs[:linkend] || mark.attrs['linkend'])
+        when "xref"
+          linkend = mark.attrs && (mark.attrs[:linkend] || mark.attrs["linkend"])
           el = Docbook::Elements::Xref.new
           el.linkend = linkend
           el.content = text
           el
-        when 'citation'
-          bibref = mark.attrs && (mark.attrs[:bibref] || mark.attrs['bibref'])
+        when "citation"
+          bibref = mark.attrs && (mark.attrs[:bibref] || mark.attrs["bibref"])
           el = Docbook::Elements::Biblioref.new
           el.linkend = bibref
           el.content = text
           el
-        when 'tag'
+        when "tag"
           el = Docbook::Elements::Tag.new
           el.content = text.gsub(/^<(.+)>$/, '\1')
           el
-        else
-          nil
         end
       end
 
       def docbook_code_block(mirror_node)
         attrs = mirror_node.attrs || {}
-        language = attrs[:language] || attrs['language']
+        language = attrs[:language] || attrs["language"]
 
         # Determine which code element to use
-        el = if language == 'text' || language.nil?
+        el = if language == "text" || language.nil?
                Docbook::Elements::Screen.new
              else
                code = Docbook::Elements::Code.new
@@ -1087,8 +1086,8 @@ module Docbook
       def docbook_varlistentry(mirror_node)
         ve = Docbook::Elements::Varlistentry.new
         # Find term and description children
-        term_node = mirror_node.content.to_a.find { |n| n.type == 'definition_term' } if mirror_node.content
-        desc_node = mirror_node.content.to_a.find { |n| n.type == 'definition_description' } if mirror_node.content
+        term_node = mirror_node.content.to_a.find { |n| n.type == "definition_term" } if mirror_node.content
+        desc_node = mirror_node.content.to_a.find { |n| n.type == "definition_description" } if mirror_node.content
 
         ve.term = docbook_definition_term(term_node) if term_node
         ve.definition = [docbook_definition_description(desc_node)] if desc_node
@@ -1113,17 +1112,17 @@ module Docbook
       end
 
       ADMONITION_TYPES = {
-        'note' => Docbook::Elements::Note,
-        'warning' => Docbook::Elements::Warning,
-        'tip' => Docbook::Elements::Tip,
-        'caution' => Docbook::Elements::Caution,
-        'important' => Docbook::Elements::Important,
-        'danger' => Docbook::Elements::Danger
+        "note" => Docbook::Elements::Note,
+        "warning" => Docbook::Elements::Warning,
+        "tip" => Docbook::Elements::Tip,
+        "caution" => Docbook::Elements::Caution,
+        "important" => Docbook::Elements::Important,
+        "danger" => Docbook::Elements::Danger
       }.freeze
 
       def docbook_admonition(mirror_node)
         attrs = mirror_node.attrs || {}
-        type = (attrs[:admonition_type] || attrs['admonition_type'] || 'note').to_s
+        type = (attrs[:admonition_type] || attrs["admonition_type"] || "note").to_s
 
         adm_class = ADMONITION_TYPES[type] || Docbook::Elements::Note
         adm = adm_class.new
@@ -1134,11 +1133,11 @@ module Docbook
       def docbook_chapter(mirror_node)
         attrs = mirror_node.attrs || {}
         chapter = Docbook::Elements::Chapter.new
-        chapter.xml_id = attrs[:xml_id] || attrs['xml_id']
-        chapter.number = attrs[:number] || attrs['number']
-        if attrs[:title] || attrs['title']
+        chapter.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        chapter.number = attrs[:number] || attrs["number"]
+        if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs['title']
+          title.content = attrs[:title] || attrs["title"]
           chapter.title = title
         end
         chapter.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
@@ -1148,11 +1147,11 @@ module Docbook
       def docbook_section(mirror_node)
         attrs = mirror_node.attrs || {}
         section = Docbook::Elements::Section.new
-        section.xml_id = attrs[:xml_id] || attrs['xml_id']
-        section.number = attrs[:number] || attrs['number']
-        if attrs[:title] || attrs['title']
+        section.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        section.number = attrs[:number] || attrs["number"]
+        if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs['title']
+          title.content = attrs[:title] || attrs["title"]
           section.title = title
         end
         section.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
@@ -1162,10 +1161,10 @@ module Docbook
       def docbook_part(mirror_node)
         attrs = mirror_node.attrs || {}
         part = Docbook::Elements::Part.new
-        part.number = attrs[:number] || attrs['number']
-        if attrs[:title] || attrs['title']
+        part.number = attrs[:number] || attrs["number"]
+        if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs['title']
+          title.content = attrs[:title] || attrs["title"]
           part.title = title
         end
         part.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
@@ -1175,11 +1174,11 @@ module Docbook
       def docbook_appendix(mirror_node)
         attrs = mirror_node.attrs || {}
         appendix = Docbook::Elements::Appendix.new
-        appendix.xml_id = attrs[:xml_id] || attrs['xml_id']
-        appendix.number = attrs[:number] || attrs['number']
-        if attrs[:title] || attrs['title']
+        appendix.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        appendix.number = attrs[:number] || attrs["number"]
+        if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs['title']
+          title.content = attrs[:title] || attrs["title"]
           appendix.title = title
         end
         appendix.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) } if mirror_node.content
@@ -1189,10 +1188,10 @@ module Docbook
       def docbook_reference(mirror_node)
         attrs = mirror_node.attrs || {}
         ref = Docbook::Elements::RefEntry.new
-        ref.xml_id = attrs[:xml_id] || attrs['xml_id']
-        if attrs[:title] || attrs['title']
+        ref.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        if attrs[:title] || attrs["title"]
           refmeta = Docbook::Elements::RefMeta.new
-          refmeta.refentrytitle = attrs[:title] || attrs['title']
+          refmeta.refentrytitle = attrs[:title] || attrs["title"]
           ref.refmeta = refmeta
         end
         ref
@@ -1201,15 +1200,15 @@ module Docbook
       def docbook_image(mirror_node)
         attrs = mirror_node.attrs || {}
         figure = Docbook::Elements::Figure.new
-        figure.xml_id = attrs[:xml_id] || attrs['xml_id']
-        if attrs[:title] || attrs['title']
+        figure.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs['title']
+          title.content = attrs[:title] || attrs["title"]
           figure.title = title
         end
         imageobject = Docbook::Elements::ImageObject.new
         imagedata = Docbook::Elements::ImageData.new
-        imagedata.fileref = attrs[:src] || attrs['src']
+        imagedata.fileref = attrs[:src] || attrs["src"]
         imageobject.imagedata = imagedata
         figure.imageobject = [imageobject]
         figure
@@ -1226,9 +1225,9 @@ module Docbook
 
         mirror_node.content.each do |child|
           case child.type
-          when 'text'
+          when "text"
             inline_content << docbook_text(child)
-          when 'soft_break'
+          when "soft_break"
             inline_content << "\n"
           end
         end
@@ -1237,7 +1236,7 @@ module Docbook
       end
 
       def docbook_text(mirror_node)
-        text = mirror_node.text || ''
+        text = mirror_node.text || ""
         marks = mirror_node.marks || []
 
         # Process marks in order
@@ -1250,31 +1249,31 @@ module Docbook
 
       def apply_mark_to_text(text, mark)
         case mark.type
-        when 'emphasis'
+        when "emphasis"
           wrap_in_element(text, Docbook::Elements::Emphasis)
-        when 'strong'
+        when "strong"
           el = Docbook::Elements::Emphasis.new
-          el.role = 'bold'
+          el.role = "bold"
           el.content = text
           el
-        when 'italic'
+        when "italic"
           el = Docbook::Elements::Emphasis.new
-          el.role = 'italic'
+          el.role = "italic"
           el.content = text
           el
-        when 'code'
-          role = mark.attrs && (mark.attrs[:role] || mark.attrs['role']) || 'literal'
+        when "code"
+          role = (mark.attrs && (mark.attrs[:role] || mark.attrs["role"])) || "literal"
           wrap_in_element(text, role_to_class(role))
-        when 'link'
-          href = mark.attrs && (mark.attrs[:href] || mark.attrs['href'])
+        when "link"
+          href = mark.attrs && (mark.attrs[:href] || mark.attrs["href"])
           wrap_in_link(text, href)
-        when 'xref'
-          linkend = mark.attrs && (mark.attrs[:linkend] || mark.attrs['linkend'])
+        when "xref"
+          linkend = mark.attrs && (mark.attrs[:linkend] || mark.attrs["linkend"])
           wrap_in_xref(text, linkend)
-        when 'citation'
-          bibref = mark.attrs && (mark.attrs[:bibref] || mark.attrs['bibref'])
+        when "citation"
+          bibref = mark.attrs && (mark.attrs[:bibref] || mark.attrs["bibref"])
           wrap_in_biblioref(text, bibref)
-        when 'tag'
+        when "tag"
           tag = Docbook::Elements::Tag.new
           tag.content = text.gsub(/^<(.+)>$/, '\1')
           tag
@@ -1291,15 +1290,15 @@ module Docbook
 
       def role_to_class(role)
         case role.to_s
-        when 'literal' then Docbook::Elements::Literal
-        when 'code' then Docbook::Elements::Code
-        when 'userinput' then Docbook::Elements::UserInput
-        when 'computeroutput' then Docbook::Elements::ComputerOutput
-        when 'filename' then Docbook::Elements::Filename
-        when 'classname' then Docbook::Elements::ClassName
-        when 'function' then Docbook::Elements::Function
-        when 'parameter' then Docbook::Elements::Parameter
-        when 'replaceable' then Docbook::Elements::Replaceable
+        when "literal" then Docbook::Elements::Literal
+        when "code" then Docbook::Elements::Code
+        when "userinput" then Docbook::Elements::UserInput
+        when "computeroutput" then Docbook::Elements::ComputerOutput
+        when "filename" then Docbook::Elements::Filename
+        when "classname" then Docbook::Elements::ClassName
+        when "function" then Docbook::Elements::Function
+        when "parameter" then Docbook::Elements::Parameter
+        when "replaceable" then Docbook::Elements::Replaceable
         else Docbook::Elements::Literal
         end
       end
@@ -1330,7 +1329,7 @@ module Docbook
       # =========================================
 
       def extract_text_from_content(content)
-        return '' unless content
+        return "" unless content
 
         content.map do |node|
           if node.respond_to?(:text) && node.text

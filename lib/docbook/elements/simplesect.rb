@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Docbook
   module Elements
     class Simplesect < Lutaml::Model::Serializable

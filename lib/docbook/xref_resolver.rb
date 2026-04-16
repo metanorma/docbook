@@ -19,6 +19,7 @@ module Docbook
     def title_for(linkend)
       target = @xml_id_map[linkend.to_s]
       return nil unless target
+
       best_title(target)
     end
 
@@ -63,9 +64,7 @@ module Docbook
         el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
       when Docbook::Elements::Bibliography
         el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
-        if el.respond_to?(:bibliolist)
-          el.bibliolist&.each { |bl| build_xml_id_map(bl, map) }
-        end
+        el.bibliolist&.each { |bl| build_xml_id_map(bl, map) } if el.respond_to?(:bibliolist)
       end
 
       map
@@ -83,7 +82,11 @@ module Docbook
           el.citetitle&.first&.content ||
           format_bibliomixed_id(el.xml_id)
       else
-        el.title&.content rescue nil
+        begin
+          el.title&.content
+        rescue StandardError
+          nil
+        end
       end
     end
 
@@ -95,13 +98,13 @@ module Docbook
       id = xml_id.to_s
       # Handle known prefixes
       suffix = if id.start_with?("rfc") && id.length > 3
-                 id[3..-1]
+                 id[3..]
                elsif id.start_with?("iso") && id.length > 3
-                 id[3..-1]
+                 id[3..]
                elsif id.start_with?("xml") && id.length > 3
-                 id[3..-1]
+                 id[3..]
                elsif id.start_with?("bib.")
-                 id[4..-1]
+                 id[4..]
                else
                  id
                end
@@ -109,20 +112,20 @@ module Docbook
       return nil if suffix.nil? || suffix.empty?
 
       # Clean up suffix: strip leading/trailing whitespace and hyphens
-      suffix = suffix.strip.gsub(/\A-+/, '').gsub(/-\z/, '')
+      suffix = suffix.strip.gsub(/\A-+/, "").gsub(/-\z/, "")
       return nil if suffix.empty?
 
       # Apply formatting
       if id.start_with?("rfc")
         "RFC #{suffix}"
       elsif id.start_with?("iso")
-        "ISO #{suffix.gsub('-', ' ')}"
+        "ISO #{suffix.gsub("-", " ")}"
       elsif id.start_with?("xml")
-        "XML #{suffix.gsub('-', ' ')}"
+        "XML #{suffix.gsub("-", " ")}"
       elsif id.start_with?("bib.")
         suffix.capitalize
       else
-        suffix.split('-').map(&:capitalize).join(' ')
+        suffix.split("-").map(&:capitalize).join(" ")
       end
     end
   end

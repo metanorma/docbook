@@ -121,7 +121,7 @@ module Docbook
             <title>#{@title}</title>
             <style>#{css_content}</style>
             <script>
-              window.DOCBOOK_DATA = #{JSON.generate(guide).gsub('</script', '<\\/script')};
+              window.DOCBOOK_DATA = #{JSON.generate(guide).gsub("</script", '<\\/script')};
             </script>
           </head>
           <body>

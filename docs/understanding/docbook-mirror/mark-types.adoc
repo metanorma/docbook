@@ -1,0 +1,359 @@
+---
+layout: default
+title: Mark Types
+parent: DocbookMirror JSON
+grand_parent: Understanding
+nav_order: 2
+---
+
+# Mark Types
+
+**Marks** are inline annotations attached to `text` nodes. A mark wraps a span
+of text with a type identifier and optional attributes. In the JSON output,
+marks appear in the `marks` array of a text node.
+
+All mark classes inherit from `Docbook::Mirror::Mark::Base` and are registered
+in the `MARKS` hash for deserialization.
+
+== Common mark shape
+
+A mark follows this structure in JSON:
+
+[source,json]
+----
+{
+  "type": "<mark_type>",
+  "attrs": { /* mark-specific attributes */ }
+}
+----
+
+* `type` (required) -- The mark type string, matching the class's `PM_TYPE`
+  constant.
+* `attrs` (optional) -- A key-value map of attributes. Omitted when empty.
+
+Marks never appear on their own; they are always carried by `text` nodes:
+
+[source,json]
+----
+{
+  "type": "text",
+  "text": "highlighted text",
+  "marks": [
+    { "type": "emphasis" }
+  ]
+}
+----
+
+A text node can carry multiple marks simultaneously. For example, text that is
+both emphasized and a link would have both the `emphasis` and `link` marks in
+its `marks` array.
+
+== emphasis
+
+`Docbook::Mirror::Mark::Emphasis` +
+PM_TYPE: `"emphasis"`
+
+Default emphasis styling. Mapped from DocBook `<emphasis>` elements that have
+no `role` attribute (or an unrecognized role). In HTML this typically renders
+as italic text.
+
+.DocBook source
+[source,xml]
+----
+<emphasis>important</emphasis>
+----
+
+.JSON output
+[source,json]
+----
+{
+  "type": "text",
+  "text": "important",
+  "marks": [
+    { "type": "emphasis" }
+  ]
+}
+----
+
+== strong
+
+`Docbook::Mirror::Mark::Strong` +
+PM_TYPE: `"strong"`
+
+Strong (bold) emphasis. Mapped from DocBook `<emphasis role="strong">` and
+`<emphasis role="bold">`.
+
+.DocBook source
+[source,xml]
+----
+<emphasis role="strong">bold text</emphasis>
+----
+
+.JSON output
+[source,json]
+----
+{
+  "type": "text",
+  "text": "bold text",
+  "marks": [
+    { "type": "strong" }
+  ]
+}
+----
+
+== italic
+
+`Docbook::Mirror::Mark::Italic` +
+PM_TYPE: `"italic"`
+
+Explicit italic styling. Mapped from DocBook `<emphasis role="italic">`.
+Distinguished from the default `emphasis` mark to preserve the author's
+explicit intent for italic rendering.
+
+.DocBook source
+[source,xml]
+----
+<emphasis role="italic">italic text</emphasis>
+----
+
+.JSON output
+[source,json]
+----
+{
+  "type": "text",
+  "text": "italic text",
+  "marks": [
+    { "type": "italic" }
+  ]
+}
+----
+
+== code
+
+`Docbook::Mirror::Mark::Code` +
+PM_TYPE: `"code"`
+
+Monospace code styling. This is a unified mark type that covers 23+ distinct
+DocBook inline elements. The specific DocBook element is preserved in the
+`role` attribute, allowing the renderer to apply different styling or behavior
+based on the original element.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `role` | String | The DocBook element type. Defaults to `"literal"`.
+|===
+
+.Supported role values
+
+[cols="1,2"]
+|===
+| Role | DocBook Element
+| `literal` | `<literal>`
+| `code` | `<code>`
+| `userinput` | `<userinput>`
+| `computeroutput` | `<computeroutput>`
+| `filename` | `<filename>`
+| `classname` | `<classname>`
+| `function` | `<function>`
+| `parameter` | `<parameter>`
+| `replaceable` | `<replaceable>`
+| `command` | `<command>`
+| `option` | `<option>`
+| `envar` | `<envar>`
+| `property` | `<property>`
+| `varname` | `<varname>`
+| `type` | `<type>`
+| `errortype` | `<errortype>`
+| `errorcode` | `<errorcode>`
+| `exceptionname` | `<exceptionname>`
+| `constant` | `<constant>`
+| `prompt` | `<prompt>`
+| `buildtarget` | `<buildtarget>`
+| `enumvalue` | `<enumvalue>`
+| `tag` | `<tag>` (rendered as `<tagname>`)
+| `keycap` | `<keycap>`
+|===
+
+.DocBook source
+[source,xml]
+----
+<filename>/etc/hosts</filename>
+<command>make install</command>
+----
+
+.JSON output
+[source,json]
+----
+[
+  {
+    "type": "text",
+    "text": "/etc/hosts",
+    "marks": [ { "type": "code", "attrs": { "role": "filename" } } ]
+  },
+  {
+    "type": "text",
+    "text": "make install",
+    "marks": [ { "type": "code", "attrs": { "role": "command" } } ]
+  }
+]
+----
+
+== link
+
+`Docbook::Mirror::Mark::Link` +
+PM_TYPE: `"link"`
+
+A hyperlink. Supports both external URLs (via `href`) and internal
+cross-references within the document (via `linkend`). Mapped from DocBook
+`<link>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `href` | String | External URL (present for external links)
+| `linkend` | String | Internal document anchor ID (present for internal links)
+|===
+
+Exactly one of `href` or `linkend` is set on any given link mark.
+
+.DocBook source (external link)
+[source,xml]
+----
+<link xlink:href="https://example.com">visit the site</link>
+----
+
+.JSON output (external link)
+[source,json]
+----
+{
+  "type": "text",
+  "text": "visit the site",
+  "marks": [
+    { "type": "link", "attrs": { "href": "https://example.com" } }
+  ]
+}
+----
+
+.DocBook source (internal link)
+[source,xml]
+----
+<link linkend="getting-started">Getting Started</link>
+----
+
+.JSON output (internal link)
+[source,json]
+----
+{
+  "type": "text",
+  "text": "Getting Started",
+  "marks": [
+    { "type": "link", "attrs": { "linkend": "getting-started" } }
+  ]
+}
+----
+
+=== Link resolution behavior
+
+When a `<link>` element has no text content, the transformer synthesizes
+display text:
+
+* For `linkend` references, it resolves the title from the internal `xml_id_map`.
+* For external URLs, it extracts a readable label from the URL path or host.
+
+== xref
+
+`Docbook::Mirror::Mark::Xref` +
+PM_TYPE: `"xref"`
+
+A cross-reference to another element in the document. Mapped from DocBook
+`<xref>`. Unlike `link`, which represents an authored hyperlink, `xref` is a
+semantic cross-reference that the transformer resolves to a title.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `linkend` | String | The `xml:id` of the target element
+| `resolved` | String | The resolved title text of the target element
+|===
+
+.DocBook source
+[source,xml]
+----
+See <xref linkend="installation"/> for details.
+----
+
+.JSON output
+[source,json]
+----
+{
+  "type": "text",
+  "text": "Installation",
+  "marks": [
+    { "type": "xref", "attrs": { "linkend": "installation", "resolved": "Installation" } }
+  ]
+}
+----
+
+=== Resolution mechanism
+
+During `from_docbook`, the transformer builds an `xml_id_map` by walking the
+entire element tree and collecting every element that has an `xml:id`. The
+`resolved` attribute is populated by looking up the `linkend` value in this
+map. If no matching ID is found, the `linkend` value itself is used as the
+display text.
+
+== citation
+
+`Docbook::Mirror::Mark::Citation` +
+PM_TYPE: `"citation"`
+
+A citation reference to a bibliography entry. Mapped from DocBook `<citation>`
+(via `<biblioref>`) and `<citetitle>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `bibref` | String | The bibliography reference identifier (from `linkend` or `href`)
+|===
+
+.DocBook source
+[source,xml]
+----
+See <citation>bib001</citation> for background.
+----
+
+.JSON output
+[source,json]
+----
+{
+  "type": "text",
+  "text": "bib001",
+  "marks": [
+    { "type": "citation", "attrs": { "bibref": "bib001" } }
+  ]
+}
+----
+
+== Complete mark type reference
+
+[cols="1,1,2,2"]
+|===
+| Class | PM_TYPE | Key Attributes | Source DocBook Elements
+
+| `Emphasis` | `emphasis` | -- | `<emphasis>` (no role)
+| `Strong` | `strong` | -- | `<emphasis role="strong">`, `<emphasis role="bold">`
+| `Italic` | `italic` | -- | `<emphasis role="italic">`
+| `Code` | `code` | `role` | `<literal>`, `<code>`, `<userinput>`, `<computeroutput>`, `<filename>`, `<classname>`, `<function>`, `<parameter>`, `<replaceable>`, `<command>`, `<option>`, `<envar>`, `<property>`, `<varname>`, `<type>`, `<errortype>`, `<errorcode>`, `<exceptionname>`, `<constant>`, `<prompt>`, `<buildtarget>`, `<enumvalue>`, `<tag>`, `<keycap>`
+| `Link` | `link` | `href`, `linkend` | `<link>`
+| `Xref` | `xref` | `linkend`, `resolved` | `<xref>`
+| `Citation` | `citation` | `bibref` | `<citation>`, `<biblioref>`, `<citetitle>`
+|===

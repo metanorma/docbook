@@ -1,0 +1,173 @@
+---
+layout: default
+title: Breadcrumb Navigation
+parent: Features
+nav_order: 9
+---
+
+= Breadcrumb Navigation
+
+The breadcrumb bar provides persistent context for the reader's position within
+the document hierarchy.  It displays the full ancestor chain from the root
+section down to the currently visible section, using collapsible "chips" that
+show type badges and section titles.
+
+== Overview
+
+The breadcrumb bar is rendered by the `BreadcrumbBar.vue` component and sits at
+the top of the content area.  It is:
+
+* **Sticky** -- pinned to the top of the viewport so it is always visible while
+  scrolling.
+* **Reactive** -- updates automatically as the user navigates or scrolls to a
+  new section.
+* **Compact** -- ancestor chips collapse to show only type badge and section
+  number, expanding on hover to reveal the full title.
+
+== Ancestor chain
+
+The ancestor chain is computed by walking the TOC tree from the root to the
+active section:
+
+[source,javascript]
+----
+// From utils/breadcrumb.ts
+export function findAncestorChain(sections, activeId) {
+  return walk(sections, activeId, [])
+}
+
+function walk(nodes, targetId, path) {
+  for (const node of nodes) {
+    const currentPath = [...path, node]
+    if (node.id === targetId) return currentPath
+    if (node.children?.length) {
+      const found = walk(node.children, targetId, currentPath)
+      if (found) return found
+    }
+  }
+  return null
+}
+----
+
+The result is an ordered array `[root, ...intermediates, active]` representing
+the path from the document root to the current section.
+
+== Type badges
+
+Each breadcrumb chip displays a short type badge indicating the section type.
+Badges are color-coded for quick visual scanning:
+
+[cols="1,1,1"]
+|===
+|Section type |Badge label |Badge class
+
+|`part`
+|Pt
+|`badge-purple` (#8b5cf6)
+
+|`chapter`
+|Ch
+|`badge-blue` (#3b82f6)
+
+|`appendix`
+|App
+|`badge-green` (#22c55e)
+
+|`glossary`
+|Gl
+|`badge-yellow` (#eab308)
+
+|`bibliography`
+|Bib
+|`badge-red` (#ef4444)
+
+|`index`
+|Idx
+|`badge-indigo` (#6366f1)
+
+|`preface`
+|Pref
+|`badge-orange` (#f97316)
+
+|`reference`
+|Ref
+|`badge-cyan` (#06b6d4)
+
+|`refentry`
+|p
+|`badge-refentry` (monospace)
+|===
+
+== Collapsible chips
+
+To save horizontal space, intermediate breadcrumb chips (all ancestors except
+the root and the active leaf) collapse by default.  A collapsed chip shows only
+the type badge and the section number.  The full title is revealed when the
+user hovers over the chip:
+
+[source,css]
+----
+.breadcrumb-title {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.25s ease-out, opacity 0.2s ease-out;
+}
+
+.breadcrumb-title.expanded,
+.group:hover .breadcrumb-title {
+  max-width: 200px;
+  opacity: 1;
+}
+----
+
+The root chip and the active (leaf) chip are always expanded so the user can
+see where they are and where the document starts.
+
+== Navigation
+
+Each breadcrumb chip is a clickable link that navigates to the corresponding
+section:
+
+[source,vue]
+----
+<a :href="'#' + item.id" class="breadcrumb-chip">
+  <span class="badge">{{ getTypeLabel(item.type) }}</span>
+  <span class="number">{{ item.number }}</span>
+  <span class="title">{{ item.title }}</span>
+</a>
+----
+
+Clicking a chip scrolls the content area to the target section.  Because the
+href uses the section ID as a fragment (`#section-id`), navigation also updates
+the browser's URL hash.
+
+== Visual design
+
+The breadcrumb bar uses a frosted-glass effect for readability over content:
+
+[source,css]
+----
+.breadcrumb-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--chrome-bg-glass);  /* semi-transparent */
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--chrome-border);
+}
+----
+
+The active chip is highlighted with an accent-colored outline to clearly mark
+the current position:
+
+[source,css]
+----
+.breadcrumb-chip-active {
+  background: color-mix(in srgb, var(--chrome-accent) 15%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--chrome-accent) 30%, transparent);
+}
+----
+
+All colors adapt to the active theme through the `--chrome-*` CSS custom
+properties.

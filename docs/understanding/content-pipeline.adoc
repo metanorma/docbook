@@ -21,7 +21,8 @@ layer. The XML may reference external files via XInclude or contain
 
 == Step 2: XInclude resolution
 
-If XInclude processing is enabled (the default for `to-html`), the
+If XInclude processing is enabled (the default for `build`, `convert`,
+and `export`), the
 `XIncludeResolver` preprocesses the Nokogiri document. It iterates
 through all `xi:include` elements, fetches the referenced files, and
 replaces the include directives with the actual content. This step

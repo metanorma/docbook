@@ -187,7 +187,7 @@ To modify the reader's appearance or behavior:
 
 . Edit the Vue components in `frontend/src/`.
 . Run `npm run build` in the `frontend/` directory.
-. Regenerate the HTML output using the `docbook to-html` command.
+. Regenerate the HTML output using the `docbook build` command.
 
 The Ruby generator always uses the latest built assets from
 `frontend/dist/`, so changes take effect immediately after rebuilding.

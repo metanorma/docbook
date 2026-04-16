@@ -112,19 +112,25 @@ curl -X GET https://api.example.com/v1/users \
 
 == CLI conversion
 
-To convert the article to a single HTML file:
+To build an interactive reader:
 
 ....
-docbook to-html article.xml -o article.html
+docbook build article.xml -o article.html
+....
+
+For static HTML output:
+
+....
+docbook convert article.xml -o article.html
 ....
 
 For directory output:
 
 ....
-docbook to-html article.xml -o article-out --output-type directory
+docbook convert article.xml -o article-out --output-type directory
 ....
 
-Note that XInclude resolution is enabled by default for `to-html`. If
+Note that XInclude resolution is enabled by default. If
 your article does not use XIncludes, this has no effect.
 
 == Ruby API conversion

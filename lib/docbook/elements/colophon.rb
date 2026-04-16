@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Docbook
   module Elements
     class Colophon < Lutaml::Model::Serializable

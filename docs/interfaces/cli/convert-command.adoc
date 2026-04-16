@@ -1,0 +1,138 @@
+---
+layout: default
+title: convert
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 2
+---
+
+== convert
+
+Convert a DocBook XML file to static HTML. Unlike `build`, the output has no JavaScript or interactivity -- it produces plain HTML suitable for embedding or further processing.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook convert INPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file (required)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` PATH | stdout | Output file path (single-file mode) or directory path (directory mode)
+| `--xinclude` | `true` | Resolve XInclude elements before processing
+| `--output-type` MODE | `single_file` | Output mode: `single_file` or `directory`
+|===
+
+=== Output Modes
+
+==== Single-File Mode (default)
+
+Produces a single HTML file with all content embedded:
+
+[source,bash]
+----
+$ docbook convert book.xml -o output.html
+Written to output.html
+----
+
+In single-file mode:
+
+* CSS and JavaScript are embedded inline
+* All content data (TOC, sections, index) is embedded in `<script>` tags as JSON
+* Images use Base64 data URIs
+
+==== Directory Mode
+
+Produces a directory with separate files for web serving:
+
+[source,bash]
+----
+$ docbook convert book.xml -o my-book --output-type directory
+Written to my-book/index.html and assets/
+----
+
+Directory structure:
+
+[source]
+----
+my-book/
+  index.html           # HTML shell with Vue SPA
+  docbook.data.json    # Structured content data
+  assets/
+    app.css            # Compiled stylesheet
+    app.iife.js        # JavaScript application bundle
+----
+
+[IMPORTANT]
+====
+When using `--output-type directory`, the `--output` option is *required*.
+====
+
+=== Generated Content
+
+The output includes several computed features:
+
+[cols="2,5"]
+|===
+| Feature | Description
+
+| *Table of Contents* | Hierarchical TOC with section numbering
+| *Section Numbering* | Parts (Roman), chapters (Arabic), appendices (Alpha), sections (dotted)
+| *Cross-References* | `xref` elements resolved to target titles
+| *Image Handling* | Single-file: Base64 data URIs. Directory: relative paths
+| *Index Generation* | `indexterm` elements collected and grouped alphabetically
+|===
+
+=== XInclude Resolution
+
+By default, XIncludes are resolved before conversion. To skip:
+
+[source,bash]
+----
+$ docbook convert book.xml -o output.html --no-xinclude
+----
+
+=== Examples
+
+==== Convert an article
+
+[source,bash]
+----
+$ docbook convert article.xml -o article.html
+Written to article.html
+----
+
+==== Convert to directory for web serving
+
+[source,bash]
+----
+$ docbook convert book.xml -o /var/www/book --output-type directory
+Written to /var/www/book/index.html and assets/
+----
+
+==== Pipe to stdout
+
+[source,bash]
+----
+$ docbook convert article.xml
+<!DOCTYPE html><html>...
+----
+
+=== See Also
+
+* link:../build-command[build] -- Build an interactive HTML reader (recommended)
+* link:../../ruby-api/html-output[Ruby API: HTML Output] -- Programmatic HTML generation

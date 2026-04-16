@@ -1,0 +1,115 @@
+---
+layout: default
+title: build
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 1
+---
+
+== build
+
+Build an interactive HTML reader from a DocBook XML file. The output is a single self-contained file that works offline -- CSS, JavaScript, and images are all inlined.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook build INPUT -o OUTPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file (required)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` PATH | _(required)_ | Output HTML file path
+| `--xinclude` | `true` | Resolve XInclude elements before processing
+| `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
+| `--image-strategy` STRATEGY | `data_url` | Image handling: `data_url`, `file_url`, or `relative`
+| `--title` TITLE | Derived from document | Page title shown in the browser tab
+|===
+
+=== Image Strategies
+
+The `--image-strategy` option controls how images are handled in the output:
+
+[cols="2,5"]
+|===
+| Strategy | Description
+
+| `data_url` | Images are Base64-encoded and embedded in the HTML. Produces a fully self-contained file that works offline. Recommended for local viewing and single-file distribution.
+
+| `file_url` | Images are referenced by absolute file system paths. Suitable for local viewing where image files remain at their original locations.
+
+| `relative` | Images use relative paths from the output HTML file. Best for web hosting -- deploy the HTML and image files together to a static server.
+|===
+
+=== Examples
+
+==== Basic usage
+
+[source,bash]
+----
+$ docbook build book.xml -o book.html
+Built /path/to/book.html
+----
+
+==== Custom image directories
+
+[source,bash]
+----
+$ docbook build book.xml -o book.html --image-search-dir media/ images/
+Built /path/to/book.html
+----
+
+==== For web hosting
+
+[source,bash]
+----
+$ docbook build book.xml -o /var/www/book.html --image-strategy relative
+Built /var/www/book.html
+----
+
+==== Custom title
+
+[source,bash]
+----
+$ docbook build manual.xml -o manual.html --title "Product Manual v3.0"
+Built /path/to/manual.html
+----
+
+==== Skip XInclude resolution
+
+[source,bash]
+----
+$ docbook build article.xml -o article.html --no-xinclude
+Built /path/to/article.html
+----
+
+=== What's in the output
+
+The built HTML file is a complete interactive reader with:
+
+* **Sidebar** -- Collapsible table of contents with section type badges
+* **Search** -- Full-text search powered by FlexSearch (press `/` to open)
+* **Themes** -- Day, Sepia, Night, and OLED themes with font options
+* **Breadcrumb** -- Ancestor chain navigation bar
+* **Content** -- All DocBook content rendered with proper typography
+
+The file works offline because all CSS, JavaScript, and (with `data_url` strategy) images are embedded.
+
+=== See Also
+
+* link:../demo-command[demo] -- Build a demo reader from the bundled sample
+* link:../convert-command[convert] -- Convert to static HTML (no JavaScript)
+* link:../../ruby-api/single-page[Ruby API: SinglePage] -- Programmatic reader generation

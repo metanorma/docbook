@@ -32,3 +32,6 @@ Read these pages when you want to do any of the following:
   from XML input to final output.
 * <<data-models, Data Models>> -- The Ruby classes that represent
   parsed and computed document data.
+* <<docbook-mirror, DocbookMirror JSON>> -- The ProseMirror-compatible
+  intermediate representation: node types, mark types, and how it
+  differs from standard ProseMirror.

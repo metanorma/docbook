@@ -83,11 +83,13 @@ module Docbook
     def self.base_dir_for(document)
       url = document.url
       return nil unless url
+
       File.dirname(url.sub(%r{^file://}, ""))
     end
 
     def self.resolve_path(base_dir, href)
       return nil unless base_dir
+
       File.join(base_dir, href)
     end
 
@@ -145,14 +147,15 @@ module Docbook
       if remainder && !remainder.empty? && remainder.start_with?(delim)
         stop_remainder = remainder[1..]
         stop_close = stop_remainder.index(delim)
-        if stop_close
-          stop_pattern = stop_remainder[0...stop_close]
-        end
+        stop_pattern = stop_remainder[0...stop_close] if stop_close
       end
 
       # Apply search
-      match_fn = delim == "/" ? ->(line, pat) { line.match?(Regexp.new(pat)) }
-                              : ->(line, pat) { line.include?(pat) }
+      match_fn = if delim == "/"
+                   ->(line, pat) { line.match?(Regexp.new(pat)) }
+                 else
+                   ->(line, pat) { line.include?(pat) }
+                 end
 
       start_idx = lines.index { |l| match_fn.call(l, pattern_str) }
       return nil unless start_idx
@@ -201,7 +204,7 @@ module Docbook
       result = selected.join
       if length_part
         max_len = length_part.split("=")[1].to_i
-        result = result[0...max_len] if max_len > 0
+        result = result[0...max_len] if max_len.positive?
       end
       result
     end
@@ -211,6 +214,7 @@ module Docbook
     def self.apply_char_fragid(content, char_spec)
       char_start, char_end = char_spec.split(",").map(&:to_i)
       return nil unless char_start && char_end
+
       content[char_start...char_end]
     end
   end

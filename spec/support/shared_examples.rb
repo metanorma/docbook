@@ -3,7 +3,7 @@
 RSpec.shared_examples "a serializer" do
   it "round-trips" do
     input = fixture.read
-    fixture_path = fixture.respond_to?(:path) ? fixture.path : fixture.to_s
+    fixture.respond_to?(:path) ? fixture.path : fixture.to_s
 
     serialized = described_class.from_xml(input)
     output = serialized.to_xml(declaration: true, encoding: "utf-8")
@@ -20,7 +20,7 @@ end
 RSpec.shared_examples "a canon serializer" do
   it "round-trips with canonical equivalence" do
     input = fixture.read
-    fixture_path = fixture.respond_to?(:path) ? fixture.path : fixture.to_s
+    fixture.respond_to?(:path) ? fixture.path : fixture.to_s
 
     serialized = described_class.from_xml(input)
     output = serialized.to_xml(declaration: true, encoding: "utf-8")

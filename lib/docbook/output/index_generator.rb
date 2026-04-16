@@ -225,10 +225,11 @@ module Docbook
       end
 
       # Helper to safely call attributes - same pattern as Html class
-      def each_attr(obj, name)
+      def each_attr(obj, name, &)
         val = obj.send(name)
         return unless val
-        Array(val).each { |item| yield item }
+
+        Array(val).each(&)
       rescue NoMethodError
         nil
       end
@@ -245,13 +246,13 @@ module Docbook
       def generate
         by_letter = group_by_letter
         by_letter.sort_by { |letter, _| letter == "SYMBOLS" ? "{" : letter.downcase }
-              .to_h
-              .map do |letter, terms|
-            {
-              letter: letter,
-              entries: sort_entries(terms)
-            }
-          end
+                 .to_h
+                 .map do |letter, terms|
+          {
+            letter: letter,
+            entries: sort_entries(terms)
+          }
+        end
       end
 
       private

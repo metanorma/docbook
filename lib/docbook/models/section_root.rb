@@ -6,9 +6,9 @@ module Docbook
     # This combines the Lutaml model with Ruby-generated data (numbering, etc.)
     class SectionRoot < Lutaml::Model::Serializable
       attribute :id, :string
-      attribute :type, :string  # chapter, section, appendix, part, reference, refentry
+      attribute :type, :string # chapter, section, appendix, part, reference, refentry
       attribute :title, :string
-      attribute :number, :string  # Pre-computed number like "I", "1.2", "A"
+      attribute :number, :string # Pre-computed number like "I", "1.2", "A"
 
       # Nested child sections
       attribute :children, SectionRoot, collection: true

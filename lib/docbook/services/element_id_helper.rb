@@ -46,11 +46,11 @@ module Docbook
           end
           if meta.respond_to?(:fieldsynopsis) && meta.fieldsynopsis && !meta.fieldsynopsis.empty?
             vn = meta.fieldsynopsis.first.varname
-            return vn.content.to_s if vn && vn.respond_to?(:content) && vn.content
+            return vn.content.to_s if vn.respond_to?(:content) && vn.content
           end
         end
 
-        if ref.respond_to?(:refnamediv) && ref.refnamediv && ref.refnamediv.respond_to?(:refname)
+        if ref.respond_to?(:refnamediv) && ref.refnamediv.respond_to?(:refname)
           names = ref.refnamediv.refname
           return names.map(&:content).join(", ") if names && !names.empty?
         end

@@ -16,10 +16,10 @@ module Docbook
       # - parameter: <parameter>
       # - replaceable: <replaceable>
       class Code < Base
-        PM_TYPE = 'code'
+        PM_TYPE = "code"
 
-        def initialize(role: 'literal', **kwargs)
-          super(**kwargs)
+        def initialize(role: "literal", **)
+          super(**)
           @attrs[:role] = role
         end
 

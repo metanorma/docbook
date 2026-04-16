@@ -131,7 +131,7 @@ module Docbook
     # OOP Numbering builder with proper scope tracking
     # Handles: Part (Roman), Chapter (Arabic, scoped to part), Section (hierarchical), Appendix (Alpha)
     class NumberingBuilder
-      attr_reader :numbering  # returns hash of id => formatted_number_string
+      attr_reader :numbering # returns hash of id => formatted_number_string
 
       def initialize
         @numbering = {}
@@ -172,7 +172,8 @@ module Docbook
 
       def roman_numeral(num)
         result = +""
-        roman_map = { 1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD', 100 => 'C', 90 => 'XC', 50 => 'L', 40 => 'XL', 10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I' }
+        roman_map = { 1000 => "M", 900 => "CM", 500 => "D", 400 => "CD", 100 => "C", 90 => "XC", 50 => "L", 40 => "XL",
+                      10 => "X", 9 => "IX", 5 => "V", 4 => "IV", 1 => "I" }
         roman_map.each do |value, letter|
           while num >= value
             result << letter
@@ -184,9 +185,9 @@ module Docbook
 
       def alpha_numeral(num)
         result = ""
-        while num > 0
+        while num.positive?
           num -= 1
-          result = (('A'.ord + (num % 26)).chr) + result
+          result = ("A".ord + (num % 26)).chr + result
           num /= 26
         end
         result

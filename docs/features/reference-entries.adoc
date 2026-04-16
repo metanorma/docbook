@@ -1,0 +1,159 @@
+---
+layout: default
+title: Reference Entries (refentry)
+parent: Features
+nav_order: 11
+---
+
+= Reference Entries (refentry)
+
+DocBook `refentry` elements are used for reference manual pages -- the kind of
+structured documentation found in man pages, API references, and CLI command
+references.  The interactive reader renders them with a specialized layout
+optimized for quick scanning.
+
+== DocBook structure
+
+A `refentry` in DocBook XML typically contains:
+
+[source,xml]
+----
+<refentry>
+  <refmeta>
+    <refentrytitle>command-name</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>command-name</refname>
+    <refpurpose>Brief one-line description</refpurpose>
+    <refclass>utility</refclass>
+  </refnamediv>
+  <refsynopsisdiv>
+    <synopsis>command [options] &lt;args&gt;</synopsis>
+  </refsynopsisdiv>
+  <refsection>
+    <title>Description</title>
+    <para>Detailed explanation...</para>
+  </refsection>
+</refentry>
+----
+
+Multiple `refentry` elements can be grouped inside a `reference` element:
+
+[source,xml]
+----
+<reference>
+  <title>Command Reference</title>
+  <refentry>...</refentry>
+  <refentry>...</refentry>
+  <refentry>...</refentry>
+</reference>
+----
+
+== Reader rendering
+
+The `ReferenceEntry.vue` component handles specialized rendering for each
+`refentry`.  It produces a structured card with the following sections:
+
+=== Reference metadata
+
+Small, subtle text from `refmeta` displayed at the top of the entry (e.g., the
+man page volume number).
+
+=== Reference badge
+
+An uppercase badge from `refclass` indicating the entry category:
+
+[source,vue]
+----
+<span class="reference-badge text-[0.65rem] font-semibold uppercase">
+  {{ child.text }}
+</span>
+----
+
+=== Reference name
+
+The primary identifier (`refname`) rendered as a bold monospace heading:
+
+[source,vue]
+----
+<h2 class="reference-name text-2xl font-bold font-mono">
+  {{ child.text }}
+</h2>
+----
+
+The name uses the monospace font stack (`JetBrains Mono`, `Fira Code`,
+`ui-monospace`) and is colored with the accent color (`--chrome-accent`).
+
+=== Reference definition
+
+The one-line purpose (`refpurpose`) rendered in italic muted text:
+
+[source,vue]
+----
+<p class="reference-definition text-base italic">
+  {{ child.text }}
+</p>
+----
+
+=== Description sections
+
+Content from `refsection` elements is rendered using the standard
+`BlockRenderer`, which handles paragraphs, lists, code blocks, tables, and all
+other DocBook content types.
+
+== Table of contents integration
+
+When a document contains a `reference` element with multiple `refentry`
+children, each entry appears in the table of contents with a type badge showing
+the entry name.  The badge uses the `badge-refentry` style -- a monospace badge
+that distinguishes reference entries from regular sections.
+
+The breadcrumb bar also recognizes `refentry` sections, displaying them with
+the "p" badge label and the `badge-refentry` styling.
+
+== Reading mode: Cards
+
+The settings panel offers a "Cards" reading mode (mapped to `reference` mode)
+that is specifically designed for browsing `refentry` elements.  When active,
+reference entries are displayed as individual cards, making it easy to scan
+through API or CLI documentation.
+
+[source,javascript]
+----
+const readingModes = [
+  { value: 'scroll',     label: 'Scroll',   icon: '...' },
+  { value: 'page',       label: 'Page',     icon: '...' },
+  { value: 'chapter',    label: 'Chapter',  icon: '...' },
+  { value: 'reference',  label: 'Cards',    icon: '...' },
+]
+----
+
+== Visual styling
+
+The reference entry card uses a left border accent and a tinted background:
+
+[source,css]
+----
+.reference-entry {
+  border-left: 4px solid var(--chrome-accent);
+  background: color-mix(in srgb, var(--chrome-accent) 5%, var(--ebook-bg));
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+----
+
+Description sections within a reference entry are separated by a top border:
+
+[source,css]
+----
+.description-section {
+  border-top: 1px solid var(--ebook-border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+----
+
+All colors use CSS custom properties, so reference entries adapt to the active
+theme (Day, Sepia, Night, or OLED).
