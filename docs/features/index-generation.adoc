@@ -187,7 +187,7 @@ These are collected from `see` and `seealso` child elements within `indexterm`:
 
 ## Index Content Rendering
 
-The index is rendered in the Vue SPA using `ContentBlock` trees with dedicated block types:
+The index is rendered in the Vue SPA using DocbookMirror nodes with dedicated node types:
 
 - `index_section` -- Container for an index section
 - `index_letter` -- Letter group heading with child entries

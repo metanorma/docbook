@@ -10,9 +10,9 @@ nav_order: 3
 
 The output data model defines the JSON structure produced by the Ruby backend and consumed by the Vue 3 SPA frontend. All models are implemented as `Lutaml::Model::Serializable` classes, providing type-safe serialization to JSON.
 
-## Top-Level Model: DocbookOutput
+## Top-Level Model: DocbookMirror
 
-The `DocbookOutput` class is the root container for all output data:
+The output uses a ProseMirror-compatible JSON document produced by `Mirror::Transformer`. The `DocbookMirror` class wraps this output:
 
 [cols="1,1,3"]
 |===
@@ -20,18 +20,19 @@ The `DocbookOutput` class is the root container for all output data:
 
 | `title` | `String` | Document title (from `Book.info.title` or `Article.info.title`)
 | `toc` | `Toc` | Table of contents tree and numbering map
-| `content` | `ContentData` | All section content as block trees
+| `content` | `DocbookMirror doc` | All section content as ProseMirror node trees
 | `index` | `Index` | Generated index data (may be empty)
 |===
 
 [source,ruby]
 ----
-class DocbookOutput < Lutaml::Model::Serializable
-  attribute :title, :string
-  attribute :toc, Toc
-  attribute :content, ContentData
-  attribute :index, Index
-end
+# DocbookMirror output structure
+{
+  doc: {
+    type: "doc",
+    content: [node, node, ...]   # ProseMirror nodes
+  }
+}
 ----
 
 ## TOC Model
@@ -93,7 +94,7 @@ A key-value pair mapping a section ID to its content:
 | Field | Type | Description
 
 | `key` | `String` | Section `xml:id`
-| `value` | `SectionContent` | The section's content blocks
+| `value` | `SectionContent` | The section's content nodes
 |===
 
 ### SectionContent
@@ -105,25 +106,22 @@ The content for a single section:
 | Field | Type | Description
 
 | `section_id` | `String` | Section's `xml:id`
-| `blocks` | `ContentBlock[]` | Tree of content blocks
+| `blocks` | `DocbookMirror node[]` | Tree of DocbookMirror nodes
 |===
 
-## ContentBlock Model
+## DocbookMirror Node Model
 
-The `ContentBlock` is the core building block for all rendered content. It is a recursive structure that can represent paragraphs, images, code listings, lists, admonitions, and more:
+DocbookMirror uses ProseMirror-compatible nodes as the core building blocks for all rendered content. Each node is a recursive structure that can represent paragraphs, images, code listings, lists, admonitions, and more:
 
 [cols="1,1,3"]
 |===
 | Field | Type | Description
 
-| `type` | `String` | Block type (40+ types, see below)
+| `type` | `String` | Node type (40+ types, see below)
 | `text` | `String` | Primary text content (paragraph text, code content, title, etc.)
-| `src` | `String` | URL or path (images, links, xrefs)
-| `alt` | `String` | Alt text (images)
-| `title` | `String` | Block title (figures, examples)
-| `language` | `String` | Programming language for syntax highlighting (code blocks)
-| `className` | `String` | CSS class name (bibliography elements)
-| `children` | `ContentBlock[]` | Nested child blocks (recursive)
+| `attrs` | `Object` | Node attributes (src, alt, title, language, className, etc.)
+| `content` | `Node[]` | Nested child nodes (recursive)
+| `marks` | `Mark[]` | Inline marks (bold, italic, code, link, etc.)
 |===
 
 ### Block Types

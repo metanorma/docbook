@@ -42,32 +42,31 @@ corresponding element objects. The resolver walks the element tree
 recursively, collecting every element that has an `xml_id`. Callers
 then use `title_for(linkend)` to resolve cross-reference text.
 
-=== Docbook::Output::Html
+=== Docbook::Output::SinglePage
 
-The HTML generation engine. It takes a parsed element tree and an
-optional `XrefResolver`, then walks the tree to produce structured
-data (TOC, content blocks, numbering, index). The final output is
-rendered through a Liquid template with inline or linked JSON data
-for the Vue SPA frontend.
+The complete pipeline for building interactive HTML readers. It takes
+an XML file path and produces a self-contained HTML file with the
+Vue SPA, DocbookMirror JSON data, and all assets inlined. This is the
+primary output path, used by the `build` CLI command.
 
-=== Docbook::Output::Data
+=== Docbook::Output::DocbookMirror
 
-Defines the data model classes used by the HTML generator:
-`ContentBlock`, `SectionData`, `NumberingBuilder`, `DocbookOutput`,
-and related types. These classes hold the intermediate representation
-between the element tree and JSON serialization.
+Exports parsed DocBook documents as ProseMirror-compatible JSON via the
+`Mirror::Transformer`. This converts Docbook element objects into a
+`{doc: {content: [nodes]}}` tree with typed nodes and marks. Used by the
+`export` CLI command and embedded in SinglePage output.
 
 === Docbook::Models
 
-A parallel set of pre-computed models (`DocumentRoot`, `TocNode`,
+A set of pre-computed models (`DocumentRoot`, `TocNode`,
 `SectionRoot`, etc.) that represent the final JSON structure consumed
-by the Vue SPA. These are separate from `Output::Data` because they
-include additional metadata like reading position and generator version.
+by the Vue SPA. They include additional metadata like reading position
+and generator version.
 
 === Docbook::CLI
 
 A Thor-based command-line interface that provides the `build`,
-`convert`, `export`, `validate`, `format`, `demo`, and `roundtrip`
+`export`, `validate`, `format`, `demo`, and `roundtrip`
 commands. It wires together the parsing, resolution, and output modules
 based on user options.
 
@@ -103,33 +102,34 @@ final HTML output:
                   | lookup hash     |
                   +--------+--------+
                            |
-                           v
-                  +--------+--------+
-                  | Output::Html     |
-                  | Section tree    |
-                  | Numbering       |
-                  | Content blocks  |
-                  | Index collection|
-                  +--------+--------+
-                           |
-                           v
-                  +--------+--------+
-                  | Liquid Template  |
-                  | Inline JSON      |
-                  | or linked JSON   |
-                  +--------+--------+
-                           |
-                           v
-                  +--------+--------+
-                  |   HTML Output   |
-                  | (single file or |
-                  |  directory)     |
-                  +-----------------+
+                     +-----+-----+
+                     |           |
+                     v           v
+          +---------+--+  +-----+------------+
+          | Output::    |  | Output::         |
+          | SinglePage  |  | DocbookMirror    |
+          |              |  |                  |
+          | Mirror::     |  | Mirror::         |
+          | Transformer  |  | Transformer      |
+          | TOC          |  |                  |
+          | Numbering    |  | ProseMirror-     |
+          | Index        |  | compatible JSON  |
+          | Images       |  |                  |
+          | HTML render  |  | -> JSON output   |
+          +---------+----+  +------------------+
+                    |
+                    v
+          +---------+----+
+          | Single-page  |
+          | HTML reader  |
+          | (self-       |
+          |  contained)  |
+          +--------------+
 ....
 
-In single-file mode, all JSON data and CSS/JS assets are embedded
-directly into the HTML. In directory mode, the JSON is written to
-`docbook.data.json` and assets are copied to an `assets/` subdirectory.
+The `build` command produces a self-contained HTML file with all data,
+CSS, JS, and images inlined. The `export` command produces DocbookMirror
+JSON.
 
 == Element model system
 

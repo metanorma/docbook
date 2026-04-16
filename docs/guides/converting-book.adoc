@@ -97,7 +97,7 @@ command exits with code 1.
 
 If your book uses `<xi:include>` to pull in chapters from separate
 files, verify that all referenced files exist and are well-formed XML.
-XInclude resolution is enabled by default for `build` and `convert`.
+XInclude resolution is enabled by default for `build` and `export`.
 
 == Step 3: Build an interactive reader
 
@@ -110,28 +110,7 @@ docbook build book.xml -o output.html
 This produces `output.html` with all data, CSS, JavaScript, and images
 inlined. You can open it directly in any browser.
 
-== Step 4: Convert to static HTML
-
-For static HTML output without JavaScript:
-
-....
-docbook convert book.xml -o output.html
-....
-
-Or for directory output with separate assets:
-
-....
-docbook convert book.xml -o my-book --output-type directory
-....
-
-This creates a `my-book/` directory containing:
-
-* `index.html` -- The HTML shell with the Vue SPA mount point
-* `docbook.data.json` -- The full document data as JSON
-* `assets/app.css` -- The compiled stylesheet
-* `assets/app.iife.js` -- The bundled JavaScript
-
-== Step 5: Open in browser
+== Step 4: Open in browser
 
 Open the HTML file or directory in a web browser. You should see:
 
@@ -165,24 +144,15 @@ Docbook::Output::SinglePage.new(
 ).generate
 ----
 
-Or generate static HTML:
+Or generate DocbookMirror JSON:
 
 [source,ruby]
 ----
 require "docbook"
 
-xml = File.read("book.xml")
-doc = Docbook::Document.from_xml(xml)
-xref = Docbook::XrefResolver.new(doc).resolve!
-
-html = Docbook::Output::Html.new(
-  doc,
-  xref_resolver: xref,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("book.xml"))
-).to_html
-
-File.write("output.html", html)
+doc = Docbook::Document.from_xml(File.read("book.xml"))
+json = Docbook::Output::DocbookMirror.new(doc).to_pretty_json
+File.write("book.json", json)
 ----
 
 == Troubleshooting

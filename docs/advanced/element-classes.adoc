@@ -115,9 +115,9 @@ element.each_mixed_content do |node|
 end
 ----
 
-This pattern is the foundation of the HTML generator's content
-rendering. The `build_inline_content` and `build_element_content`
-methods in `Output::Html` use `each_mixed_content` exclusively to
+This pattern is the foundation of the DocbookMirror transformer's content
+rendering. The `extract_content` and `process_inline_content`
+methods in `Mirror::Transformer` use `each_mixed_content` exclusively to
 process element children.
 
 == Adding a new element
@@ -145,10 +145,10 @@ attribute :newelement, NewElement, collection: true
 map_element "newelement", to: :newelement
 ----
 
-. **Add a case in the HTML generator**. In `lib/docbook/output/html.rb`,
-  add a `when` branch in the appropriate `case` statement (either
-  `build_element_content` or `build_inline_content`) to handle the new
-  element type and produce the corresponding `ContentBlock`.
+. **Add a case in the DocbookMirror transformer**. In `lib/docbook/mirror/transformer.rb`,
+  add a `when` branch in `extract_content` (for block elements) or
+  `process_inline_content` (for inline elements) to handle the new
+  element type and produce the corresponding Mirror node or mark.
 
 . **Add to ROOT_ELEMENT_MAP** if the element can be a document root.
   In `lib/docbook/document.rb`, add an entry like:

@@ -45,12 +45,12 @@ declarative DSL for mapping between XML, JSON, and Ruby objects.
 The DocBook gem uses it as the base class for all element and data
 model classes, providing automatic serialization and deserialization.
 
-ContentBlock::
-A data model class (`Docbook::Output::ContentBlock`) representing a
-single unit of content in the HTML output. Each block has a `type`
-(paragraph, code, image, etc.), optional text content, and optional
-children forming a recursive tree. The Vue SPA renders blocks
-using the `BlockRenderer` component.
+DocbookMirror::
+A ProseMirror-compatible intermediate JSON format. The Ruby
+`Mirror::Transformer` walks Docbook element objects and produces
+a `{doc: {content: [nodes]}}` tree with typed nodes (paragraph, heading,
+code_block, etc.) and marks (emphasis, code, link, xref, citation).
+The Vue SPA renders this using `MirrorRenderer`.
 
 SectionData::
 A data model class representing a section in the table of contents
@@ -72,8 +72,8 @@ this as a collapsible sidebar with expand/collapse navigation.
 RefEntry::
 A DocBook element type (`<refentry>`) used for man-page style reference
 documentation. It contains a `refmeta` (metadata), `refnamediv` (name
-and purpose), and `refsection` elements (description content). The gem
-renders RefEntry with specialized content block types.
+and purpose), and `refsection` elements (description content). The
+`MirrorRenderer` renders RefEntry nodes with specialized card layout.
 
 mixed content::
 An XML concept where an element can contain both text nodes and child
@@ -86,25 +86,14 @@ Vue SPA::
 A Vue 3 single-page application embedded in the generated HTML. It
 provides an interactive ebook reader with a table of contents sidebar,
 search, theme switching, and reading mode selection. The SPA reads
-document data from inline JSON or an external JSON file.
+DocbookMirror JSON data embedded in the HTML. The `MirrorRenderer`
+component renders the document content.
 
 single file mode::
-An output mode where all document data, CSS, and JavaScript are
+An output mode where all document data (DocbookMirror JSON), CSS, and JavaScript are
 embedded into a single HTML file. The resulting file is self-contained
-and can be opened directly in a browser without a web server. JSON data
-is stored in `window.DOCBOOK_DATA`.
-
-directory mode::
-An output mode where the HTML, JSON data, and assets are written as
-separate files in an output directory. The HTML file loads CSS and JS
-from `assets/` and fetches document data from `docbook.data.json` at
-runtime. Requires a web server or local file access.
-
-Liquid template::
-The template engine (Liquid) used to generate the HTML shell. Templates
-are stored in `lib/docbook/templates/` and use partials for the document
-head and scripts. Template variables control asset inlining, and
-placeholder tokens are replaced with JSON data after rendering.
+and can be opened directly in a browser without a web server. This is
+the default and only mode for the `build` command.
 
 FlexSearch::
 A JavaScript full-text search library used in the Vue SPA for

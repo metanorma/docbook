@@ -28,39 +28,23 @@ Images are **not** copied to the output directory. Instead, they are referenced 
 
 ## How It Works
 
-In directory mode, the `Output::Html` class performs these steps:
+In directory mode, the `Output::SinglePage` class performs these steps:
 
-. **Serialize data** -- The full `DocbookOutput` model is serialized to JSON and written to `docbook.data.json`
-. **Render template** -- The Liquid template is rendered with `assets_inline: false`, producing external `<link>` and `<script>` references
-. **Replace placeholders** -- The `[[DOCBOOK_DATA]]` placeholders are replaced with `null` comments since data is loaded separately
+. **Serialize data** -- The full document data (TOC, DocbookMirror content, index) is serialized to JSON and written to `docbook.data.json`
+. **Render HTML shell** -- The HTML shell is generated with external `<link>` and `<script>` references to assets
 . **Write files** -- The CLI copies frontend assets to `assets/` and writes the HTML to `index.html`
 
 ## Asset References
 
-The template partials use the `assets_inline` flag to switch between inline and external references:
-
-**Head partial (`_head.liquid`):**
+The HTML shell references external CSS and JavaScript assets:
 
 [source,html]
 ----
 <!-- Directory mode: external CSS -->
-{% if assets_inline %}
-  <style>{{ app_css }}</style>
-{% else %}
-  <link rel="stylesheet" href="{{ base_url }}/assets/app.css">
-{% endif %}
-----
+<link rel="stylesheet" href="./assets/app.css">
 
-**Scripts partial (`_scripts.liquid`):**
-
-[source,html]
-----
 <!-- Directory mode: external JS -->
-{% if assets_inline %}
-  <script>{{ app_js }}</script>
-{% else %}
-  <script src="{{ base_url }}/assets/app.iife.js"></script>
-{% endif %}
+<script src="./assets/app.iife.js"></script>
 ----
 
 ## Data Loading
@@ -87,7 +71,7 @@ function loadFromWindow(): Promise<void> {
 }
 ----
 
-The `docbook.data.json` file contains the complete serialized `DocbookOutput` model, including the TOC tree, numbering map, all section content, and the generated index.
+The `docbook.data.json` file contains the complete document data, including the TOC tree, numbering map, all DocbookMirror content, and the generated index.
 
 ## Image Handling
 
@@ -96,7 +80,7 @@ In directory mode, images are referenced by file path rather than base64:
 [source,ruby]
 ----
 def process_image(fileref)
-  if @output_mode == :single_file
+  if @image_strategy == :data_url
     embed_image_base64(fileref)
   else
     find_file_path(fileref) || fileref
@@ -120,7 +104,7 @@ Directory mode is designed for:
 [source,bash]
 ----
 # Directory mode requires an output directory
-docbook convert document.xml -o ./output_dir --output-type directory
+docbook build document.xml -o ./output_dir --output-type directory
 ----
 
 The CLI copies frontend assets automatically:
@@ -147,34 +131,24 @@ end
 ----
 require "docbook"
 
-document = Docbook::Document.from_xml(File.read("book.xml"))
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-base_path = File.dirname(File.expand_path("book.xml"))
-output_dir = "/path/to/output"
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :directory,
-  base_path: base_path,
-  output_path: output_dir
-).to_html
-
-File.write(File.join(output_dir, "index.html"), html)
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "./output_dir",
+  image_search_dirs: ["media/"],
+  image_strategy: :relative
+).generate
 ----
 
 ## Template Rendering Details
 
-The Liquid template is rendered with these variables in directory mode:
+In directory mode, the HTML shell is generated with these settings:
 
 [cols="1,2,3"]
 |===
-| Variable | Value | Purpose
+| Setting | Value | Purpose
 
 | `docbook_title` | Document title | Page `<title>` element
 | `base_url` | `"."` (current directory) | Relative URL base for asset references
 | `assets_inline` | `false` | Controls whether CSS/JS are inlined or linked
-| `app_css` | Contents of `frontend/dist/app.css` | Used only for template rendering (file is also copied to `assets/`)
-| `app_js` | Contents of `frontend/dist/app.iife.js` | Used only for template rendering (file is also copied to `assets/`)
 | `data_url` | `"docbook.data.json"` | URL the SPA fetches for document data
 |===

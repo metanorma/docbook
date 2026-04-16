@@ -12,24 +12,22 @@ Single file mode (`output_mode: :single_file`) produces a single, self-contained
 
 ## How It Works
 
-When single file mode is active, the `Output::Html` class inlines every asset directly into the HTML:
+When single file mode is active, the `Output::SinglePage` class inlines every asset directly into the HTML:
 
 . **CSS** -- The compiled `app.css` from `frontend/dist/` is injected inline via a `<style>` tag
 . **JavaScript** -- The compiled `app.iife.js` from `frontend/dist/` is injected inline via a `<script>` tag
-. **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN in `_head.liquid`
-. **JSON Data** -- All document data (TOC, content, index) is serialized to JSON and injected via `[[DOCBOOK_DATA]]` placeholders, with `</script>` tags escaped to `<\/script>`
-
-The Liquid template is rendered with `assets_inline: true`, which causes the partials to inline assets rather than reference external files.
+. **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN
+. **JSON Data** -- All document data (TOC, DocbookMirror content, index) is serialized to JSON and embedded in the HTML, with `</script>` tags escaped to `<\/script>`
 
 ## Image Embedding
 
-Images are embedded as base64 data URIs. The `process_image` method in `Output::Html` handles this:
+Images are embedded as base64 data URIs. The `process_image` method in `Output::SinglePage` handles this:
 
 [source,ruby]
 ----
-# When output_mode is :single_file, images are base64-encoded
+# When image_strategy is :data_url, images are base64-encoded
 def process_image(fileref)
-  if @output_mode == :single_file
+  if @image_strategy == :data_url
     embed_image_base64(fileref)
   else
     find_file_path(fileref) || fileref
@@ -51,20 +49,7 @@ Image paths are resolved by searching the document's base path and its parent di
 
 ## Data Injection
 
-The template contains four placeholder tokens that are replaced with inline JSON:
-
-[source,html]
-----
-<script>
-window.DOCBOOK_DATA = Object.assign([[DOCBOOK_DATA]], {
-  toc: [[DOCBOOK_TOC]],
-  content: [[DOCBOOK_CONTENT]],
-  index: [[DOCBOOK_INDEX]]
-});
-</script>
-----
-
-In single file mode, the placeholders are replaced with actual JSON data. The Vue SPA's `documentStore` detects `window.DOCBOOK_DATA` and loads the data synchronously without any network requests.
+The document data is embedded directly in the HTML. In single-file mode, the JSON data is injected inline so the Vue SPA loads it synchronously without any network requests. The `documentStore` detects `window.DOCBOOK_DATA` and loads the data immediately.
 
 ## Use Case
 
@@ -78,14 +63,11 @@ Single file mode is designed for:
 ## CLI Usage
 
 ```bash
-# Build an interactive reader (recommended)
+# Build an interactive reader (default)
 docbook build document.xml -o output.html
 
-# Static HTML conversion
-docbook convert document.xml -o output.html
-
-# Explicit single file mode
-docbook convert document.xml -o output.html --output-type single_file
+# With explicit image strategy
+docbook build document.xml -o output.html --image-strategy data_url
 ```
 
 ## Programmatic Usage
@@ -94,32 +76,23 @@ docbook convert document.xml -o output.html --output-type single_file
 ----
 require "docbook"
 
-document = Docbook::Document.from_xml(File.read("book.xml"))
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-base_path = File.dirname(File.expand_path("book.xml"))
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: base_path
-).to_html
-
-File.write("book.html", html)
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "book.html",
+  image_strategy: :data_url
+).generate
 ----
 
 ## Template Rendering Details
 
-The Liquid template is rendered with these variables in single file mode:
+In single-file mode, the HTML is generated with these settings:
 
 [cols="1,2,3"]
 |===
-| Variable | Value | Purpose
+| Setting | Value | Purpose
 
 | `docbook_title` | Document title | Page `<title>` element
 | `base_url` | `""` (empty string) | Relative URL base (not needed for single file)
-| `assets_inline` | `true` | Controls whether CSS/JS are inlined or linked
-| `app_css` | Contents of `frontend/dist/app.css` | Inlined as `<style>` tag
-| `app_js` | Contents of `frontend/dist/app.iife.js` | Inlined as `<script>` tag
+| `assets_inline` | `true` | CSS and JS are inlined directly
 | `data_url` | Not used | Only relevant for directory mode
 |===

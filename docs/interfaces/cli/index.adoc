@@ -8,7 +8,7 @@ has_children: true
 
 == CLI Reference
 
-The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides six commands for working with DocBook XML files.
+The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides five commands for working with DocBook XML files.
 
 === Global Behavior
 
@@ -26,28 +26,12 @@ The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry 
 | Command | Since | Description
 
 | `build` | 0.1.0 | Build an interactive HTML reader from DocBook XML (self-contained, works offline)
-| `convert` | 0.1.0 | Convert DocBook XML to static HTML
 | `export` | 0.1.0 | Export DocBook XML as DocbookMirror JSON (ProseMirror-compatible)
 | `validate` | 0.1.0 | Validate DocBook XML against RELAX NG schema
 | `format` | 0.1.0 | Reformat and prettify DocBook XML
 | `demo` | 0.1.0 | Build a demo reader from the bundled sample
 | `roundtrip` | 0.1.0 | Round-trip test XML files (development)
 |===
-
-=== Deprecated Commands
-
-The following commands are deprecated and will be removed in a future release:
-
-[cols="2,3"]
-|===
-| Deprecated | Use Instead
-
-| `to-single-page` | `build`
-| `to-html` | `convert`
-| `to-docbook-mirror` | `export`
-|===
-
-These commands still work but print a deprecation warning.
 
 === Getting Help
 
@@ -74,7 +58,6 @@ Options:
 Select a command for detailed usage instructions, options, and examples:
 
 * link:build-command[build] -- Build an interactive HTML reader
-* link:convert-command[convert] -- Convert to static HTML
 * link:export-command[export] -- Export as DocbookMirror JSON
 * link:validate-command[validate] -- Validate DocBook XML
 * link:format-command[format] -- Format DocBook XML

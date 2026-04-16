@@ -47,11 +47,11 @@ The processing pipeline follows these stages:
 . **Parse** -- DocBook XML is parsed into Lutaml::Model-based element classes (`Docbook::Document.from_xml`)
 . **Resolve XIncludes** -- `XIncludeResolver` replaces `xi:include` elements iteratively, handling nested includes
 . **Resolve XRefs** -- `XrefResolver` builds an O(1) lookup map of `xml:id` to element titles
-. **Build Output Data** -- `Output::Html` traverses the element tree to produce a `DocbookOutput` model containing:
+. **Build Output Data** -- `DocbookMirror` (via `Mirror::Transformer`) traverses the element tree to produce ProseMirror-compatible JSON nodes containing:
   * `Toc` -- section tree with numbering
-  * `ContentData` -- section content as `ContentBlock` trees
+  * `ContentData` -- section content as DocbookMirror node trees
   * `Index` -- grouped index entries
-. **Render** -- A Liquid template produces the HTML shell, and the Vue 3 SPA renders the content client-side
+. **Render** -- The HTML shell is generated with embedded data, and the Vue 3 SPA renders the content client-side
 
 ## Reader Features
 

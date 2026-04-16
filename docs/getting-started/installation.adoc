@@ -76,7 +76,6 @@ You should see output listing the available commands:
 ----
 Commands:
   docbook build INPUT        # Build an interactive HTML reader from DocBook XML
-  docbook convert INPUT      # Convert DocBook XML to static HTML
   docbook demo               # Build a demo reader from the bundled sample
   docbook export INPUT       # Export DocBook XML as DocbookMirror JSON
   docbook format INPUT       # Format/prettify DocBook XML

@@ -95,11 +95,11 @@ end
 
 ## CLI Integration
 
-XInclude resolution is enabled by default in the `build`, `convert`, and `export` commands, and disabled by default in the `format` command:
+XInclude resolution is enabled by default in the `build` and `export` commands, and disabled by default in the `format` command:
 
 [source,bash]
 ----
-# XInclude enabled (default for build/convert/export)
+# XInclude enabled (default for build/export)
 docbook build book.xml -o output.html
 
 # Explicitly disable XInclude

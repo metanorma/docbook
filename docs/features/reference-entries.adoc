@@ -52,7 +52,7 @@ Multiple `refentry` elements can be grouped inside a `reference` element:
 
 == Reader rendering
 
-The `ReferenceEntry.vue` component handles specialized rendering for each
+The `MirrorRenderer` Vue component handles specialized rendering for each
 `refentry`.  It produces a structured card with the following sections:
 
 === Reference metadata
@@ -99,7 +99,7 @@ The one-line purpose (`refpurpose`) rendered in italic muted text:
 === Description sections
 
 Content from `refsection` elements is rendered using the standard
-`BlockRenderer`, which handles paragraphs, lists, code blocks, tables, and all
+`MirrorRenderer`, which handles paragraphs, lists, code blocks, tables, and all
 other DocBook content types.
 
 == Table of contents integration

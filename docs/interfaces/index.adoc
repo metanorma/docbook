@@ -35,7 +35,6 @@ The `docbook` CLI is a Thor-based command-line tool installed with the gem. It p
 | Command | Description
 
 | `docbook build INPUT` | Build an interactive HTML reader
-| `docbook convert INPUT` | Convert DocBook XML to static HTML
 | `docbook export INPUT` | Export as DocbookMirror JSON
 | `docbook validate INPUT` | Validate DocBook XML
 | `docbook format INPUT` | Prettify DocBook XML
@@ -63,7 +62,6 @@ The core classes are:
 
 | `Docbook::Document` | Entry point for parsing XML into element models
 | `Docbook::Output::SinglePage` | Full pipeline for interactive HTML readers
-| `Docbook::Output::Html` | Static HTML generation in single-file or directory mode
 | `Docbook::Output::DocbookMirror` | ProseMirror-compatible JSON export
 | `Docbook::XIncludeResolver` | Resolves XInclude elements in XML documents
 | `Docbook::XrefResolver` | Builds xml:id lookup map and resolves cross-references

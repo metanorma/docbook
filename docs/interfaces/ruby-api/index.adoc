@@ -8,7 +8,7 @@ has_children: true
 
 == Ruby API
 
-The `docbook` gem provides a programmatic Ruby API for parsing, processing, and converting DocBook XML documents. This is the same API that powers the CLI, exposed for direct use in Ruby applications.
+The `docbook` gem provides a programmatic Ruby API for parsing, processing, and building interactive HTML readers from DocBook XML documents. This is the same API that powers the CLI, exposed for direct use in Ruby applications.
 
 === Getting Started
 
@@ -31,7 +31,6 @@ The Ruby API revolves around six core classes:
 
 | `Docbook::Document` | Entry point for parsing XML strings into typed Ruby element models. Supports 33 root element types.
 | `Docbook::Output::SinglePage` | Full pipeline: parse, TOC, numbering, index, images, and interactive HTML reader. Powers `docbook build`.
-| `Docbook::Output::Html` | Generates static HTML from a parsed document in single-file or directory mode. Powers `docbook convert`.
 | `Docbook::Output::DocbookMirror` | Exports parsed documents as ProseMirror-compatible JSON. Powers `docbook export`.
 | `Docbook::XIncludeResolver` | Resolves `xi:include` elements in XML documents. Must be called *before* parsing with `Document.from_xml`.
 | `Docbook::XrefResolver` | Builds an `xml:id` lookup map from a parsed document and resolves `xref`/`linkend` references to titles.
@@ -58,19 +57,18 @@ document = Docbook::Document.from_xml(resolved.to_xml)
 xref_resolver = Docbook::XrefResolver.new(document).resolve!
 
 # Stage 5: Generate HTML
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("book.xml"))
-).to_html
-
-File.write("output.html", html)
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  image_search_dirs: ["media/"],
+  image_strategy: :data_url,
+  title: "My Book"
+).generate
 ----
 
 [TIP]
 ====
-Stages 2 and 4 are optional but recommended. XInclude resolution should happen *before* parsing because the parser needs a single, complete XML document. Cross-reference resolution should happen *after* parsing so the resolver can traverse the element tree.
+Stages 2 and 4 are handled automatically by `Output::SinglePage`. When using the Ruby API directly, XInclude resolution should happen *before* parsing because the parser needs a single, complete XML document. Cross-reference resolution should happen *after* parsing so the resolver can traverse the element tree.
 ====
 
 === Error Handling
@@ -109,7 +107,7 @@ Explore each component in detail:
 
 * *<<parsing,Parsing Documents>>* -- How to parse XML and access element models
 * *<<single-page,SinglePage Reader>>* -- Build interactive HTML readers (full pipeline)
-* *<<html-output,HTML Output>>* -- Generating static HTML in single-file and directory modes
+* *<<html-output,HTML Output>>* -- Generating interactive HTML readers
 * *<<json-export,JSON Export>>* -- Exporting DocbookMirror JSON
 * *<<xinclude,XInclude Resolution>>* -- Resolving `xi:include` elements
 * *<<xref-resolution,XRef Resolution>>* -- Building ID maps and resolving cross-references

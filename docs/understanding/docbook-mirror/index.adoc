@@ -131,3 +131,6 @@ and traversal. The order of items in the array reflects document order.
   attributes and JSON examples.
 * <<comparison-prosemirror, Comparison with ProseMirror>> -- How DocbookMirror
   JSON differs from standard ProseMirror JSON and why.
+* <<translation-reference, Translation Reference>> -- Complete mapping of DocBook
+  element classes to/from Mirror node and mark types, including the bidirectional
+  conversion pipeline.
