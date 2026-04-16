@@ -91,10 +91,10 @@ module Docbook
         @table_counters[scope_id] = 0
 
         process_children(chapter, parent_info.merge(
-          chapter_scope: scope_id,
-          section_depth: 1,
-          chapter_number: chapter_number
-        ))
+                                    chapter_scope: scope_id,
+                                    section_depth: 1,
+                                    chapter_number: chapter_number
+                                  ))
       end
 
       def process_appendix(appendix, parent_info)
@@ -111,17 +111,17 @@ module Docbook
         @table_counters[scope_id] = 0
 
         process_children(appendix, parent_info.merge(
-          appendix_scope: scope_id,
-          section_depth: 1,
-          appendix_number: appendix_number
-        ))
+                                     appendix_scope: scope_id,
+                                     section_depth: 1,
+                                     appendix_number: appendix_number
+                                   ))
       end
 
       def process_section(section, parent_info)
         # Determine scope
         scope_id = parent_info[:chapter_scope] ||
-                    parent_info[:appendix_scope] ||
-                    element_id(section)
+                   parent_info[:appendix_scope] ||
+                   element_id(section)
 
         # Initialize counters for this scope
         @section_counters[scope_id] ||= [0, 0, 0, 0, 0]
@@ -211,6 +211,7 @@ module Docbook
 
         element.each_mixed_content do |node|
           next if node.is_a?(String)
+
           result << node
         end
         result
@@ -228,9 +229,9 @@ module Docbook
       def roman_numeral(num)
         result = +""
         roman_map = {
-          1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD',
-          100 => 'C', 90 => 'XC', 50 => 'L', 40 => 'XL',
-          10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I'
+          1000 => "M", 900 => "CM", 500 => "D", 400 => "CD",
+          100 => "C", 90 => "XC", 50 => "L", 40 => "XL",
+          10 => "X", 9 => "IX", 5 => "V", 4 => "IV", 1 => "I"
         }
         remaining = num
         roman_map.each do |value, letter|
@@ -244,9 +245,9 @@ module Docbook
 
       def alpha_numeral(num)
         result = ""
-        while num > 0
+        while num.positive?
           num -= 1
-          result = (('A'.ord + (num % 26)).chr) + result
+          result = ("A".ord + (num % 26)).chr + result
           num /= 26
         end
         result

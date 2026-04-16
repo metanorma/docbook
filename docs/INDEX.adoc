@@ -2,24 +2,25 @@
 layout: default
 title: Home
 nav_order: 1
-description: "Metanorma DocBook: Parse, transform, and generate HTML from DocBook 5 XML"
+description: "DocBook: Parse, validate, and convert DocBook 5 XML to interactive HTML"
 permalink: /
 ---
-= Metanorma DocBook Documentation
+= DocBook Documentation
 :toc: macro
 :toclevels: 2
 
 [.lead]
-Metanorma DocBook is a Ruby gem for parsing, accessing, and converting DocBook 5 XML documents to interactive HTML.
+DocBook is a Ruby gem for parsing, validating, and converting DocBook 5 XML documents into interactive HTML readers and structured JSON.
 
 toc::[]
 
 == Welcome
 
-Metanorma DocBook helps you:
+DocBook helps you:
 
-* **Parse** DocBook 5 XML into Ruby object models using 149 element classes
-* **Convert** DocBook to self-contained HTML with a Vue 3 interactive reader
+* **Build** interactive HTML readers from DocBook XML -- self-contained files that work offline
+* **Parse** DocBook 5 XML into Ruby object models using 170+ element classes
+* **Export** ProseMirror-compatible JSON (DocbookMirror) for rich document editing
 * **Resolve** XIncludes with text fragid extensions (`search=`, `line=`, `char=`)
 * **Validate** and **format** DocBook XML from the command line
 
@@ -28,7 +29,7 @@ Metanorma DocBook helps you:
 === By Your Role
 
 **Developer**::
-Start with link:getting-started/ruby-api/[Ruby API] to integrate DocBook parsing into your applications.
+Start with link:interfaces/ruby-api/[Ruby API] to integrate DocBook parsing into your applications.
 
 **Technical Writer**::
 Start with link:guides/converting-book/[Converting a Book] to convert DocBook documents to HTML.
@@ -38,8 +39,14 @@ Start with link:interfaces/cli/[CLI Reference] for command-line usage in pipelin
 
 === By Task
 
+**Build an interactive reader**::
+link:interfaces/cli/build-command[CLI: build] | link:interfaces/ruby-api/single-page[Ruby API: SinglePage]
+
 **Convert DocBook to HTML**::
-link:getting-started/quick-start/#to-html[Quick Start: to-html] | link:interfaces/cli/to-html-command[CLI: to-html] | link:interfaces/ruby-api/html-output[Ruby API: HTML Output]
+link:interfaces/cli/convert-command[CLI: convert] | link:interfaces/ruby-api/html-output[Ruby API: HTML Output]
+
+**Export as JSON**::
+link:interfaces/cli/export-command[CLI: export] | link:interfaces/ruby-api/json-export[Ruby API: JSON Export]
 
 **Resolve XIncludes**::
 link:features/xinclude/text-includes[Text Includes] | link:features/xinclude/fragid-schemes[fragid Schemes] | link:interfaces/ruby-api/xinclude[Ruby API]
@@ -57,11 +64,11 @@ link:reference/supported-elements[**Reference pages**]:: RefEntry manual pages
 
 . *Get Started (5 minutes)* -- link:getting-started/installation[Install] and link:getting-started/quick-start[try basic commands]
 . *Learn Interfaces (15 minutes)* -- link:interfaces/cli/[CLI] or link:interfaces/ruby-api/[Ruby API]
-. *Explore Features (30 minutes)* -- link:features/html-output/[HTML output], link:features/xinclude/[XInclude], link:features/numbering[Numbering]
+. *Explore Features (30 minutes)* -- link:features/html-output/[HTML output], link:features/xinclude/[XInclude], link:features/numbering[Numbering], link:understanding/docbook-mirror/[DocbookMirror JSON]
 . *Understand Internals (as needed)* -- link:understanding/architecture[Architecture], link:understanding/data-models[Data Models]
 
 == Getting Help
 
-**Found a bug?**:: link:https://github.com/metanorma/docbook/issues[Report an issue on GitHub]
+**Found a bug?**:: link:https://github.com/metanorma/metanorma-docbook/issues[Report an issue on GitHub]
 
 **Have a question?**:: Check link:reference/glossary[Glossary] or search this documentation

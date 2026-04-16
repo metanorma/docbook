@@ -1,0 +1,886 @@
+---
+layout: default
+title: Node Types
+parent: DocbookMirror JSON
+grand_parent: Understanding
+nav_order: 1
+---
+
+# Node Types
+
+Every element in a DocbookMirror JSON document is represented as a **node**.
+Each node has a `type` string that identifies its kind, an optional `attrs`
+object for type-specific attributes, an optional `content` array of child
+nodes, and an optional `marks` array for inline annotations.
+
+All node classes are defined in `Docbook::Mirror::Node` subclasses and are
+registered in the `NODES` hash for deserialization.
+
+== Common node shape
+
+Every node follows this general structure when serialized to JSON:
+
+[source,json]
+----
+{
+  "type": "<node_type>",
+  "attrs": { /* type-specific attributes */ },
+  "content": [ /* child nodes */ ],
+  "marks": [ /* mark objects, only on text nodes */ ]
+}
+----
+
+* `type` (required) -- The node type string, matching the class's `PM_TYPE`
+  constant.
+* `attrs` (optional) -- A key-value map of attributes. Omitted when empty.
+* `content` (optional) -- An ordered array of child nodes. Omitted when empty.
+* `marks` (optional) -- An array of mark objects. Used only on `text` nodes.
+
+== Document root
+
+=== doc
+
+`Docbook::Mirror::Node::Document` +
+PM_TYPE: `"doc"`
+
+The top-level container for the entire document. Produced by
+`Transformer#from_docbook` as the entry point. The `title` attribute is
+populated from the DocBook `info/title` element.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Document title, from `info/title`
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "doc",
+  "attrs": {
+    "title": "Metanorma Users Guide"
+  },
+  "content": [
+    { "type": "chapter", "attrs": { "title": "Introduction" }, "content": [...] }
+  ]
+}
+----
+
+== Text
+
+=== text
+
+`Docbook::Mirror::Node::Text` +
+PM_TYPE: `"text"`
+
+A leaf node holding a run of inline text. Text nodes are the only node type
+that carries a `text` attribute and may have `marks` applied to them. Text
+nodes cannot have `content` children.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `text` | String | The text content of this run
+|===
+
+.Example (plain text)
+[source,json]
+----
+{
+  "type": "text",
+  "text": "Hello, world."
+}
+----
+
+.Example (text with an emphasis mark)
+[source,json]
+----
+{
+  "type": "text",
+  "text": "important",
+  "marks": [
+    { "type": "emphasis" }
+  ]
+}
+----
+
+== Block nodes
+
+=== paragraph
+
+`Docbook::Mirror::Node::Paragraph` +
+PM_TYPE: `"paragraph"`
+
+A block-level paragraph. Mapped from DocBook `<para>` and `<formalpara>`.
+Its `content` array contains inline content: text nodes, mark-annotated text,
+and inline images.
+
+.Example
+[source,json]
+----
+{
+  "type": "paragraph",
+  "content": [
+    { "type": "text", "text": "This is a " },
+    { "type": "text", "text": "paragraph", "marks": [ { "type": "emphasis" } ] },
+    { "type": "text", "text": " with inline markup." }
+  ]
+}
+----
+
+=== code_block
+
+`Docbook::Mirror::Node::CodeBlock` +
+PM_TYPE: `"code_block"`
+
+A block of preformatted code or verbatim text. Mapped from DocBook `<code>`,
+`<programlisting>`, `<screen>`, `<literallayout>`, `<example>`, and
+`<informalexample>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `language` | String | Programming language for syntax highlighting
+| `xml_id` | String | XML identifier, for cross-reference anchoring
+| `title` | String | Title text (from `<example>` or `<figure>`)
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "code_block",
+  "attrs": {
+    "language": "ruby"
+  },
+  "content": [
+    { "type": "text", "text": "puts 'Hello, world!'" }
+  ]
+}
+----
+
+=== blockquote
+
+`Docbook::Mirror::Node::Blockquote` +
+PM_TYPE: `"blockquote"`
+
+A block quotation. Mapped from DocBook `<blockquote>`. Contains block-level
+children (paragraphs, lists, and so on).
+
+.Example
+[source,json]
+----
+{
+  "type": "blockquote",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "To be or not to be." }
+      ]
+    }
+  ]
+}
+----
+
+=== bullet_list
+
+`Docbook::Mirror::Node::BulletList` +
+PM_TYPE: `"bullet_list"`
+
+An unordered (bulleted) list. Mapped from DocBook `<itemizedlist>`. Contains
+`list_item` children.
+
+.Example
+[source,json]
+----
+{
+  "type": "bullet_list",
+  "content": [
+    {
+      "type": "list_item",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [ { "type": "text", "text": "First item" } ]
+        }
+      ]
+    },
+    {
+      "type": "list_item",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [ { "type": "text", "text": "Second item" } ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+=== ordered_list
+
+`Docbook::Mirror::Node::OrderedList` +
+PM_TYPE: `"ordered_list"`
+
+A numbered list. Mapped from DocBook `<orderedlist>`. Contains `list_item`
+children. The structure is identical to `bullet_list` except for the type.
+
+.Example
+[source,json]
+----
+{
+  "type": "ordered_list",
+  "content": [
+    {
+      "type": "list_item",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [ { "type": "text", "text": "Step one" } ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+=== list_item
+
+`Docbook::Mirror::Node::ListItem` +
+PM_TYPE: `"list_item"`
+
+A single list item inside a `bullet_list` or `ordered_list`. Mapped from
+DocBook `<listitem>`. Contains block-level children (paragraphs, nested lists,
+and so on).
+
+.Example
+[source,json]
+----
+{
+  "type": "list_item",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [ { "type": "text", "text": "Item content" } ]
+    }
+  ]
+}
+----
+
+=== dl
+
+`Docbook::Mirror::Node::DefinitionList` +
+PM_TYPE: `"dl"`
+
+A definition list (variable list). Mapped from DocBook `<variablelist>`. Its
+`content` array holds alternating `definition_term` and `definition_description`
+nodes, paired to represent each `<varlistentry>`.
+
+.Example
+[source,json]
+----
+{
+  "type": "dl",
+  "content": [
+    {
+      "type": "definition_term",
+      "content": [ { "type": "text", "text": "API" } ]
+    },
+    {
+      "type": "definition_description",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [ { "type": "text", "text": "Application Programming Interface." } ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+=== definition_term
+
+`Docbook::Mirror::Node::DefinitionTerm` +
+PM_TYPE: `"definition_term"`
+
+The term being defined in a definition list entry. Mapped from DocBook `<term>`.
+Contains inline content (text nodes with optional marks).
+
+.Example
+[source,json]
+----
+{
+  "type": "definition_term",
+  "content": [
+    { "type": "text", "text": "REST" }
+  ]
+}
+----
+
+=== definition_description
+
+`Docbook::Mirror::Node::DefinitionDescription` +
+PM_TYPE: `"definition_description"`
+
+The definition or description associated with a term. Mapped from the
+`<listitem>` inside a `<varlistentry>`. Contains block-level children.
+
+.Example
+[source,json]
+----
+{
+  "type": "definition_description",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [ { "type": "text", "text": "Representational State Transfer." } ]
+    }
+  ]
+}
+----
+
+== Headings
+
+=== heading
+
+`Docbook::Mirror::Node::Heading` +
+PM_TYPE: `"heading"`
+
+A section heading. Registered as a node type and available for heading-level
+content. The heading level is expressed via attributes.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `level` | Integer | Heading level (1 through 6, mapping to h1-h6)
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "heading",
+  "attrs": { "level": 1 },
+  "content": [
+    { "type": "text", "text": "Chapter Title" }
+  ]
+}
+----
+
+== Structural nodes
+
+These nodes represent the hierarchical structure of a DocBook document.
+DocBook has a richer structural vocabulary than typical web documents, and
+DocbookMirror preserves this.
+
+=== chapter
+
+`Docbook::Mirror::Node::Chapter` +
+PM_TYPE: `"chapter"`
+
+A book chapter. Mapped from DocBook `<chapter>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Chapter title
+| `xml_id` | String | XML identifier (`xml:id`), used for cross-references
+| `number` | String | Computed chapter number (for example, `"1"`, `"2"`)
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "chapter",
+  "attrs": {
+    "title": "Getting Started",
+    "xml_id": "getting-started",
+    "number": "1"
+  },
+  "content": [
+    { "type": "paragraph", "content": [ { "type": "text", "text": "In this chapter..." } ] }
+  ]
+}
+----
+
+=== section
+
+`Docbook::Mirror::Node::Section` +
+PM_TYPE: `"section"`
+
+A generic section. Mapped from DocBook `<section>` and `<simplesect>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Section title
+| `xml_id` | String | XML identifier
+| `number` | String | Computed section number (for example, `"1.2"`)
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "section",
+  "attrs": {
+    "title": "Installation",
+    "xml_id": "installation",
+    "number": "1.1"
+  },
+  "content": [
+    { "type": "paragraph", "content": [ { "type": "text", "text": "To install..." } ] }
+  ]
+}
+----
+
+=== part
+
+`Docbook::Mirror::Node::Part` +
+PM_TYPE: `"part"`
+
+A book part (a grouping of chapters). Mapped from DocBook `<part>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Part title
+| `xml_id` | String | XML identifier
+| `number` | String | Computed part number
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "part",
+  "attrs": {
+    "title": "Part I: Fundamentals",
+    "xml_id": "part-fundamentals",
+    "number": "1"
+  },
+  "content": [
+    { "type": "chapter", "attrs": { "title": "Overview" }, "content": [...] }
+  ]
+}
+----
+
+=== appendix
+
+`Docbook::Mirror::Node::Appendix` +
+PM_TYPE: `"appendix"`
+
+An appendix section. Mapped from DocBook `<appendix>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Appendix title
+| `xml_id` | String | XML identifier
+| `number` | String | Computed appendix letter or number
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "appendix",
+  "attrs": {
+    "title": "Glossary",
+    "xml_id": "appendix-glossary",
+    "number": "A"
+  },
+  "content": [
+    { "type": "dl", "content": [...] }
+  ]
+}
+----
+
+=== reference
+
+`Docbook::Mirror::Node::Reference` +
+PM_TYPE: `"reference"`
+
+A reference page collection. Mapped from DocBook `<reference>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Reference collection title (from `info/title` or `title`)
+| `xml_id` | String | XML identifier
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "reference",
+  "attrs": {
+    "title": "Command Reference",
+    "xml_id": "cmdref"
+  },
+  "content": [
+    { "type": "refentry", "attrs": { "title": "init" }, "content": [...] }
+  ]
+}
+----
+
+=== refentry
+
+`Docbook::Mirror::Node::RefEntry` +
+PM_TYPE: `"refentry"`
+
+A single reference entry (manual page). Mapped from DocBook `<refentry>`. The
+transformer synthesizes a synopsis paragraph from `<refmeta>` data (field
+signature, refentrytitle, manvolnum) when available.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Resolved entry title
+| `xml_id` | String | XML identifier (from `refentry` or synthesized)
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "refentry",
+  "attrs": {
+    "title": "docbook(1)",
+    "xml_id": "docbook-1"
+  },
+  "content": [
+    {
+      "type": "paragraph",
+      "attrs": { "class": "refmeta-synopsis" },
+      "content": [
+        { "type": "text", "text": "String ", "marks": [ { "type": "code", "attrs": { "role": "type" } } ] },
+        { "type": "text", "text": "name", "marks": [ { "type": "code", "attrs": { "role": "varname" } } ] }
+      ]
+    },
+    { "type": "refsection", "attrs": { "title": "Description" }, "content": [...] }
+  ]
+}
+----
+
+=== refsection
+
+`Docbook::Mirror::Node::RefSection` +
+PM_TYPE: `"refsection"`
+
+A section within a reference entry. Mapped from DocBook `<refsection>`,
+`<refsect1>`, `<refsect2>`, and `<refsect3>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `title` | String | Section title
+| `xml_id` | String | XML identifier
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "refsection",
+  "attrs": {
+    "title": "Description",
+    "xml_id": "docbook-description"
+  },
+  "content": [
+    { "type": "paragraph", "content": [ { "type": "text", "text": "Processes DocBook XML..." } ] }
+  ]
+}
+----
+
+== Media
+
+=== image
+
+`Docbook::Mirror::Node::Image` +
+PM_TYPE: `"image"`
+
+An image. Mapped from DocBook `<figure>`, `<informalfigure>`, and
+`<inlinemediaobject>`. When a figure contains no actual image data but has an
+`xml_id`, the transformer emits a placeholder paragraph instead so that the
+cross-reference anchor is preserved.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `src` | String | Image file path (from `imagedata/fileref`)
+| `alt` | String | Alternative text description
+| `title` | String | Figure title
+| `xml_id` | String | XML identifier for cross-referencing
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "image",
+  "attrs": {
+    "src": "images/architecture.png",
+    "title": "System Architecture",
+    "xml_id": "fig-architecture"
+  }
+}
+----
+
+== Tables
+
+DocBook tables use a `tgroup` model with `thead` and `tbody`. The transformer
+flattens this into a simpler `table` > `table_head` / `table_body` >
+`table_row` > `table_cell` hierarchy.
+
+=== table
+
+`Docbook::Mirror::Node::Table` +
+PM_TYPE: `"table"`
+
+A table. Mapped from DocBook `<table>` and `<informaltable>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `title` | String | Table title
+| `frame` | String | Frame style (for example, `"all"`, `"none"`)
+| `colsep` | String | Column separator rule (`"0"` or `"1"`)
+| `rowsep` | String | Row separator rule (`"0"` or `"1"`)
+| `cols` | Integer | Number of columns
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "table",
+  "attrs": {
+    "xml_id": "tbl-options",
+    "title": "Available Options",
+    "cols": 3
+  },
+  "content": [
+    { "type": "table_head", "content": [...] },
+    { "type": "table_body", "content": [...] }
+  ]
+}
+----
+
+=== table_head
+
+`Docbook::Mirror::Node::TableHead` +
+PM_TYPE: `"table_head"`
+
+The header section of a table. Contains `table_row` children. Mapped from
+DocBook `<thead>`.
+
+.Example
+[source,json]
+----
+{
+  "type": "table_head",
+  "content": [
+    {
+      "type": "table_row",
+      "content": [
+        { "type": "table_cell", "content": [ { "type": "text", "text": "Name" } ] },
+        { "type": "table_cell", "content": [ { "type": "text", "text": "Type" } ] },
+        { "type": "table_cell", "content": [ { "type": "text", "text": "Description" } ] }
+      ]
+    }
+  ]
+}
+----
+
+=== table_body
+
+`Docbook::Mirror::Node::TableBody` +
+PM_TYPE: `"table_body"`
+
+The body section of a table. Contains `table_row` children. Mapped from
+DocBook `<tbody>`.
+
+.Example
+[source,json]
+----
+{
+  "type": "table_body",
+  "content": [
+    {
+      "type": "table_row",
+      "content": [
+        { "type": "table_cell", "content": [ { "type": "text", "text": "verbose" } ] },
+        { "type": "table_cell", "content": [ { "type": "text", "text": "Boolean" } ] },
+        { "type": "table_cell", "content": [ { "type": "text", "text": "Enable verbose output" } ] }
+      ]
+    }
+  ]
+}
+----
+
+=== table_row
+
+`Docbook::Mirror::Node::TableRow` +
+PM_TYPE: `"table_row"`
+
+A single row in a table head or table body. Contains `table_cell` children.
+
+.Example
+[source,json]
+----
+{
+  "type": "table_row",
+  "content": [
+    { "type": "table_cell", "content": [ { "type": "text", "text": "Cell 1" } ] },
+    { "type": "table_cell", "content": [ { "type": "text", "text": "Cell 2" } ] }
+  ]
+}
+----
+
+=== table_cell
+
+`Docbook::Mirror::Node::TableCell` +
+PM_TYPE: `"table_cell"`
+
+A single cell within a table row. Mapped from DocBook `<entry>`. Supports
+DocBook-style column spanning (`namest`/`nameend`) and row spanning
+(`morerows`), as well as alignment attributes.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `align` | String | Horizontal alignment (`"left"`, `"center"`, `"right"`)
+| `valign` | String | Vertical alignment (`"top"`, `"middle"`, `"bottom"`)
+| `namest` | String | Column name where spanning starts
+| `nameend` | String | Column name where spanning ends
+| `morerows` | Integer | Number of additional rows this cell spans
+|===
+
+.Example (simple cell)
+[source,json]
+----
+{
+  "type": "table_cell",
+  "content": [ { "type": "text", "text": "Cell content" } ]
+}
+----
+
+.Example (spanning cell)
+[source,json]
+----
+{
+  "type": "table_cell",
+  "attrs": {
+    "namest": "col1",
+    "nameend": "col3",
+    "morerows": 1,
+    "align": "center"
+  },
+  "content": [ { "type": "text", "text": "Wide cell" } ]
+}
+----
+
+== Admonitions
+
+=== admonition
+
+`Docbook::Mirror::Node::Admonition` +
+PM_TYPE: `"admonition"`
+
+A callout or notice block. Mapped from DocBook `<note>`, `<warning>`,
+`<tip>`, `<caution>`, `<important>`, and `<danger>`. The specific admonition
+type is carried in the `admonition_type` attribute rather than using separate
+node types for each kind.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `admonition_type` | String | One of `"note"`, `"warning"`, `"caution"`, `"important"`, `"tip"`, `"danger"`
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "admonition",
+  "attrs": { "admonition_type": "warning" },
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [ { "type": "text", "text": "Do not delete this file." } ]
+    }
+  ]
+}
+----
+
+== Complete node type reference
+
+[cols="1,1,1,2"]
+|===
+| Class | PM_TYPE | Category | Key Attributes
+
+| `Document` | `doc` | Root | `title`
+| `Text` | `text` | Leaf | `text`
+| `Paragraph` | `paragraph` | Block | --
+| `CodeBlock` | `code_block` | Block | `language`, `xml_id`, `title`
+| `Blockquote` | `blockquote` | Block | --
+| `BulletList` | `bullet_list` | Block | --
+| `OrderedList` | `ordered_list` | Block | --
+| `ListItem` | `list_item` | Block | --
+| `DefinitionList` | `dl` | Block | --
+| `DefinitionTerm` | `definition_term` | Block | --
+| `DefinitionDescription` | `definition_description` | Block | --
+| `Heading` | `heading` | Block | `level`
+| `Chapter` | `chapter` | Structural | `title`, `xml_id`, `number`
+| `Section` | `section` | Structural | `title`, `xml_id`, `number`
+| `Part` | `part` | Structural | `title`, `xml_id`, `number`
+| `Appendix` | `appendix` | Structural | `title`, `xml_id`, `number`
+| `Reference` | `reference` | Structural | `title`, `xml_id`
+| `RefEntry` | `refentry` | Structural | `title`, `xml_id`
+| `RefSection` | `refsection` | Structural | `title`, `xml_id`
+| `Image` | `image` | Media | `src`, `alt`, `title`, `xml_id`
+| `Table` | `table` | Table | `xml_id`, `title`, `cols`, `frame`, `colsep`, `rowsep`
+| `TableHead` | `table_head` | Table | --
+| `TableBody` | `table_body` | Table | --
+| `TableRow` | `table_row` | Table | --
+| `TableCell` | `table_cell` | Table | `align`, `valign`, `namest`, `nameend`, `morerows`
+| `Admonition` | `admonition` | Admonition | `admonition_type`
+|===

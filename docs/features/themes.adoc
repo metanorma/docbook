@@ -1,0 +1,155 @@
+---
+layout: default
+title: Themes
+parent: Features
+nav_order: 7
+---
+
+= Themes
+
+The interactive reader ships with four built-in themes, each designed for a
+different reading environment.  All colors are driven by
+https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties[CSS custom properties],
+so every visual element -- from the sidebar chrome to inline code blocks --
+adapts automatically when the user switches themes.
+
+== Available themes
+
+[cols="1,1,1,1,1"]
+|===
+|Theme |Label |Background |Text |Accent
+
+|Day
+|"Clean Sheet"
+|`#fafaf8`
+|`#1a1a1a`
+|`#0e7490` (cyan)
+
+|Sepia
+|"Warm Library"
+|`#f4e8d1`
+|`#3e2f23`
+|`#b8860b` (gold)
+
+|Night
+|"Midnight Study"
+|`#1a1a20`
+|`#ddd9d2`
+|`#38bdf8` (sky)
+
+|OLED
+|"Void"
+|`#000000`
+|`#e8e6e1`
+|`#818cf8` (indigo)
+|===
+
+== CSS custom properties
+
+The reader defines two families of CSS custom properties:
+
+`--chrome-*`:: Variables that control the UI chrome -- the sidebar, top bar,
+search modal, and settings panel.  Examples include `--chrome-bg`,
+`--chrome-text`, `--chrome-accent`, `--chrome-border`, and `--chrome-bg-hover`.
+
+`--ebook-*`:: Variables that control the reading-content area -- body text,
+headings, code blocks, borders, and links.  Examples include `--ebook-bg`,
+`--ebook-text`, `--ebook-text-muted`, `--ebook-code-bg`, and
+`--ebook-inline-code-bg`.
+
+Because the entire color system is built on custom properties, a new theme can
+be created simply by overriding these variables in a new CSS class.
+
+=== Example: Day theme variables
+
+[source,css]
+----
+.theme-day {
+  --ebook-bg: #fafaf8;
+  --ebook-text: #1a1a1a;
+  --ebook-accent: #0e7490;
+
+  --chrome-bg: #fafaf8;
+  --chrome-text: #1a1a1a;
+  --chrome-accent: #0e7490;
+  --chrome-border: #e2e0dc;
+}
+----
+
+== Applying a theme
+
+Themes are applied by adding a class to the root `<html>` element:
+
+[source,javascript]
+----
+// Applied by useEbookStore.applyTheme()
+document.documentElement.classList.add('theme-day');   // or theme-sepia, theme-night, theme-oled
+----
+
+The `useEbookStore` composable handles this automatically.  When the user
+selects a theme, the store:
+
+. Removes any existing `theme-*` class from `document.documentElement`.
+. Adds the new class (`theme-day`, `theme-sepia`, etc.).
+. Toggles the `dark` class on `<html>` for Night and OLED themes.
+
+== Switching themes
+
+Users switch themes from the settings panel, opened via the gear icon in the
+top bar.  The `SettingsPanel.vue` component presents a 4-column grid of theme
+swatches.  Each swatch shows a color preview circle and the theme name.
+
+[source,vue]
+----
+const themes = [
+  { value: 'day',   label: 'Day',   preview: 'bg-white border border-gray-300' },
+  { value: 'sepia', label: 'Sepia', preview: 'bg-amber-100' },
+  { value: 'night', label: 'Night', preview: 'bg-gray-800' },
+  { value: 'oled',  label: 'OLED',  preview: 'bg-black border border-gray-600' },
+]
+----
+
+The selected theme is persisted in `localStorage` under the key
+`docbook_ebook_preferences`, so it survives page reloads.
+
+== Font options
+
+The reader supports two font families:
+
+Sans-serif (default):: Uses *Inter* (`'Inter', system-ui, sans-serif`).
+Serif:: Uses *Merriweather* (`'Merriweather', Georgia, serif`).
+
+Font family is toggled via the UI store and applied by switching the
+`font-serif` / `font-sans` class on `<body>`:
+
+[source,css]
+----
+body.font-serif {
+  font-family: 'Merriweather', Georgia, serif;
+}
+body.font-sans {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+----
+
+Users can also adjust font size (12--32 px), font weight (300--700), and line
+height (1.2--2.0) from the settings panel.  These values are applied as CSS
+custom properties (`--ebook-font-size`, `--ebook-font-weight`,
+`--ebook-line-height`) on the `.ebook-container` element.
+
+== Print stylesheet
+
+Regardless of the active theme, the reader provides a clean print stylesheet
+that hides navigation chrome:
+
+[source,css]
+----
+@media print {
+  .lg\:translate-x-0, #sidebar, #sidebar-toggle, .sticky {
+    display: none !important;
+  }
+}
+----
+
+Only the reading content is sent to the printer -- no sidebars, no breadcrumb
+bar, no modal overlays.

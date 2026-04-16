@@ -23,16 +23,18 @@ All public classes are under the `Docbook` module namespace.
 
 === Core Classes
 
-The Ruby API revolves around four core classes:
+The Ruby API revolves around six core classes:
 
 [cols="3,5"]
 |===
 | Class | Purpose
 
-| `Docbook::Document` | Entry point for parsing XML strings into typed Ruby element models. Supports 39 root element types.
+| `Docbook::Document` | Entry point for parsing XML strings into typed Ruby element models. Supports 33 root element types.
+| `Docbook::Output::SinglePage` | Full pipeline: parse, TOC, numbering, index, images, and interactive HTML reader. Powers `docbook build`.
+| `Docbook::Output::Html` | Generates static HTML from a parsed document in single-file or directory mode. Powers `docbook convert`.
+| `Docbook::Output::DocbookMirror` | Exports parsed documents as ProseMirror-compatible JSON. Powers `docbook export`.
 | `Docbook::XIncludeResolver` | Resolves `xi:include` elements in XML documents. Must be called *before* parsing with `Document.from_xml`.
 | `Docbook::XrefResolver` | Builds an `xml:id` lookup map from a parsed document and resolves `xref`/`linkend` references to titles.
-| `Docbook::Output::Html` | Generates HTML from a parsed document in single-file or directory mode.
 |===
 
 === Processing Pipeline
@@ -106,6 +108,8 @@ For example, a `<book>` element is represented as `Docbook::Elements::Book` with
 Explore each component in detail:
 
 * *<<parsing,Parsing Documents>>* -- How to parse XML and access element models
-* *<<html-output,HTML Output>>* -- Generating HTML in single-file and directory modes
+* *<<single-page,SinglePage Reader>>* -- Build interactive HTML readers (full pipeline)
+* *<<html-output,HTML Output>>* -- Generating static HTML in single-file and directory modes
+* *<<json-export,JSON Export>>* -- Exporting DocbookMirror JSON
 * *<<xinclude,XInclude Resolution>>* -- Resolving `xi:include` elements
 * *<<xref-resolution,XRef Resolution>>* -- Building ID maps and resolving cross-references

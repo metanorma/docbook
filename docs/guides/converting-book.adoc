@@ -97,25 +97,31 @@ command exits with code 1.
 
 If your book uses `<xi:include>` to pull in chapters from separate
 files, verify that all referenced files exist and are well-formed XML.
-XInclude resolution is enabled by default for `to-html`.
+XInclude resolution is enabled by default for `build` and `convert`.
 
-== Step 3: Convert to single-file HTML
+== Step 3: Build an interactive reader
 
-For a self-contained HTML file:
+For a self-contained interactive HTML reader:
 
 ....
-docbook to-html book.xml -o output.html
+docbook build book.xml -o output.html
 ....
 
-This produces `output.html` with all data, CSS, and JavaScript
+This produces `output.html` with all data, CSS, JavaScript, and images
 inlined. You can open it directly in any browser.
 
-== Step 4: Convert to directory output
+== Step 4: Convert to static HTML
 
-For a directory-based output with linked assets:
+For static HTML output without JavaScript:
 
 ....
-docbook to-html book.xml -o my-book --output-type directory
+docbook convert book.xml -o output.html
+....
+
+Or for directory output with separate assets:
+
+....
+docbook convert book.xml -o my-book --output-type directory
 ....
 
 This creates a `my-book/` directory containing:
@@ -143,21 +149,32 @@ Open the HTML file or directory in a web browser. You should see:
 
 == Using the Ruby API
 
-You can also convert programmatically:
+You can also build programmatically:
+
+[source,ruby]
+----
+require "docbook"
+
+# Full pipeline: parse + TOC + numbering + index + images + HTML
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "My Book"
+).generate
+----
+
+Or generate static HTML:
 
 [source,ruby]
 ----
 require "docbook"
 
 xml = File.read("book.xml")
-
-# Parse
 doc = Docbook::Document.from_xml(xml)
-
-# Resolve cross-references
 xref = Docbook::XrefResolver.new(doc).resolve!
 
-# Generate HTML
 html = Docbook::Output::Html.new(
   doc,
   xref_resolver: xref,

@@ -3,7 +3,7 @@
 module Docbook
   module Models
     # Pre-computed models for Vue SPA
-    MODELS_DIR = "#{__dir__}/models"
+    MODELS_DIR = "#{__dir__}/models".freeze
 
     autoload :TocNode, "#{MODELS_DIR}/toc_node"
     autoload :IndexEntry, "#{MODELS_DIR}/index_entry"

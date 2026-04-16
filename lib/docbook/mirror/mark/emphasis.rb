@@ -6,15 +6,15 @@ module Docbook
   module Mirror
     module Mark
       class Emphasis < Base
-        PM_TYPE = 'emphasis'
+        PM_TYPE = "emphasis"
       end
 
       class Strong < Base
-        PM_TYPE = 'strong'
+        PM_TYPE = "strong"
       end
 
       class Italic < Base
-        PM_TYPE = 'italic'
+        PM_TYPE = "italic"
       end
     end
   end

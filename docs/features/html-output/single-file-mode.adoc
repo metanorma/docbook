@@ -78,14 +78,14 @@ Single file mode is designed for:
 ## CLI Usage
 
 ```bash
-# Default: single file mode, output to stdout
-docbook to-html document.xml
+# Build an interactive reader (recommended)
+docbook build document.xml -o output.html
 
-# Write to a file
-docbook to-html document.xml -o output.html
+# Static HTML conversion
+docbook convert document.xml -o output.html
 
 # Explicit single file mode
-docbook to-html document.xml -o output.html --output-type single_file
+docbook convert document.xml -o output.html --output-type single_file
 ```
 
 ## Programmatic Usage

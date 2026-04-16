@@ -3,7 +3,7 @@
 module Docbook
   module Mirror
     class Node
-      PM_TYPE = 'node'
+      PM_TYPE = "node"
 
       attr_accessor :type, :attrs, :content, :marks
 
@@ -16,20 +16,18 @@ module Docbook
 
       # Convert to hash for JSON serialization
       def to_h
-        result = { 'type' => type }
+        result = { "type" => type }
 
-        if attrs && !attrs.empty?
-          result['attrs'] = attrs.transform_keys(&:to_s)
-        end
+        result["attrs"] = attrs.transform_keys(&:to_s) if attrs && !attrs.empty?
 
         if marks && !marks.empty?
-          result['marks'] = marks.map do |mark|
+          result["marks"] = marks.map do |mark|
             mark.respond_to?(:to_h) ? mark.to_h : mark
           end
         end
 
         if content && !content.empty?
-          result['content'] = content.map do |item|
+          result["content"] = content.map do |item|
             item.respond_to?(:to_h) ? item.to_h : item
           end
         end
@@ -46,10 +44,10 @@ module Docbook
       def self.from_h(hash)
         return nil unless hash
 
-        type = hash['type']
-        attrs = hash['attrs'] || {}
-        content = hash['content'] || []
-        marks = hash['marks'] || []
+        type = hash["type"]
+        attrs = hash["attrs"] || {}
+        content = hash["content"] || []
+        marks = hash["marks"] || []
 
         node_class = NODE_TYPES[type] || Node
         node_class.new(
@@ -89,7 +87,7 @@ module Docbook
 
       # Get text content
       def text_content
-        return '' unless content
+        return "" unless content
 
         content.map do |item|
           if item.is_a?(Node)
@@ -97,12 +95,12 @@ module Docbook
           elsif item.is_a?(String)
             item
           else
-            ''
+            ""
           end
         end.join
       end
 
-      NODE_TYPES = {}
+      NODE_TYPES = {}.freeze
     end
   end
 end

@@ -1,0 +1,105 @@
+---
+layout: default
+title: JSON Export
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 4
+---
+
+== JSON Export
+
+The `Docbook::Output::DocbookMirror` class exports a parsed DocBook document as DocbookMirror JSON -- a ProseMirror-compatible structured representation.
+
+=== Basic Usage
+
+[source,ruby]
+----
+require "docbook"
+
+doc = Docbook::Document.from_xml(File.read("guide.xml"))
+mirror = Docbook::Output::DocbookMirror.new(doc)
+
+# Pretty JSON
+json = mirror.to_pretty_json
+File.write("guide.json", json)
+
+# Compact JSON
+json = mirror.to_json
+File.write("guide.json", json)
+----
+
+=== Methods
+
+[cols="2,5"]
+|===
+| Method | Description
+
+| `to_pretty_json` | Returns formatted JSON string with indentation
+
+| `to_json(**options)` | Returns JSON string (accepts `JSON.generate` options)
+
+| `to_document` | Returns the Ruby object (a `Mirror::Node` tree)
+|===
+
+=== The DocbookMirror Format
+
+The output JSON follows a structure compatible with ProseMirror's document model, extended with DocBook-specific types:
+
+* **27 node types** -- `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, images
+* **7 mark types** -- `emphasis`, `strong`, `italic`, `code`, `link`, `xref`, `citation`
+
+Example output structure:
+
+[source,json]
+----
+{
+  "type": "doc",
+  "children": [
+    {
+      "type": "chapter",
+      "children": [
+        {
+          "type": "heading",
+          "level": 1,
+          "children": [
+            { "type": "text", "text": "Introduction" }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            { "type": "text", "text": "This is a " },
+            {
+              "type": "text",
+              "text": "linked",
+              "marks": [{ "type": "link", "attrs": { "href": "https://example.com" } }]
+            },
+            { "type": "text", "text": " word." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+=== Bidirectional Transformation
+
+The underlying `Docbook::Mirror::Transformer` supports bidirectional conversion:
+
+[source,ruby]
+----
+require "docbook/mirror"
+
+# DocBook XML → DocbookMirror
+mirror_doc = Docbook::Mirror::Transformer.from_docbook(parsed_doc)
+
+# DocbookMirror → DocBook XML
+docbook_element = Docbook::Mirror::Transformer.to_docbook(mirror_doc)
+xml_string = docbook_element.to_xml
+----
+
+=== See Also
+
+* link:../../../understanding/docbook-mirror/[DocbookMirror JSON] -- Full format specification with all node and mark types
+* link:../../cli/export-command[CLI: export] -- Equivalent CLI command

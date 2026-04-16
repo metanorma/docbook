@@ -8,7 +8,12 @@ nav_order: 2
 
 == HTML Output
 
-The `Docbook::Output::Html` class generates HTML from a parsed DocBook document.
+The `Docbook::Output::Html` class generates static HTML from a parsed DocBook document.
+
+[NOTE]
+====
+For building interactive HTML readers with the full pipeline (TOC, numbering, index, images), use link:../single-page[`Docbook::Output::SinglePage`] instead. The `Html` class produces static HTML without JavaScript interactivity.
+====
 
 === Constructor
 

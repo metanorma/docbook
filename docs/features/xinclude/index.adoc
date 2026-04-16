@@ -95,15 +95,15 @@ end
 
 ## CLI Integration
 
-XInclude resolution is enabled by default in the `to-html` command and disabled by default in the `format` command:
+XInclude resolution is enabled by default in the `build`, `convert`, and `export` commands, and disabled by default in the `format` command:
 
 [source,bash]
 ----
-# XInclude enabled (default for to-html)
-docbook to-html book.xml -o output.html
+# XInclude enabled (default for build/convert/export)
+docbook build book.xml -o output.html
 
 # Explicitly disable XInclude
-docbook to-html book.xml -o output.html --no-xinclude
+docbook build book.xml -o output.html --no-xinclude
 
 # XInclude disabled (default for format)
 docbook format book.xml

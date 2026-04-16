@@ -1,0 +1,86 @@
+---
+layout: default
+title: export
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 3
+---
+
+== export
+
+Export a DocBook XML file as DocbookMirror JSON -- a ProseMirror-compatible structured representation of the document.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook export INPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to the DocBook XML file (required)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` PATH | stdout | Output JSON file path
+| `--pretty` | `true` | Pretty-print the JSON output
+| `--xinclude` | `true` | Resolve XInclude elements before processing
+|===
+
+=== Output Format
+
+The output is a JSON document following the DocbookMirror schema, which extends ProseMirror's document model with DocBook-specific node and mark types:
+
+* 27 node types: `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, and images
+* 7 mark types: `emphasis`, `strong`, `italic`, `code`, `link`, `xref`, `citation`
+
+See link:../../../understanding/docbook-mirror/[DocbookMirror JSON] for the full specification.
+
+=== Examples
+
+==== Export to file
+
+[source,bash]
+----
+$ docbook export book.xml -o book.json
+Written to book.json
+----
+
+==== Export to stdout
+
+[source,bash]
+----
+$ docbook export book.xml
+{"type":"doc","children":[...]...}
+----
+
+==== Compact JSON (no pretty-print)
+
+[source,bash]
+----
+$ docbook export book.xml --no-pretty -o book.json
+Written to book.json
+----
+
+==== Skip XInclude resolution
+
+[source,bash]
+----
+$ docbook export article.xml -o article.json --no-xinclude
+Written to article.json
+----
+
+=== See Also
+
+* link:../../../understanding/docbook-mirror/[DocbookMirror JSON] -- Full format specification
+* link:../../ruby-api/json-export[Ruby API: JSON Export] -- Programmatic JSON export

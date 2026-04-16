@@ -1,0 +1,272 @@
+---
+layout: default
+title: Comparison with ProseMirror
+parent: DocbookMirror JSON
+grand_parent: Understanding
+nav_order: 3
+---
+
+# Comparison with ProseMirror
+
+DocbookMirror JSON is inspired by the ProseMirror document model and shares
+many conventions, but it is not a strict subset. DocBook has structural and
+semantic requirements that go beyond what ProseMirror's core schema provides.
+This page documents the key similarities and differences.
+
+== What is the same
+
+These conventions are shared directly with ProseMirror:
+
+**Node type strings** -- Every node has a `type` field containing a string
+identifier (for example, `"paragraph"`, `"heading"`, `"text"`). ProseMirror
+uses the same convention in its JSON representation.
+
+**Mark type strings** -- Marks use a `type` field with a string identifier
+(for example, `"emphasis"`, `"link"`), just like ProseMirror marks.
+
+**Text nodes with marks** -- Inline styling is expressed as text nodes that
+carry a `marks` array. Each mark is an object with `type` and optional
+`attrs`. This is the same model ProseMirror uses.
+
+[source,json]
+----
+{
+  "type": "text",
+  "text": "bold text",
+  "marks": [
+    { "type": "strong" }
+  ]
+}
+----
+
+**Hierarchical tree** -- The document is a tree of nested nodes with typed
+children. Block nodes contain other block nodes or text leaves.
+
+== Key differences
+
+=== 1. Flat `content` array vs ProseMirror's `content` field
+
+In ProseMirror, the `content` field on a node is a `Fragment` -- an ordered
+collection of child nodes. When serialized to JSON, it is an array under the
+`content` key.
+
+DocbookMirror uses the same `content` key and array structure, but the
+children are always a flat list. DocBook does not use ProseMirror's concept
+of named content slots (for example, `content` vs `marks` vs `attrs` in the
+schema sense). Every child appears in the single `content` array.
+
+This means a definition list's `content` array contains interleaved
+`definition_term` and `definition_description` nodes rather than a nested
+structure:
+
+[source,json]
+----
+{
+  "type": "dl",
+  "content": [
+    { "type": "definition_term", "content": [...] },
+    { "type": "definition_description", "content": [...] },
+    { "type": "definition_term", "content": [...] },
+    { "type": "definition_description", "content": [...] }
+  ]
+}
+----
+
+=== 2. Unified code mark with role attribute
+
+In ProseMirror, each inline formatting variant is typically a separate mark
+type. DocbookMirror uses a single `code` mark type with a `role` attribute
+to distinguish 23+ DocBook inline elements. This design choice was made
+because:
+
+* All these elements share the same rendering concern (monospace font).
+* The specific element type is metadata that the renderer may or may not
+  need to differentiate.
+* A single mark type keeps the mark registry small while preserving full
+  DocBook semantics.
+
+[source,json]
+----
+{
+  "type": "code",
+  "attrs": { "role": "filename" }
+}
+----
+
+Compare this with a hypothetical ProseMirror approach that would define
+separate mark types (`code_filename`, `code_command`, `code_function`, and
+so on).
+
+=== 3. Structural nodes that do not exist in ProseMirror
+
+DocBook defines document-level structural elements that have no direct
+equivalent in ProseMirror's default schema:
+
+* `chapter` -- A book chapter with title, numbering, and nested content.
+* `part` -- A grouping of chapters.
+* `appendix` -- An appendix with letter-based numbering.
+* `reference` -- A reference page collection.
+* `refentry` -- A single reference entry (manual page).
+* `refsection` -- A section within a reference entry.
+
+In ProseMirror, these would typically be represented as custom node types
+added to the schema. DocbookMirror includes them as first-class node types
+because DocBook documents are fundamentally structured around them.
+
+=== 4. Cross-references as first-class marks
+
+ProseMirror's standard schema does not include cross-reference marks.
+DocbookMirror defines two dedicated mark types for DocBook cross-referencing:
+
+* `xref` -- A semantic cross-reference with `linkend` (target ID) and
+  `resolved` (the resolved title text). The transformer populates the
+  `resolved` attribute during conversion by looking up the target in the
+  `xml_id_map`.
+* `citation` -- A bibliography reference with a `bibref` attribute.
+
+[source,json]
+----
+{
+  "type": "xref",
+  "attrs": { "linkend": "installation", "resolved": "Installation" }
+}
+----
+
+In a standard ProseMirror editor, cross-references would be handled by a
+plugin or a custom mark. By including them as built-in mark types,
+DocbookMirror ensures that cross-reference semantics are preserved through
+round-trip conversion without plugin infrastructure.
+
+=== 5. Table model with DocBook semantics
+
+ProseMirror's table extension (`prosemirror-tables`) uses a simple model of
+`table` > `table_row` > `table_cell` with `colspan` and `rowspan` attributes
+on cells.
+
+DocbookMirror uses the same three-level hierarchy (`table` > `table_row` >
+`table_cell`) but adds a `table_head` / `table_body` distinction that
+ProseMirror tables lack. It also preserves DocBook-specific spanning
+attributes:
+
+* `namest` / `nameend` -- Column spanning by named column positions, rather
+  than a numeric colspan.
+* `morerows` -- Row spanning expressed as the number of additional rows
+  (rather than a total rowspan).
+
+Additionally, table-level attributes carry DocBook frame and separator rules:
+
+[source,json]
+----
+{
+  "type": "table",
+  "attrs": { "frame": "all", "colsep": "1", "rowsep": "1", "cols": 3 },
+  "content": [
+    { "type": "table_head", "content": [...] },
+    { "type": "table_body", "content": [...] }
+  ]
+}
+----
+
+=== 6. Admonition nodes with type attribute
+
+ProseMirror does not have a built-in admonition node. In DocbookMirror, all
+DocBook admonition types (`<note>`, `<warning>`, `<tip>`, `<caution>`,
+`<important>`, `<danger>`) are represented as a single `admonition` node with
+an `admonition_type` attribute:
+
+[source,json]
+----
+{
+  "type": "admonition",
+  "attrs": { "admonition_type": "warning" },
+  "content": [...]
+}
+----
+
+An alternative ProseMirror approach would define separate node types for each
+admonition kind (`note`, `warning`, and so on). DocbookMirror uses a single
+type with an attribute because:
+
+* All admonition types share the same content model (block-level children).
+* The visual difference is cosmetic (icon, border color) and can be driven
+  entirely by the `admonition_type` attribute.
+* It keeps the node type registry compact.
+
+=== 7. Image nodes with DocBook attributes
+
+ProseMirror's image node is a leaf with `src`, `alt`, and `title` attributes.
+DocbookMirror's `image` node carries the same attributes plus an `xml_id`
+for cross-reference anchoring:
+
+[source,json]
+----
+{
+  "type": "image",
+  "attrs": {
+    "src": "images/diagram.png",
+    "title": "System Diagram",
+    "xml_id": "fig-diagram"
+  }
+}
+----
+
+The `xml_id` attribute is important because DocBook figures are frequently
+the target of `<xref>` cross-references. Preserving the ID ensures that
+cross-reference resolution works correctly in the rendered output.
+
+=== 8. Heading level is separate from structural sections
+
+In ProseMirror, headings are leaf block nodes with a `level` attribute (1-6)
+that determines the visual hierarchy. There is no separate concept of
+"section" or "chapter" -- headings imply structure.
+
+In DocBook, structural elements (`<chapter>`, `<section>`, `<part>`) are
+explicit containers with their own titles. DocbookMirror represents these as
+distinct structural node types. The `heading` node type exists for cases
+where a standalone heading is needed, but most documents use `chapter`,
+`section`, and `refsection` nodes instead.
+
+== Why these differences exist
+
+ProseMirror is an **editor framework**. Its document model is designed for
+inline editing: typing, selecting, applying marks, and undo/redo. The schema
+is minimal to keep the editor fast and predictable.
+
+DocBook is a **document format**. It encodes rich document semantics:
+hierarchical structure (parts, chapters, sections), typed cross-references
+(xref, link, biblioref), domain-specific inline elements (command, filename,
+classname), and presentation rules (admonition types, table frames).
+
+DocbookMirror bridges these two worlds. It uses ProseMirror's conventions
+where they fit (text with marks, node type strings, hierarchical tree) and
+extends them where DocBook's semantics require it (structural nodes,
+cross-reference marks, role-annotated code marks).
+
+== How the Vue renderer handles these differences
+
+The Vue renderer consumes DocbookMirror JSON and produces interactive HTML.
+It handles the differences through:
+
+**Node type dispatching** -- The renderer maintains a component map that maps
+each node type string to a Vue component. Structural nodes (`chapter`,
+`section`, `refentry`) render with their own layout and styling, while
+standard nodes (`paragraph`, `bullet_list`) use simpler components.
+
+**Mark-aware text rendering** -- Text nodes are rendered by inspecting their
+`marks` array. The `code` mark's `role` attribute can drive visual
+differentiation (for example, a different color for `filename` vs `command`)
+or be rendered uniformly as monospace.
+
+**Admonition theming** -- The `admonition` node's `admonition_type` attribute
+selects the appropriate icon and color scheme from the frontend's theme
+configuration.
+
+**Table rendering** -- The `table_head` / `table_body` distinction allows the
+renderer to apply sticky header styles. The `namest`/`nameend` and `morerows`
+attributes are translated to standard `colspan`/`rowspan` HTML attributes
+during rendering.
+
+**Cross-reference resolution** -- The `xref` mark's `resolved` attribute
+provides the display text directly, so the renderer does not need to look up
+the target at render time. The `linkend` attribute is used to construct the
+internal navigation link.

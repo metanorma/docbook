@@ -96,7 +96,6 @@ module Docbook
         when ".gif"  then "image/gif"
         when ".svg"  then "image/svg+xml"
         when ".webp" then "image/webp"
-        else nil
         end
       end
     end

@@ -6,10 +6,10 @@ module Docbook
     class TocNode < Lutaml::Model::Serializable
       attribute :id, :string
       attribute :title, :string
-      attribute :type, :string  # part, chapter, section, appendix, reference
+      attribute :type, :string # part, chapter, section, appendix, reference
       attribute :number, :string
       attribute :children, TocNode, collection: true
-      attribute :page, :integer  # Page number for PDF navigation
+      attribute :page, :integer # Page number for PDF navigation
 
       json do
         map "id", to: :id

@@ -15,8 +15,9 @@ RSpec.describe "xslTNG test fixtures" do
     doc = Nokogiri::XML(input)
     root = doc.root
     next unless root
+
     ns = root.namespace&.href
-    next unless ns && ns.include?("docbook")
+    next unless ns&.include?("docbook")
 
     root_name = root.name
     next unless Docbook::Document.supports?(root_name)

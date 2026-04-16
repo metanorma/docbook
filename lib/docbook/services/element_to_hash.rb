@@ -45,7 +45,7 @@ module Docbook
       private
 
       def refentry_to_h
-        content = @element.as_json
+        @element.as_json
 
         # Flatten for Vue - extract key fields
         result = {
@@ -102,13 +102,13 @@ module Docbook
           type: "variablelist",
           items: @element.varlistentry.map do |ve|
             terms = ve.term&.map { |t| extract_inline_content(t) } || []
-            definition = if ve.listitem&.respond_to?(:para)
-              ve.listitem.para.map { |p| extract_inline_content(p) }
-            elsif ve.listitem&.respond_to?(:elements)
-              ve.listitem.elements.map { |e| ElementToHash.new(e).to_h }
-            else
-              []
-            end
+            definition = if ve.listitem.respond_to?(:para)
+                           ve.listitem.para.map { |p| extract_inline_content(p) }
+                         elsif ve.listitem.respond_to?(:elements)
+                           ve.listitem.elements.map { |e| ElementToHash.new(e).to_h }
+                         else
+                           []
+                         end
             { terms: terms, definition: definition }
           end
         }
@@ -183,7 +183,7 @@ module Docbook
         {
           type: "table",
           id: @element.xml_id,
-          rows: []  # Would need complex traversal
+          rows: [] # Would need complex traversal
         }
       end
 
@@ -192,7 +192,7 @@ module Docbook
         content = @element.elements.map { |e| ElementToHash.new(e).to_h } if @element.elements
 
         {
-          type: @element.class.name.split('::').last.downcase,
+          type: @element.class.name.split("::").last.downcase,
           title: title,
           content: content
         }
@@ -212,7 +212,7 @@ module Docbook
       def generic_to_h
         # Default: try to use as_json
         if @element.respond_to?(:as_json)
-          @element.as_json.merge(type: @element.class.name.split('::').last.downcase)
+          @element.as_json.merge(type: @element.class.name.split("::").last.downcase)
         else
           { type: "unknown", content: @element.to_s }
         end

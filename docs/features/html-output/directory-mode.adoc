@@ -120,7 +120,7 @@ Directory mode is designed for:
 [source,bash]
 ----
 # Directory mode requires an output directory
-docbook to-html document.xml -o ./output_dir --output-type directory
+docbook convert document.xml -o ./output_dir --output-type directory
 ----
 
 The CLI copies frontend assets automatically:

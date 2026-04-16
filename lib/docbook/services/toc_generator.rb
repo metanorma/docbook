@@ -43,14 +43,12 @@ module Docbook
           id: get_id(element),
           title: get_title(element),
           type: element_type(element),
-          number: nil  # Numbering added separately
+          number: nil # Numbering added separately
         )
 
         # Recursively add children
         children = get_child_sections(element)
-        if children.any?
-          node.children = children.map { |child| build_toc_node(child) }.compact
-        end
+        node.children = children.map { |child| build_toc_node(child) }.compact if children.any?
 
         node
       end
@@ -84,7 +82,7 @@ module Docbook
       end
 
       def element_type(element)
-        element.class.name.split('::').last.downcase
+        element.class.name.split("::").last.downcase
       end
 
       def get_child_sections(element)

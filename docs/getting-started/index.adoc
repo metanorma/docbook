@@ -40,9 +40,9 @@ The `docbook` gem supports 39 root element types, including the most commonly us
 |===
 | Feature | Description
 
-| *CLI* | A Thor-based command-line interface with four commands: `validate`, `format`, `to-html`, and `roundtrip`.
+| *CLI* | A Thor-based command-line interface with six commands: `build`, `convert`, `export`, `validate`, `format`, and `demo`.
 | *Ruby API* | Programmatic access to parsing, XInclude resolution, cross-reference resolution, and HTML generation.
-| *HTML Output* | Two output modes: a self-contained single HTML file (with embedded Base64 images) and a directory mode (with a Vue.js-powered reading experience).
+| *Interactive Reader* | Self-contained HTML with Vue 3 frontend, 4 themes, full-text search, TOC navigation, and breadcrumb bar.
 | *XInclude Support* | Full resolution of XInclude elements including nested includes, text includes, and `text+fragid` extensions.
 | *Cross-Reference Resolution* | Automatic resolution of `xml:id` references to section titles and other targets.
 |===

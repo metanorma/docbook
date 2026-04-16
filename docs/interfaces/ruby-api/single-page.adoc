@@ -1,0 +1,101 @@
+---
+layout: default
+title: SinglePage Reader
+parent: Ruby API
+grand_parent: Interfaces
+nav_order: 3
+---
+
+== SinglePage Reader
+
+The `Docbook::Output::SinglePage` class runs the full pipeline to produce a self-contained interactive HTML reader. This is the same pipeline used by the `docbook build` CLI command.
+
+=== Constructor
+
+[source,ruby]
+----
+page = Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output/book.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "My Document"
+)
+----
+
+==== Parameters
+
+[cols="2,1,5"]
+|===
+| Parameter | Required | Description
+
+| `xml_path` | Yes | Path to the DocBook XML file
+| `output_path` | Yes | Output HTML file path
+| `dist_dir` | No | Frontend dist directory (defaults to gem-bundled `frontend/dist`)
+| `image_search_dirs` | No | Array of directories for image lookup (defaults to XML file directory)
+| `image_strategy` | No | `:data_url` (default), `:file_url`, or `:relative`
+| `title` | No | HTML page title (default: `"DocBook Library"`)
+|===
+
+=== Generating the Reader
+
+Call `generate` to run the full pipeline and write the output file:
+
+[source,ruby]
+----
+page.generate
+# => "/path/to/output/book.html"
+----
+
+The method returns the output path.
+
+=== Pipeline Steps
+
+The `generate` method runs an 8-step pipeline:
+
+. **Parse XML** -- Read and parse the DocBook XML file (with XInclude resolution)
+. **Generate TOC** -- Build hierarchical table of contents via `Services::TocGenerator`
+. **Generate Numbering** -- Compute section numbering via `Services::NumberingService`
+. **Collect Index** -- Gather `indexterm` elements and generate index
+. **Transform to DocbookMirror** -- Convert parsed document to DocbookMirror JSON via `Mirror::Transformer`
+. **Attach metadata** -- Attach TOC, numbering, and index to the mirror output
+. **Resolve images** -- Process image paths via `Services::ImageResolver`
+. **Write HTML** -- Render the Liquid template with all data and write to disk
+
+=== Complete Example
+
+[source,ruby]
+----
+require "docbook"
+
+# Build an interactive reader from any DocBook XML
+page = Docbook::Output::SinglePage.new(
+  xml_path: "guide.xml",
+  output_path: "output/guide.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "Product Guide"
+)
+
+page.generate
+puts "Built interactive reader at output/guide.html"
+----
+
+=== Image Strategies
+
+[cols="2,5"]
+|===
+| Strategy | Description
+
+| `:data_url` | Images are Base64-encoded and embedded in the HTML. Fully self-contained. Default.
+
+| `:file_url` | Images reference absolute file system paths. For local viewing.
+
+| `:relative` | Images use relative paths from the output HTML. For web hosting.
+|===
+
+=== See Also
+
+* link:../html-output[HTML Output] -- Static HTML generation (no JavaScript)
+* link:../json-export[JSON Export] -- DocbookMirror JSON export
+* link:../../cli/build-command[CLI: build] -- Equivalent CLI command

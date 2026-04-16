@@ -3,7 +3,7 @@
 module Docbook
   module Mirror
     class Mark
-      PM_TYPE = 'mark'
+      PM_TYPE = "mark"
 
       attr_accessor :type, :attrs
 
@@ -13,8 +13,8 @@ module Docbook
       end
 
       def to_h
-        result = { 'type' => type }
-        result['attrs'] = attrs.transform_keys(&:to_s) if attrs && !attrs.empty?
+        result = { "type" => type }
+        result["attrs"] = attrs.transform_keys(&:to_s) if attrs && !attrs.empty?
         result
       end
 
@@ -27,8 +27,8 @@ module Docbook
       def self.from_h(hash)
         return nil unless hash
 
-        type = hash['type']
-        attrs = hash['attrs'] || {}
+        type = hash["type"]
+        attrs = hash["attrs"] || {}
 
         mark_class = MARK_TYPES[type] || Mark
         mark_class.new(
@@ -36,7 +36,7 @@ module Docbook
         )
       end
 
-      MARK_TYPES = {}
+      MARK_TYPES = {}.freeze
     end
   end
 end

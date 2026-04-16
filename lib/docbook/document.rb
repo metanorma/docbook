@@ -34,7 +34,7 @@ module Docbook
       "refsect3" => Elements::RefSect3,
       "setindex" => Elements::SetIndex,
       "para" => Elements::Para,
-      "simplesect" => Elements::Simplesect,
+      "simplesect" => Elements::Simplesect
     }.freeze
 
     class << self
@@ -60,7 +60,7 @@ module Docbook
       private
 
       def extract_root_element(xml_string)
-        match = xml_string.match(/<\s*([a-zA-Z_][\w.-]*)(?:\s|\/|>)/)
+        match = xml_string.match(%r{<\s*([a-zA-Z_][\w.-]*)(?:\s|/|>)})
         match&.[](1)
       end
     end

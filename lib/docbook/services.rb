@@ -3,7 +3,7 @@
 module Docbook
   module Services
     # Service classes for data generation
-    SERVICES_DIR = "#{__dir__}/services"
+    SERVICES_DIR = "#{__dir__}/services".freeze
 
     autoload :TocGenerator, "#{SERVICES_DIR}/toc_generator"
     autoload :IndexGenerator, "#{SERVICES_DIR}/index_generator"

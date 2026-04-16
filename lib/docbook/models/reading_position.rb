@@ -7,7 +7,7 @@ module Docbook
       attribute :section_id, :string
       attribute :percentage, :float
       attribute :last_read_at, :string
-      attribute :reading_mode, :string  # scroll, page, chapter, reference
+      attribute :reading_mode, :string # scroll, page, chapter, reference
       attribute :scroll_position, :integer
 
       json do

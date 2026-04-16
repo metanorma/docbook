@@ -35,10 +35,10 @@ module Docbook
         end
 
         # Process nested sections
-        if element.respond_to?(:section)
-          Array(element.section).each do |section|
-            collect_index_terms(section, section_info)
-          end
+        return unless element.respond_to?(:section)
+
+        Array(element.section).each do |section|
+          collect_index_terms(section, section_info)
         end
       end
 
@@ -55,13 +55,13 @@ module Docbook
           element.refnamediv&.refname&.map(&:content)&.join(" ") ||
             element.refmeta&.refentrytitle&.content
         else
-          element.respond_to?(:title) && element.title&.content ||
-            element.respond_to?(:info) && element.info&.title&.content
+          (element.respond_to?(:title) && element.title&.content) ||
+            (element.respond_to?(:info) && element.info&.title&.content)
         end
       end
 
       def generate_id(element)
-        "section-#{element.class.name.split('::').last.downcase}-#{element.object_id}"
+        "section-#{element.class.name.split("::").last.downcase}-#{element.object_id}"
       end
 
       def process_index_terms(element, section_info)
@@ -78,14 +78,10 @@ module Docbook
         return [] unless element
 
         terms = []
-        if element.is_a?(Elements::IndexTerm)
-          terms << element
-        end
+        terms << element if element.is_a?(Elements::IndexTerm)
 
         # Check for nested index terms
-        if element.respond_to?(:indexterm)
-          terms.concat(Array(element.indexterm))
-        end
+        terms.concat(Array(element.indexterm)) if element.respond_to?(:indexterm)
 
         terms
       end
@@ -102,14 +98,10 @@ module Docbook
         )
 
         # Extract secondary terms
-        if index_term.respond_to?(:secondary)
-          entry.secondary = Array(index_term.secondary).map(&:content).compact
-        end
+        entry.secondary = Array(index_term.secondary).map(&:content).compact if index_term.respond_to?(:secondary)
 
         # Extract see-also
-        if index_term.respond_to?(:see_also)
-          entry.see_also = Array(index_term.see_also).map(&:content).compact
-        end
+        entry.see_also = Array(index_term.see_also).map(&:content).compact if index_term.respond_to?(:see_also)
 
         entry
       end

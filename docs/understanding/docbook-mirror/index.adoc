@@ -1,0 +1,133 @@
+---
+layout: default
+title: DocbookMirror JSON
+parent: Understanding
+nav_order: 4
+has_children: true
+---
+
+# DocbookMirror JSON
+
+DocbookMirror JSON is an intermediate representation that sits between parsed
+DocBook XML and interactive rendering. It uses a ProseMirror-compatible JSON
+structure, enabling rich document editing and Vue-based rendering without
+direct coupling to the XML source format.
+
+== Why DocbookMirror JSON exists
+
+DocBook XML is a comprehensive document markup format, but it is not well suited
+for direct use in interactive web applications. The DocbookMirror JSON format
+solves this by providing a clean, tree-structured document model that:
+
+* **Decouples rendering from XML** -- The Vue frontend consumes JSON, not XML,
+  so it is not tied to the quirks of XML parsing or serialization.
+* **Enables rich editing** -- Because the format follows ProseMirror conventions,
+  existing editor infrastructure (selection, transactions, schema validation)
+  can be applied with minimal adaptation.
+* **Preserves document semantics** -- DocBook-specific concepts such as
+  cross-references (`xref`), admonitions, definition lists, and reference pages
+  (`refentry`) are represented as first-class node and mark types, not stripped
+  away during conversion.
+
+== Position in the architecture
+
+DocbookMirror JSON sits between the element model and the Vue renderer:
+
+....
++---------------------+
+|  DocBook XML Input  |
++----------+----------+
+           |
+           v
++----------+----------+
+| Lutaml Element Model |
+| (Ruby classes)       |
++----------+----------+
+           |
+           v
++----------+----------+      +--------------------+
+| Mirror::Transformer  |      | Mirror::Node       |
+| (from_docbook)       |----->| Mirror::Mark        |
++----------+----------+      | (JSON-serializable) |
+           |                 +--------------------+
+           |                          |
+           v                          v
++----------+----------+      +----------+----------+
+| Mirror::Transformer  |      |  Vue Renderer       |
+| (to_docbook)         |<-----+  (reads JSON)       |
++----------+----------+      +---------------------+
+           |
+           v
++----------+----------+
+|  DocBook XML Output  |
++---------------------+
+....
+
+The flow is:
+
+1. DocBook XML is parsed into Lutaml element model objects.
+2. The `Mirror::Transformer` converts these objects into `Mirror::Node` and
+   `Mirror::Mark` instances (`from_docbook`).
+3. The node tree is serialized to JSON for consumption by the Vue renderer.
+4. For round-trip, the transformer can convert back from mirror nodes to
+   DocBook element model objects (`to_docbook`).
+
+== The Transformer class
+
+The `Docbook::Mirror::Transformer` class provides bidirectional conversion:
+
+`from_docbook(docbook_doc)`::
+Accepts a parsed DocBook element model (for example, an `Article` or `Book`
+instance) and returns a `Mirror::Node::Document` node tree. It walks the
+element model recursively, dispatching each element type to a dedicated
+conversion method.
+
+`to_docbook(mirror_node)`::
+Accepts a mirror node tree and converts it back into DocBook element model
+objects. This enables round-trip conversion from JSON back to XML.
+
+The transformer also builds an internal `xml_id_map` during `from_docbook` to
+resolve cross-reference titles, so that `xref` marks carry a `resolved` title
+in the JSON output.
+
+== High-level structure
+
+A DocbookMirror JSON document is a tree of typed nodes. Every node has a `type`
+string that identifies its kind. The root node is always a `doc` node:
+
+[source,json]
+----
+{
+  "type": "doc",
+  "attrs": { "title": "My Article" },
+  "content": [
+    { "type": "chapter", "attrs": { "title": "...", "xml_id": "..." }, "content": [...] },
+    { "type": "paragraph", "content": [...] },
+    { "type": "section", "attrs": { "title": "...", "xml_id": "..." }, "content": [...] }
+  ]
+}
+----
+
+=== Key concepts
+
+**Nodes** are the building blocks of the document tree. They represent
+structural elements (chapters, sections, paragraphs), block-level containers
+(lists, tables, blockquotes), media (images), and leaf text content.
+See <<node-types, Node Types>> for the complete catalog.
+
+**Marks** are inline annotations attached to text nodes. A mark wraps a
+span of text with type information and optional attributes (such as a link
+URL or a code role). See <<mark-types, Mark Types>> for the complete catalog.
+
+**Flat content array** -- Each node stores its children in a `content` array.
+This is a flat list rather than a nested map, which simplifies serialization
+and traversal. The order of items in the array reflects document order.
+
+== Child pages
+
+* <<node-types, Node Types>> -- Complete catalog of all node types with
+  attributes and JSON examples.
+* <<mark-types, Mark Types>> -- Complete catalog of all mark types with
+  attributes and JSON examples.
+* <<comparison-prosemirror, Comparison with ProseMirror>> -- How DocbookMirror
+  JSON differs from standard ProseMirror JSON and why.

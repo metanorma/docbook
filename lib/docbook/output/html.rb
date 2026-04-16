@@ -64,34 +64,34 @@ module Docbook
             "docbook_title" => output.title || "DocBook Document",
             "base_url" => base_url,
             "assets_inline" => false,
-            "app_css" => File.read(File.join(FRONTEND_ROOT, "app.css")),
-            "app_js" => File.read(File.join(FRONTEND_ROOT, "app.iife.js")),
+            "app_css" => read_frontend_asset("app.css"),
+            "app_js" => read_frontend_asset("app.iife.js"),
             "data_url" => "docbook.data.json"
           )
-          rendered = rendered.gsub('[[DOCBOOK_DATA]]', 'null /* loaded from docbook.data.json */')
-                             .gsub('[[DOCBOOK_TOC]]', 'null')
-                             .gsub('[[DOCBOOK_CONTENT]]', 'null')
-                             .gsub('[[DOCBOOK_INDEX]]', 'null')
+          rendered.gsub("[[DOCBOOK_DATA]]", "null /* loaded from docbook.data.json */")
+                  .gsub("[[DOCBOOK_TOC]]", "null")
+                  .gsub("[[DOCBOOK_CONTENT]]", "null")
+                  .gsub("[[DOCBOOK_INDEX]]", "null")
         else
           # single_file: embed everything inline via gsub placeholders
-          docbook_json = DocumentData.new(title: output.title).to_json.gsub('</script>', '<\\/script>')
-          toc_json = output.toc.to_json.gsub('</script>', '<\\/script>')
-          content_json = output.content.to_json.gsub('</script>', '<\\/script>')
-          index_json = output.index&.to_json&.gsub('</script>', '<\\/script>') || 'null'
+          docbook_json = DocumentData.new(title: output.title).to_json.gsub("</script>", '<\\/script>')
+          toc_json = output.toc.to_json.gsub("</script>", '<\\/script>')
+          content_json = output.content.to_json.gsub("</script>", '<\\/script>')
+          index_json = output.index&.to_json&.gsub("</script>", '<\\/script>') || "null"
 
           template = Liquid::Template.parse(template_content)
           rendered = template.render(
             "docbook_title" => output.title || "DocBook Document",
             "base_url" => base_url,
             "assets_inline" => true,
-            "app_css" => File.read(File.join(FRONTEND_ROOT, "app.css")),
-            "app_js" => File.read(File.join(FRONTEND_ROOT, "app.iife.js"))
+            "app_css" => read_frontend_asset("app.css"),
+            "app_js" => read_frontend_asset("app.iife.js")
           )
 
-          rendered = rendered.gsub('[[DOCBOOK_DATA]]', docbook_json)
-                             .gsub('[[DOCBOOK_TOC]]', toc_json)
-                             .gsub('[[DOCBOOK_CONTENT]]', content_json)
-                             .gsub('[[DOCBOOK_INDEX]]', index_json)
+          rendered.gsub("[[DOCBOOK_DATA]]", docbook_json)
+                  .gsub("[[DOCBOOK_TOC]]", toc_json)
+                  .gsub("[[DOCBOOK_CONTENT]]", content_json)
+                  .gsub("[[DOCBOOK_INDEX]]", index_json)
         end
       end
 
@@ -103,11 +103,17 @@ module Docbook
         @output_mode == :directory ? "." : ""
       end
 
+      def read_frontend_asset(filename)
+        path = File.join(FRONTEND_ROOT, filename)
+        File.exist?(path) ? File.read(path) : ""
+      end
+
       # ── XRef Resolution (using pre-built resolver) ──────────────────
 
       def resolve_xref_text(xref)
         linkend = xref.linkend&.to_s
         return "" unless linkend
+
         @xref_resolver&.title_for(linkend) || linkend
       end
 
@@ -121,14 +127,14 @@ module Docbook
             sections << SectionData.new(
               id: element_id(pf),
               title: best_title(pf) || "Preface",
-              type: 'preface'
+              type: "preface"
             )
           end
           each_attr(@document, :part) do |part|
             sections << SectionData.new(
               id: element_id(part),
               title: best_title(part) || "Part",
-              type: 'part',
+              type: "part",
               children: collect_part_children(part)
             )
           end
@@ -136,14 +142,14 @@ module Docbook
             sections << SectionData.new(
               id: element_id(ch),
               title: best_title(ch) || "Chapter",
-              type: 'chapter'
+              type: "chapter"
             )
           end
           each_attr(@document, :appendix) do |ap|
             sections << SectionData.new(
               id: element_id(ap),
               title: best_title(ap) || "Appendix",
-              type: 'appendix',
+              type: "appendix",
               children: collect_appendix_children(ap)
             )
           end
@@ -151,21 +157,21 @@ module Docbook
             sections << SectionData.new(
               id: element_id(g),
               title: best_title(g) || "Glossary",
-              type: 'glossary'
+              type: "glossary"
             )
           end
           each_attr(@document, :bibliography) do |b|
             sections << SectionData.new(
               id: element_id(b),
               title: best_title(b) || "References",
-              type: 'bibliography'
+              type: "bibliography"
             )
           end
           each_attr(@document, :index) do |idx|
             sections << SectionData.new(
               id: element_id(idx),
               title: best_title(idx) || "Index",
-              type: 'index'
+              type: "index"
             )
           end
         when Docbook::Elements::Article
@@ -173,7 +179,7 @@ module Docbook
             sections << SectionData.new(
               id: element_id(s),
               title: best_title(s) || "Section",
-              type: 'section',
+              type: "section",
               children: collect_section_children(s)
             )
           end
@@ -183,7 +189,7 @@ module Docbook
             sections << SectionData.new(
               id: element_id(re),
               title: best_title(re) || "Reference Entry",
-              type: 'reference'
+              type: "reference"
             )
           end
         end
@@ -196,7 +202,7 @@ module Docbook
           children << SectionData.new(
             id: element_id(pf),
             title: best_title(pf) || "Preface",
-            type: 'preface',
+            type: "preface",
             children: collect_appendix_children(pf)
           )
         end
@@ -204,7 +210,7 @@ module Docbook
           children << SectionData.new(
             id: element_id(ch),
             title: best_title(ch) || "Chapter",
-            type: 'chapter',
+            type: "chapter",
             children: collect_section_children(ch)
           )
         end
@@ -212,14 +218,14 @@ module Docbook
           children << SectionData.new(
             id: element_id(ref),
             title: best_title(ref) || "Reference",
-            type: 'chapter'
+            type: "chapter"
           )
         end
         each_attr(part, :appendix) do |ap|
           children << SectionData.new(
             id: element_id(ap),
             title: best_title(ap) || "Appendix",
-            type: 'appendix',
+            type: "appendix",
             children: collect_appendix_children(ap)
           )
         end
@@ -227,21 +233,21 @@ module Docbook
           children << SectionData.new(
             id: element_id(g),
             title: best_title(g) || "Glossary",
-            type: 'glossary'
+            type: "glossary"
           )
         end
         each_attr(part, :bibliography) do |b|
           children << SectionData.new(
             id: element_id(b),
             title: best_title(b) || "References",
-            type: 'bibliography'
+            type: "bibliography"
           )
         end
         each_attr(part, :index) do |idx|
           children << SectionData.new(
             id: element_id(idx),
             title: best_title(idx) || "Index",
-            type: 'index'
+            type: "index"
           )
         end
         children
@@ -253,7 +259,7 @@ module Docbook
           children << SectionData.new(
             id: element_id(s),
             title: best_title(s) || "Section",
-            type: 'section',
+            type: "section",
             children: collect_section_children(s)
           )
         end
@@ -266,7 +272,7 @@ module Docbook
           children << SectionData.new(
             id: element_id(s),
             title: best_title(s) || "Section",
-            type: 'section',
+            type: "section",
             children: collect_section_children(s)
           )
         end
@@ -281,22 +287,25 @@ module Docbook
 
         sections.each do |sec|
           case sec.type
-          when 'part'
+          when "part"
             part_num = builder.next_part
             builder.set_number(sec.id, part_num)
             # Parts have chapters inside them - use same part_index for all children
-            number_section_tree(sec.children, builder, part_index: part_index, section_scope: sec.id, parent_number: part_num)
+            number_section_tree(sec.children, builder, part_index: part_index, section_scope: sec.id,
+                                                       parent_number: part_num)
             part_index += 1
-          when 'chapter', 'reference'
+          when "chapter", "reference"
             chapter_num = builder.next_chapter(part_index)
             builder.set_number(sec.id, chapter_num)
             # Number children sections scoped to this chapter, prefix with chapter number
-            number_section_tree(sec.children, builder, chapter_id: sec.id, chapter_num: chapter_num, part_index: part_index, section_scope: sec.id, parent_number: chapter_num)
-          when 'appendix'
+            number_section_tree(sec.children, builder, chapter_id: sec.id, chapter_num: chapter_num,
+                                                       part_index: part_index, section_scope: sec.id, parent_number: chapter_num)
+          when "appendix"
             appendix_num = builder.next_appendix
             appendix_full = "Appendix #{appendix_num}"
             builder.set_number(sec.id, appendix_full)
-            number_section_tree(sec.children, builder, part_index: part_index, section_scope: sec.id, parent_number: appendix_full)
+            number_section_tree(sec.children, builder, part_index: part_index, section_scope: sec.id,
+                                                       parent_number: appendix_full)
           else
             # preface, glossary, bibliography, index - no numbering typically
             number_section_tree(sec.children, builder, part_index: part_index)
@@ -315,37 +324,42 @@ module Docbook
       # @param part_index [Integer] the part index for chapter numbering scope
       # @param section_scope [String] the xml_id of the parent section for numbering scope
       # @param parent_number [String, nil] the full number of the parent section for building hierarchical numbers
-      def number_section_tree(children, builder, chapter_id: nil, chapter_num: nil, appendix_prefix: nil, part_index: 0, section_scope: nil, parent_number: nil)
+      def number_section_tree(children, builder, chapter_id: nil, chapter_num: nil, appendix_prefix: nil,
+                              part_index: 0, section_scope: nil, parent_number: nil)
         return if children.nil?
+
         children.each do |child|
           case child.type
-          when 'section'
+          when "section"
             # Scope numbering to this section's ID so siblings share a counter
             scope_id = section_scope || chapter_id || "root_#{part_index}"
             section_num = builder.next_section(scope_id)
             # Build full number from parent chain: chapter_num.parent_num.section_num
             # For appendix_prefix, strip "Appendix " to get just the letter for child numbering
-            base_prefix = appendix_prefix ? appendix_prefix.sub(/\AAppendix\s*/, '') : nil
+            base_prefix = appendix_prefix&.sub(/\AAppendix\s*/, "")
             prefix = base_prefix || parent_number || chapter_num
             full_num = prefix ? "#{prefix}.#{section_num}" : section_num
             builder.set_number(child.id, full_num)
             # Recurse for nested sections, passing this section as the new scope
             number_section_tree(child.children, builder,
-              chapter_id: chapter_id, chapter_num: chapter_num, appendix_prefix: appendix_prefix,
-              part_index: part_index, section_scope: child.id, parent_number: full_num)
-          when 'chapter', 'reference'
+                                chapter_id: chapter_id, chapter_num: chapter_num, appendix_prefix: appendix_prefix,
+                                part_index: part_index, section_scope: child.id, parent_number: full_num)
+          when "chapter", "reference"
             new_chapter_num = builder.next_chapter(part_index)
             builder.set_number(child.id, new_chapter_num)
-            number_section_tree(child.children, builder, chapter_id: child.id, chapter_num: new_chapter_num, part_index: part_index, section_scope: child.id, parent_number: new_chapter_num)
-          when 'appendix'
+            number_section_tree(child.children, builder, chapter_id: child.id, chapter_num: new_chapter_num,
+                                                         part_index: part_index, section_scope: child.id, parent_number: new_chapter_num)
+          when "appendix"
             appendix_num = builder.next_appendix
             appendix_full = "Appendix #{appendix_num}"
             builder.set_number(child.id, appendix_full)
             # Prefix appendix sections with "Appendix A.", "Appendix B.", etc.
-            number_section_tree(child.children, builder, chapter_id: chapter_id, chapter_num: chapter_num, appendix_prefix: appendix_full, part_index: part_index, section_scope: child.id, parent_number: appendix_full)
+            number_section_tree(child.children, builder, chapter_id: chapter_id, chapter_num: chapter_num,
+                                                         appendix_prefix: appendix_full, part_index: part_index, section_scope: child.id, parent_number: appendix_full)
           else
             # Other types (preface, glossary, etc.) - no numbering, just recurse
-            number_section_tree(child.children, builder, chapter_id: chapter_id, chapter_num: chapter_num, appendix_prefix: appendix_prefix, part_index: part_index, section_scope: section_scope, parent_number: parent_number)
+            number_section_tree(child.children, builder, chapter_id: chapter_id, chapter_num: chapter_num,
+                                                         appendix_prefix: appendix_prefix, part_index: part_index, section_scope: section_scope, parent_number: parent_number)
           end
         end
       end
@@ -424,10 +438,10 @@ module Docbook
 
         section_content = SectionContent.new(section_id: index_element.xml_id || "index")
         section_content.add_block(ContentBlock.new(
-          type: :index_section,
-          text: index_element.title&.content,
-          children: index_data.map { |group| index_group_to_block(group) }
-        ))
+                                    type: :index_section,
+                                    text: index_element.title&.content,
+                                    children: index_data.map { |group| index_group_to_block(group) }
+                                  ))
         section_content
       end
 
@@ -437,10 +451,10 @@ module Docbook
 
         section_content = SectionContent.new(section_id: setindex_element.xml_id || "setindex")
         section_content.add_block(ContentBlock.new(
-          type: :index_section,
-          text: setindex_element.title&.content,
-          children: index_data.map { |group| index_group_to_block(group) }
-        ))
+                                    type: :index_section,
+                                    text: setindex_element.title&.content,
+                                    children: index_data.map { |group| index_group_to_block(group) }
+                                  ))
         section_content
       end
 
@@ -490,7 +504,7 @@ module Docbook
         result = []
         sections.each do |sec|
           result << sec
-          result.concat(collect_all_sections(sec.children)) if sec.children && sec.children.any?
+          result.concat(collect_all_sections(sec.children)) if sec.children&.any?
         end
         result
       end
@@ -542,26 +556,26 @@ module Docbook
           when Docbook::Elements::ProgramListing
             code_text = build_code_content(node)
             next if code_text.to_s.strip.empty?
+
             section_content.add_block(ContentBlock.new(
-              type: :code,
-              text: code_text,
-              language: node.language
-            ))
+                                        type: :code,
+                                        text: code_text,
+                                        language: node.language
+                                      ))
 
           when Docbook::Elements::Screen
             code_text = build_code_content(node)
             next if code_text.to_s.strip.empty?
+
             section_content.add_block(ContentBlock.new(
-              type: :code,
-              text: code_text,
-              language: node.language
-            ))
+                                        type: :code,
+                                        text: code_text,
+                                        language: node.language
+                                      ))
 
           when Docbook::Elements::BlockQuote
             block = ContentBlock.new(type: :blockquote)
-            if node.attribution
-              block.text = node.attribution.content
-            end
+            block.text = node.attribution.content if node.attribution
             node.each_mixed_content do |child|
               case child
               when Docbook::Elements::Para
@@ -617,9 +631,9 @@ module Docbook
           when Docbook::Elements::LiteralLayout
             if node.content
               section_content.add_block(ContentBlock.new(
-                type: :code,
-                text: node.content.to_s
-              ))
+                                          type: :code,
+                                          text: node.content.to_s
+                                        ))
             end
 
           when Docbook::Elements::Simplesect
@@ -666,14 +680,15 @@ module Docbook
       def process_mediaobject(mo, section_content)
         Array(mo.imageobject).each do |io|
           next unless io.imagedata
+
           fileref = io.imagedata.fileref
           src = fileref ? process_image(fileref) : ""
           alt = io.alt&.content
           section_content.add_block(ContentBlock.new(
-            type: :image,
-            src: src,
-            alt: alt
-          ))
+                                      type: :image,
+                                      src: src,
+                                      alt: alt
+                                    ))
         end
       end
 
@@ -683,33 +698,40 @@ module Docbook
           mo_alt = mo.alt&.content if mo.respond_to?(:alt) && mo.alt
           Array(mo.imageobject).each do |io|
             next unless io.imagedata
+
             fileref = io.imagedata.fileref
             src = fileref ? process_image(fileref) : ""
             alt = mo_alt || io.alt&.content || fig_title
             section_content.add_block(ContentBlock.new(
-              type: :image,
-              src: src,
-              alt: alt,
-              title: fig_title
-            ))
+                                        type: :image,
+                                        src: src,
+                                        alt: alt,
+                                        title: fig_title
+                                      ))
           end
           Array(mo.textobject).each do |to|
             # TextObject has content as a string, not nested para
-            if to.content && !to.content.to_s.strip.empty?
-              section_content.add_block(ContentBlock.new(
-                type: :paragraph,
-                text: to.content.to_s
-              ))
-            end
+            next unless to.content && !to.content.to_s.strip.empty?
+
+            section_content.add_block(ContentBlock.new(
+                                        type: :paragraph,
+                                        text: to.content.to_s
+                                      ))
           end
         end
         Array(fig.programlisting).each do |pl|
           code_text = build_code_content(pl)
-          section_content.add_block(ContentBlock.new(type: :code, text: code_text, language: pl.language)) unless code_text.to_s.strip.empty?
+          unless code_text.to_s.strip.empty?
+            section_content.add_block(ContentBlock.new(type: :code, text: code_text,
+                                                       language: pl.language))
+          end
         end
         Array(fig.screen).each do |s|
           code_text = build_code_content(s)
-          section_content.add_block(ContentBlock.new(type: :code, text: code_text, language: s.language)) unless code_text.to_s.strip.empty?
+          unless code_text.to_s.strip.empty?
+            section_content.add_block(ContentBlock.new(type: :code, text: code_text,
+                                                       language: s.language))
+          end
         end
       end
 
@@ -717,14 +739,15 @@ module Docbook
         Array(ifig.mediaobject).each do |mo|
           Array(mo.imageobject).each do |io|
             next unless io.imagedata
+
             fileref = io.imagedata.fileref
             src = fileref ? process_image(fileref) : ""
             alt = io.alt&.content
             section_content.add_block(ContentBlock.new(
-              type: :image,
-              src: src,
-              alt: alt
-            ))
+                                        type: :image,
+                                        src: src,
+                                        alt: alt
+                                      ))
           end
         end
       end
@@ -769,13 +792,13 @@ module Docbook
           vl_block.children << term_block
 
           # Definition description block - contains the listitem content
-          if entry.listitem
-            def_block = ContentBlock.new(type: :definition_description)
-            def_block.children ||= []
-            li_blocks = build_block_content_from_element(entry.listitem)
-            def_block.children.concat(li_blocks)
-            vl_block.children << def_block
-          end
+          next unless entry.listitem
+
+          def_block = ContentBlock.new(type: :definition_description)
+          def_block.children ||= []
+          li_blocks = build_block_content_from_element(entry.listitem)
+          def_block.children.concat(li_blocks)
+          vl_block.children << def_block
         end
         vl_block
       end
@@ -790,10 +813,16 @@ module Docbook
             block.children << build_para_block(child)
           when Docbook::Elements::ProgramListing
             code_text = build_code_content(child)
-            block.children << ContentBlock.new(type: :code, text: code_text, language: child.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              block.children << ContentBlock.new(type: :code, text: code_text,
+                                                 language: child.language)
+            end
           when Docbook::Elements::Screen
             code_text = build_code_content(child)
-            block.children << ContentBlock.new(type: :code, text: code_text, language: child.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              block.children << ContentBlock.new(type: :code, text: code_text,
+                                                 language: child.language)
+            end
           when Docbook::Elements::LiteralLayout
             block.children << ContentBlock.new(type: :code, text: child.content.to_s) if child.content
           when Docbook::Elements::Figure
@@ -802,6 +831,7 @@ module Docbook
             Array(child.mediaobject).each do |mo|
               Array(mo.imageobject).each do |io|
                 next unless io.imagedata
+
                 fig_block.src = process_image(io.imagedata.fileref)
                 fig_block.alt = io.alt&.content
               end
@@ -821,10 +851,16 @@ module Docbook
             block.children << build_para_block(child)
           when Docbook::Elements::ProgramListing
             code_text = build_code_content(child)
-            block.children << ContentBlock.new(type: :code, text: code_text, language: child.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              block.children << ContentBlock.new(type: :code, text: code_text,
+                                                 language: child.language)
+            end
           when Docbook::Elements::Screen
             code_text = build_code_content(child)
-            block.children << ContentBlock.new(type: :code, text: code_text, language: child.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              block.children << ContentBlock.new(type: :code, text: code_text,
+                                                 language: child.language)
+            end
           when Docbook::Elements::LiteralLayout
             block.children << ContentBlock.new(type: :code, text: child.content.to_s) if child.content
           end
@@ -863,20 +899,19 @@ module Docbook
         block.children ||= []
 
         # Abbrev
-        if bm.abbrev&.content
-          block.children << ContentBlock.new(type: :biblio_abbrev, text: bm.abbrev.content)
-        end
+        block.children << ContentBlock.new(type: :biblio_abbrev, text: bm.abbrev.content) if bm.abbrev&.content
 
         # Author with personname
         Array(bm.author).each do |author|
-          if author.personname
-            pn = author.personname
-            first = pn.firstname&.content
-            sur = pn.surname&.content
-            name_text = [first, sur].compact.join(" ")
-            if name_text.any?
-              block.children << ContentBlock.new(type: :biblio_personname, text: name_text, class_name: "first-last personname")
-            end
+          next unless author.personname
+
+          pn = author.personname
+          first = pn.firstname&.content
+          sur = pn.surname&.content
+          name_text = [first, sur].compact.join(" ")
+          if name_text.any?
+            block.children << ContentBlock.new(type: :biblio_personname, text: name_text,
+                                               class_name: "first-last personname")
           end
         end
 
@@ -886,13 +921,15 @@ module Docbook
           sur = pn.surname&.content
           name_text = [first, sur].compact.join(" ")
           if name_text.any?
-            block.children << ContentBlock.new(type: :biblio_personname, text: name_text, class_name: "first-last personname")
+            block.children << ContentBlock.new(type: :biblio_personname, text: name_text,
+                                               class_name: "first-last personname")
           end
         end
 
         # Firstname and surname separately
         if bm.firstname&.content
-          block.children << ContentBlock.new(type: :biblio_firstname, text: bm.firstname.content, class_name: "firstname")
+          block.children << ContentBlock.new(type: :biblio_firstname, text: bm.firstname.content,
+                                             class_name: "firstname")
         end
         if bm.surname&.content
           block.children << ContentBlock.new(type: :biblio_surname, text: bm.surname.content, class_name: "surname")
@@ -900,11 +937,11 @@ module Docbook
 
         # Citetitle
         Array(bm.citetitle).each do |ct|
-          if ct.href
-            block.children << ContentBlock.new(type: :link, text: ct.content, src: ct.href, class_name: "title")
-          else
-            block.children << ContentBlock.new(type: :biblio_citetitle, text: ct.content, class_name: "title")
-          end
+          block.children << if ct.href
+                              ContentBlock.new(type: :link, text: ct.content, src: ct.href, class_name: "title")
+                            else
+                              ContentBlock.new(type: :biblio_citetitle, text: ct.content, class_name: "title")
+                            end
         end
 
         # Orgname
@@ -917,7 +954,8 @@ module Docbook
         # Publishername
         Array(bm.publishername).each do |pn|
           if pn.content
-            block.children << ContentBlock.new(type: :biblio_publishername, text: pn.content, class_name: "publishername")
+            block.children << ContentBlock.new(type: :biblio_publishername, text: pn.content,
+                                               class_name: "publishername")
           end
         end
 
@@ -945,11 +983,11 @@ module Docbook
 
         # Determine the NAME of this entry (priority: refname > refentrytitle > fieldsynopsis.varname)
         entry_name = nil
-        if re.refnamediv&.refname && re.refnamediv.refname.any?
-          entry_name = re.refnamediv.refname.map { |n| n.content }.join(" ")
+        if re.refnamediv&.refname&.any?
+          entry_name = re.refnamediv.refname.map(&:content).join(" ")
         elsif re.refmeta&.refentrytitle
           entry_name = re.refmeta.refentrytitle.content
-        elsif re.refmeta&.respond_to?(:fieldsynopsis) && re.refmeta.fieldsynopsis
+        elsif re.refmeta.respond_to?(:fieldsynopsis) && re.refmeta.fieldsynopsis
           # fieldsynopsis is a collection, find first with varname
           re.refmeta.fieldsynopsis.each do |fs|
             # fs.varname might be nil due to namespace issues, so try direct content access
@@ -975,14 +1013,14 @@ module Docbook
           content = re.refnamediv.refpurpose.content
           # Handle both string and array content (mixed content from inline elements)
           purpose_text = if content.is_a?(Array)
-            content.join("")
-          elsif content.is_a?(String)
-            content
-          else
-            content.to_s
-          end
+                           content.join
+                         elsif content.is_a?(String)
+                           content
+                         else
+                           content.to_s
+                         end
           # Truncate and clean up the purpose to use as a name
-          entry_name = purpose_text.length > 50 ? purpose_text[0..47] + "..." : purpose_text
+          entry_name = purpose_text.length > 50 ? "#{purpose_text[0..47]}..." : purpose_text
         end
 
         # Determine the BADGE (e.g., "pi" for processing instructions, "param" for template params)
@@ -1013,10 +1051,12 @@ module Docbook
         if re.refmeta
           if re.refmeta.respond_to?(:refmiscinfo) && re.refmeta.refmiscinfo
             re.refmeta.refmiscinfo.each do |info|
+              next unless info&.content
+
               block.children << ContentBlock.new(
                 type: :reference_meta,
                 text: info.content
-              ) if info && info.content
+              )
             end
           end
           if re.refmeta.manvolnum
@@ -1032,12 +1072,12 @@ module Docbook
           content = re.refnamediv.refpurpose.content
           # Handle both string and array content (mixed content from inline elements)
           definition_text = if content.is_a?(Array)
-            content.join("")
-          elsif content.is_a?(String)
-            content
-          else
-            content.to_s
-          end
+                              content.join
+                            elsif content.is_a?(String)
+                              content
+                            else
+                              content.to_s
+                            end
           block.children << ContentBlock.new(
             type: :reference_definition,
             text: definition_text
@@ -1062,11 +1102,17 @@ module Docbook
         each_attr(element, :para) { |p| block.children << build_para_block(p) }
         each_attr(element, :programlisting) do |pl|
           code_text = build_code_content(pl)
-          block.children << ContentBlock.new(type: :code, text: code_text, language: pl.language) unless code_text.to_s.strip.empty?
+          unless code_text.to_s.strip.empty?
+            block.children << ContentBlock.new(type: :code, text: code_text,
+                                               language: pl.language)
+          end
         end
         each_attr(element, :screen) do |s|
           code_text = build_code_content(s)
-          block.children << ContentBlock.new(type: :code, text: code_text, language: s.language) unless code_text.to_s.strip.empty?
+          unless code_text.to_s.strip.empty?
+            block.children << ContentBlock.new(type: :code, text: code_text,
+                                               language: s.language)
+          end
         end
         each_attr(element, :literallayout) do |ll|
           block.children << ContentBlock.new(type: :code, text: ll.content.to_s) if ll.content
@@ -1096,16 +1142,20 @@ module Docbook
             blocks << ContentBlock.new(type: :code, text: node.content.to_s) if node.content
           when Docbook::Elements::ProgramListing
             code_text = build_code_content(node)
-            blocks << ContentBlock.new(type: :code, text: code_text, language: node.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              blocks << ContentBlock.new(type: :code, text: code_text,
+                                         language: node.language)
+            end
           when Docbook::Elements::Screen
             code_text = build_code_content(node)
-            blocks << ContentBlock.new(type: :code, text: code_text, language: node.language) unless code_text.to_s.strip.empty?
+            unless code_text.to_s.strip.empty?
+              blocks << ContentBlock.new(type: :code, text: code_text,
+                                         language: node.language)
+            end
           when Docbook::Elements::Simplesect
             block = ContentBlock.new(type: :section)
             block.children ||= []
-            if node.title
-              block.children << ContentBlock.new(type: :heading, text: node.title.content.to_s)
-            end
+            block.children << ContentBlock.new(type: :heading, text: node.title.content.to_s) if node.title
             ss_blocks = build_block_content_from_element(node)
             block.children.concat(ss_blocks)
             blocks << block
@@ -1170,11 +1220,11 @@ module Docbook
                 when Docbook::Elements::UserInput, Docbook::Elements::Screen
                   children << ContentBlock.new(type: :codetext, text: el.content.to_s)
                 when Docbook::Elements::Citetitle
-                  if el.href
-                    children << ContentBlock.new(type: :citation_link, text: el.content, src: el.href.to_s)
-                  else
-                    children << ContentBlock.new(type: :citation, text: el.content)
-                  end
+                  children << if el.href
+                                ContentBlock.new(type: :citation_link, text: el.content, src: el.href.to_s)
+                              else
+                                ContentBlock.new(type: :citation, text: el.content)
+                              end
                 when Docbook::Elements::Biblioref
                   text = el.content.to_s.empty? ? el.linkend : el.content
                   children << ContentBlock.new(type: :biblioref, text: text, src: "##{el.linkend}")
@@ -1185,7 +1235,7 @@ module Docbook
                 end
               end
             elsif Array(node.replaceable).any?
-              text = node.replaceable.map(&:content).join("")
+              text = node.replaceable.map(&:content).join
               children << ContentBlock.new(type: :text, text: "\"#{text}\"")
             else
               children << ContentBlock.new(type: :text, text: "\"#{node.content}\"")
@@ -1193,11 +1243,11 @@ module Docbook
           when Docbook::Elements::UserInput, Docbook::Elements::Screen
             children << ContentBlock.new(type: :codetext, text: node.content)
           when Docbook::Elements::Citetitle
-            if node.href
-              children << ContentBlock.new(type: :citation_link, text: node.content, src: node.href.to_s)
-            else
-              children << ContentBlock.new(type: :citation, text: node.content)
-            end
+            children << if node.href
+                          ContentBlock.new(type: :citation_link, text: node.content, src: node.href.to_s)
+                        else
+                          ContentBlock.new(type: :citation, text: node.content)
+                        end
           when Docbook::Elements::Biblioref
             # Use linkend as display text since biblioref is often self-closing
             text = node.content.to_s.empty? ? node.linkend : node.content
@@ -1240,7 +1290,11 @@ module Docbook
         text = el.content.to_s if el.content && !el.content.to_s.empty?
         text ||= begin
           # Extract meaningful text from URL: filename or last path segment
-          uri = URI(href) rescue nil
+          uri = begin
+            URI(href)
+          rescue StandardError
+            nil
+          end
           if uri&.path && !uri.path.empty? && uri.path != "/"
             File.basename(uri.path)
           elsif uri&.host
@@ -1307,7 +1361,7 @@ module Docbook
             result << node.content.to_s if node.respond_to?(:content) && node.content
           end
         end
-        result.join("")
+        result.join
       end
 
       # Build text content from a term element, handling mixed content
@@ -1338,11 +1392,12 @@ module Docbook
             result << node.content.to_s
           end
         end
-        result.join("")
+        result.join
       end
 
       def find_section_element(id)
         return find_in_document_fallback(id) unless @xref_resolver
+
         @xref_resolver[id] || find_in_document_fallback(id)
       end
 
@@ -1422,6 +1477,7 @@ module Docbook
           search_paths << path
           parent = File.dirname(path)
           break if parent == path
+
           path = parent
         end
 
@@ -1451,13 +1507,15 @@ module Docbook
 
       def escape(text)
         return "" if text.nil?
+
         ERB::Util.html_escape(text.to_s)
       end
 
-      def each_attr(obj, name)
+      def each_attr(obj, name, &)
         val = obj.send(name)
         return unless val
-        Array(val).each { |item| yield item }
+
+        Array(val).each(&)
       rescue NoMethodError
         nil
       end
@@ -1481,7 +1539,11 @@ module Docbook
              Docbook::Elements::Equation
           el.title&.content
         else
-          el.title&.content rescue nil
+          begin
+            el.title&.content
+          rescue StandardError
+            nil
+          end
         end
       end
 
