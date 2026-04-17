@@ -272,6 +272,10 @@
          :class="[
            block.attrs?.class === 'refmeta-synopsis'
              ? 'mb-2 px-3 py-2 bg-ebook-bg-secondary rounded border border-ebook-border font-mono text-sm'
+             : block.attrs?.class === 'refpurpose'
+             ? 'mb-1 ebook-text leading-relaxed italic muted-text'
+             : block.attrs?.class === 'refclass'
+             ? 'mb-3 text-xs font-mono px-2 py-0.5 rounded inline-block refclass-badge'
              : 'mb-3 ebook-text leading-relaxed'
          ]">
         <template v-for="(child, ci) in block.content" :key="ci">
@@ -671,6 +675,8 @@ function getAdmonitionTitle(type: string | undefined): string {
 
 .code-block code {
   font-family: inherit;
+  background: none;
+  padding: 0;
 }
 
 .code-language-badge {
@@ -719,6 +725,11 @@ function getAdmonitionTitle(type: string | undefined): string {
 .copy-btn:focus,
 .copy-btn-done {
   opacity: 1;
+}
+
+.refclass-badge {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text-dim);
 }
 
 .copy-btn:hover {

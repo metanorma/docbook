@@ -92,6 +92,8 @@ module Docbook
             content << reference_node(node)
           when Docbook::Elements::RefEntry
             content << refentry_node(node)
+          when Docbook::Elements::RefNamediv
+            content.concat(refnamediv_node(node))
           when Docbook::Elements::RefSection, Docbook::Elements::RefSect1,
                Docbook::Elements::RefSect2, Docbook::Elements::RefSect3
             content << refsection_node(node)
@@ -504,6 +506,42 @@ module Docbook
 
         content.concat(extract_content(ref))
         Docbook::Mirror::Node::RefEntry.new(attrs: attrs, content: content)
+      end
+
+      def refnamediv_node(nd)
+        content = []
+
+        # Render refnames (e.g. "$v:as-json")
+        names = Array(nd.refname).map(&:content).compact
+        unless names.empty?
+          content << Docbook::Mirror::Node::Paragraph.new(
+            content: [Docbook::Mirror::Node::Text.new(
+              text: names.join(", "),
+              marks: [Docbook::Mirror::Mark::Code.new],
+            )],
+          )
+        end
+
+        # Render refpurpose
+        if nd.refpurpose&.content
+          content << Docbook::Mirror::Node::Paragraph.new(
+            attrs: { class: "refpurpose" },
+            content: [Docbook::Mirror::Node::Text.new(text: nd.refpurpose.content)],
+          )
+        end
+
+        # Render refclass as a badge
+        if nd.refclass&.content
+          content << Docbook::Mirror::Node::Paragraph.new(
+            attrs: { class: "refclass" },
+            content: [Docbook::Mirror::Node::Text.new(
+              text: nd.refclass.content,
+              marks: [Docbook::Mirror::Mark::Code.new(role: "refclass")],
+            )],
+          )
+        end
+
+        content
       end
 
       def refsection_node(rs)

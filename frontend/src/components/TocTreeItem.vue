@@ -19,6 +19,7 @@
           </svg>
         </button>
         <a
+          ref="linkEl"
           :href="'#' + item.id"
           class="toc-link flex items-center gap-2 py-1 px-1 text-sm rounded-md transition-colors flex-grow truncate"
           :class="linkClass"
@@ -41,6 +42,7 @@
     <!-- Leaf item (no children) -->
     <a
       v-else
+      ref="linkEl"
       :href="'#' + item.id"
       class="toc-link flex items-center gap-2 py-1 px-1 pl-5 text-sm rounded-md transition-colors truncate"
       :class="linkClass"
@@ -66,11 +68,17 @@ const props = defineProps<Props>()
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const isOpen = ref(props.depth <= 1)
+const linkEl = ref<HTMLElement | null>(null)
 
 // Auto-expand when active section is within this subtree
 watch(() => uiStore.activeSectionId, (activeId) => {
   if (activeId && hasDescendant(props.item, activeId)) {
     isOpen.value = true
+  }
+
+  // Auto-scroll active item into view in the TOC sidebar
+  if (activeId && activeId === props.item.id && linkEl.value && uiStore.tocFollowFocus) {
+    linkEl.value.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 })
 

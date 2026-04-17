@@ -1,11 +1,13 @@
 <template>
   <aside
+    ref="sidebarEl"
     role="navigation"
     aria-label="Table of contents"
     :class="[
       'sidebar-panel fixed top-0 left-0 z-50 w-[280px] h-full overflow-y-auto transition-transform duration-200',
       uiStore.sidebarOpen ? 'translate-x-0' : '-translate-x-full'
     ]"
+    @scroll="onSidebarScroll"
   >
     <!-- Sidebar Header -->
     <div class="sidebar-header sticky top-0 p-4 z-10">
@@ -72,7 +74,7 @@
     </div>
 
     <!-- TOC -->
-    <nav class="p-3">
+    <nav class="p-3 relative">
       <ul class="space-y-0.5">
         <TocTreeItem
           v-for="item in documentStore.sections"
@@ -81,12 +83,21 @@
           :depth="1"
         />
       </ul>
+      <!-- Follow focus button -->
+      <button
+        v-if="!uiStore.tocFollowFocus"
+        @click="followFocus"
+        class="follow-focus-btn"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+        Follow active section
+      </button>
     </nav>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useDocumentStore } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useEbookStore, type Theme } from '@/composables/useEbookStore'
@@ -95,6 +106,7 @@ import TocTreeItem from '@/components/TocTreeItem.vue'
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const ebookStore = useEbookStore()
+const sidebarEl = ref<HTMLElement | null>(null)
 
 const themeOrder: Theme[] = ['day', 'sepia', 'night', 'oled']
 
@@ -115,6 +127,17 @@ function cycleTheme() {
 
 function setFontFamily(font: 'sans' | 'serif') {
   ebookStore.setFontFamily(font as any)
+}
+
+function onSidebarScroll() {
+  // User manually scrolled the TOC — disable auto-follow
+  if (uiStore.tocFollowFocus) {
+    uiStore.setTocFollowFocus(false)
+  }
+}
+
+function followFocus() {
+  uiStore.setTocFollowFocus(true)
 }
 </script>
 
@@ -188,5 +211,29 @@ function setFontFamily(font: 'sans' | 'serif') {
 
 .sidebar-theme-btn:hover {
   background: var(--chrome-bg);
+}
+
+.follow-focus-btn {
+  position: sticky;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--chrome-accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: opacity 0.15s ease;
+  margin-top: 8px;
+}
+.follow-focus-btn:hover {
+  opacity: 0.9;
 }
 </style>

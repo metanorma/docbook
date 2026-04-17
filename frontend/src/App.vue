@@ -8,27 +8,39 @@
 
     <!-- Mobile overlay -->
     <div
-      v-if="uiStore.sidebarOpen && !ebookStore.focusMode.value"
-      @click="uiStore.closeSidebar"
-      class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+      v-if="uiStore.sidebarOpen"
+      @click="handleOverlayClick"
+      class="fixed inset-0 bg-black/50 z-40"
+      :class="{ 'lg:hidden': !ebookStore.focusMode.value }"
     ></div>
 
-    <AppSidebar v-show="!ebookStore.focusMode.value" />
+    <AppSidebar v-show="!ebookStore.focusMode.value || uiStore.sidebarOpen" />
 
     <!-- Ebook Top Bar -->
-    <div :class="['focus-mode-topbar', { 'focus-mode-topbar--hidden': ebookStore.focusMode.value, 'focus-mode-topbar--reveal': ebookStore.focusMode.value && focusRevealTopbar }]">
+    <div :class="['focus-mode-topbar', { 'focus-mode-topbar--hidden': ebookStore.focusMode.value && !uiStore.sidebarOpen && !focusRevealTopbar, 'focus-mode-topbar--reveal': (ebookStore.focusMode.value && focusRevealTopbar) || (ebookStore.focusMode.value && uiStore.sidebarOpen) }]">
       <EbookTopBar
         :title="documentStore.title"
-        :sidebar-open="uiStore.sidebarOpen && !ebookStore.focusMode.value"
+        :sidebar-open="uiStore.sidebarOpen"
         @toggle-toc="toggleToc"
         @toggle-settings="ebookStore.toggleSettings"
       />
     </div>
 
+    <!-- Focus mode indicator -->
+    <button
+      v-if="ebookStore.focusMode.value && !uiStore.sidebarOpen"
+      @click="exitFocusMode"
+      class="focus-mode-indicator"
+      title="Exit focus mode (f)"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/></svg>
+      Focus mode
+    </button>
+
     <main ref="mainContent" id="main-content" role="main" :class="[
       'h-screen overflow-y-auto transition-all duration-200',
       !ebookStore.focusMode.value ? 'pt-14' : 'pt-0',
-      uiStore.sidebarOpen && !ebookStore.focusMode.value ? 'lg:pl-[280px]' : ''
+      uiStore.sidebarOpen ? 'lg:pl-[280px]' : ''
     ]" @scroll="handleScroll">
       <!-- Active section breadcrumb -->
       <BreadcrumbBar v-if="ancestorChain.length > 0 && !ebookStore.focusMode.value" :ancestor-chain="ancestorChain" />
@@ -159,6 +171,14 @@ provide('navigateToId', navigateToId)
 
 function toggleToc() {
   uiStore.toggleSidebar()
+}
+
+function exitFocusMode() {
+  ebookStore.setFocusMode(false)
+}
+
+function handleOverlayClick() {
+  uiStore.closeSidebar()
 }
 
 // Lists of figures/tables/examples
@@ -509,6 +529,30 @@ function isInputFocused(): boolean {
 .focus-mode-topbar--reveal {
   opacity: 1;
   pointer-events: auto;
+}
+
+.focus-mode-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--chrome-accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 30;
+}
+.focus-mode-indicator:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
 }
 
 .back-to-top {
