@@ -7,6 +7,9 @@ RSpec.describe "DocBook Reader", type: :feature do
     unless frontend_built?
       skip "Integration tests require frontend build artifacts (run `npm --prefix frontend run build`)"
     end
+    if Gem.win_platform?
+      skip "Integration tests skipped on Windows (file:// protocol not supported in headless Chrome)"
+    end
     @html_path = TEST_HTML_PATH
   end
 
