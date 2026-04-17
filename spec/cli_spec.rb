@@ -4,6 +4,12 @@ require "spec_helper"
 require "docbook/cli"
 require "tempfile"
 
+FRONTEND_DIST = File.expand_path("../../frontend/dist", __dir__)
+
+def frontend_built?
+  File.exist?(File.join(FRONTEND_DIST, "app.css"))
+end
+
 RSpec.describe Docbook::CLI do
   let(:sample_xml) do
     File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml")
@@ -11,10 +17,6 @@ RSpec.describe Docbook::CLI do
 
   # Build tests require frontend dist artifacts (app.css, app.iife.js).
   # Skip on CI where frontend is not built.
-  FRONTEND_DIST = File.expand_path("../../frontend/dist", __dir__)
-  def self.frontend_built?
-    File.exist?(File.join(FRONTEND_DIST, "app.css"))
-  end
 
   describe "build" do
     let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
