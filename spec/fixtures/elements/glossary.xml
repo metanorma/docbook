@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="glossary-test">
+  <title>Glossary Test</title>
+  <chapter><title>Body</title><para>Text</para></chapter>
+  <glossary>
+    <glossentry>
+      <glossterm>API</glossterm>
+      <glossdef><para>Application Programming Interface.</para></glossdef>
+    </glossentry>
+    <glossentry>
+      <glossterm>XML</glossterm>
+      <glosssee>Extensible Markup Language</glosssee>
+    </glossentry>
+    <glossentry>
+      <glossterm>HTML</glossterm>
+      <glossseealso>XML</glossseealso>
+      <glossdef><para>HyperText Markup Language.</para></glossdef>
+    </glossentry>
+  </glossary>
+</book>

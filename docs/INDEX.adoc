@@ -42,9 +42,6 @@ Start with link:interfaces/cli/[CLI Reference] for command-line usage in pipelin
 **Build an interactive reader**::
 link:interfaces/cli/build-command[CLI: build] | link:interfaces/ruby-api/single-page[Ruby API: SinglePage]
 
-**Build an interactive reader**::
-link:interfaces/cli/build-command[CLI: build] | link:interfaces/ruby-api/single-page[Ruby API: SinglePage]
-
 **Export as JSON**::
 link:interfaces/cli/export-command[CLI: export] | link:interfaces/ruby-api/json-export[Ruby API: JSON Export]
 

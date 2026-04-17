@@ -121,6 +121,8 @@ module Docbook
       MARKS["link"] = Link
       MARKS["xref"] = Xref
       MARKS["citation"] = Citation
+      MARKS["subscript"] = Mark
+      MARKS["superscript"] = Mark
     end
   end
 end

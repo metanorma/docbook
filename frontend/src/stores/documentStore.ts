@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 
 // ============================================================
 // DocbookMirror (ProseMirror-style) Types
 // ============================================================
 
 export interface MirrorMark {
-  type: 'emphasis' | 'strong' | 'italic' | 'code' | 'link' | 'xref' | 'citation' | 'tag'
+  type: 'emphasis' | 'strong' | 'italic' | 'code' | 'link' | 'xref' | 'citation' | 'tag' | 'subscript' | 'superscript'
   attrs?: Record<string, any>
 }
 
@@ -35,7 +35,7 @@ export interface MirrorDocument {
 export interface TocItem {
   id: string
   title: string
-  type: 'chapter' | 'appendix' | 'part' | 'section' | 'glossary' | 'bibliography' | 'index' | 'reference' | 'preface'
+  type: string
   children: TocItem[]
   number?: string
 }
@@ -63,11 +63,32 @@ export interface IndexData {
   groups: IndexGroup[]
 }
 
+export interface ListOfEntry {
+  id?: string
+  title: string
+  number?: string
+  section_id?: string
+  section_title?: string
+}
+
+export interface ListOfData {
+  figures: ListOfEntry[]
+  tables: ListOfEntry[]
+  examples: ListOfEntry[]
+}
+
 interface DocumentMeta {
   title?: string
+  subtitle?: string
+  author?: string
+  pubdate?: string
+  releaseinfo?: string
+  copyright?: string
+  root_element?: string
   sections: TocItem[]
   numbering: Record<string, string>
   index: IndexData | null
+  list_of?: ListOfData
 }
 
 // ============================================================
@@ -76,7 +97,7 @@ interface DocumentMeta {
 
 export const useDocumentStore = defineStore('document', () => {
   const documentMeta = ref<DocumentMeta | null>(null)
-  const mirrorDocument = ref<MirrorDocument | null>(null)
+  const mirrorDocument = shallowRef<MirrorDocument | null>(null)
 
   function convertNumbering(numbering: any): Record<string, string> {
     const map: Record<string, string> = {}
@@ -94,10 +115,23 @@ export const useDocumentStore = defineStore('document', () => {
       mirrorDocument.value = data as MirrorDocument
       // Extract sections and numbering from toc if present
       if (data.toc?.sections) {
+        const list_of: ListOfData = {
+          figures: data.list_of_figures || [],
+          tables: data.list_of_tables || [],
+          examples: data.list_of_examples || [],
+        }
         documentMeta.value = {
+          title: data.meta?.title,
+          subtitle: data.meta?.subtitle,
+          author: data.meta?.author,
+          pubdate: data.meta?.pubdate,
+          releaseinfo: data.meta?.releaseinfo,
+          copyright: data.meta?.copyright,
+          root_element: data.meta?.root_element,
           sections: data.toc.sections,
           numbering: data.toc.numbering || {},
-          index: data.toc.index || null
+          index: data.toc.index || null,
+          list_of: list_of,
         }
       }
       return Promise.resolve()
@@ -105,10 +139,16 @@ export const useDocumentStore = defineStore('document', () => {
 
     // Standalone TOC data (without mirror content)
     if (data.toc) {
+      const list_of: ListOfData = {
+        figures: data.list_of_figures || [],
+        tables: data.list_of_tables || [],
+        examples: data.list_of_examples || [],
+      }
       documentMeta.value = {
         sections: data.toc.sections || [],
         numbering: convertNumbering(data.toc.numbering),
-        index: data.index || null
+        index: data.index || null,
+        list_of: list_of,
       }
     }
 
@@ -142,14 +182,22 @@ export const useDocumentStore = defineStore('document', () => {
   }
 
   const title = computed(() => {
+    if (documentMeta.value?.title) {
+      return documentMeta.value.title
+    }
     if (mirrorDocument.value?.attrs?.title) {
       return mirrorDocument.value.attrs.title
     }
-    return documentMeta.value?.title || 'DocBook Document'
+    return 'DocBook Document'
   })
+  const subtitle = computed(() => documentMeta.value?.subtitle || '')
+  const author = computed(() => documentMeta.value?.author || '')
+  const pubdate = computed(() => documentMeta.value?.pubdate || '')
+  const copyright = computed(() => documentMeta.value?.copyright || '')
   const sections = computed(() => documentMeta.value?.sections || [])
   const numbering = computed(() => documentMeta.value?.numbering || {})
   const index = computed(() => documentMeta.value?.index || null)
+  const listOf = computed(() => documentMeta.value?.list_of || { figures: [], tables: [], examples: [] })
 
   function getNumbering(id: string): string {
     return numbering.value[id] || ''
@@ -159,9 +207,14 @@ export const useDocumentStore = defineStore('document', () => {
     mirrorDocument,
     loadFromWindow,
     title,
+    subtitle,
+    author,
+    pubdate,
+    copyright,
     sections,
     numbering,
     index,
+    listOf,
     getNumbering
   }
 })

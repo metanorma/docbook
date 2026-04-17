@@ -35,43 +35,12 @@ module Docbook
 
       map[el.xml_id.to_s] = el if el.xml_id
 
-      # Walk child collections based on element type
-      case el
-      when Docbook::Elements::Book
-        el.part&.each { |p| build_xml_id_map(p, map) }
-        el.chapter&.each { |c| build_xml_id_map(c, map) }
-        el.appendix&.each { |a| build_xml_id_map(a, map) }
-        el.preface&.each { |p| build_xml_id_map(p, map) }
-        el.glossary&.each { |g| build_xml_id_map(g, map) }
-        el.bibliography&.each { |b| build_xml_id_map(b, map) }
-        el.index&.each { |i| build_xml_id_map(i, map) }
-      when Docbook::Elements::Article
-        el.section&.each { |s| build_xml_id_map(s, map) }
-      when Docbook::Elements::Part
-        el.chapter&.each { |c| build_xml_id_map(c, map) }
-        el.appendix&.each { |a| build_xml_id_map(a, map) }
-        el.reference&.each { |r| build_xml_id_map(r, map) }
-        el.glossary&.each { |g| build_xml_id_map(g, map) }
-        el.bibliography&.each { |b| build_xml_id_map(b, map) }
-        el.index&.each { |i| build_xml_id_map(i, map) }
-      when Docbook::Elements::Chapter, Docbook::Elements::Appendix,
-           Docbook::Elements::Section, Docbook::Elements::Preface
-        el.section&.each { |s| build_xml_id_map(s, map) }
-        if el.respond_to?(:bibliolist)
-          el.bibliolist&.each do |bl|
-            build_xml_id_map(bl, map)
-          end
-        end
-      when Docbook::Elements::Reference
-        el.refentry&.each { |r| build_xml_id_map(r, map) }
-      when Docbook::Elements::Bibliolist
-        el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
-      when Docbook::Elements::Bibliography
-        el.bibliomixed&.each { |b| build_xml_id_map(b, map) }
-        if el.respond_to?(:bibliolist)
-          el.bibliolist&.each do |bl|
-            build_xml_id_map(bl, map)
-          end
+      # Walk via each_mixed_content to catch ALL element types
+      if el.respond_to?(:each_mixed_content)
+        el.each_mixed_content do |node|
+          next if node.is_a?(String)
+
+          build_xml_id_map(node, map)
         end
       end
 
@@ -85,15 +54,41 @@ module Docbook
       when Docbook::Elements::Section, Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Preface, Docbook::Elements::Part, Docbook::Elements::Reference
         el.title&.content
+      when Docbook::Elements::Figure, Docbook::Elements::InformalFigure
+        el.title&.content
+      when Docbook::Elements::Example, Docbook::Elements::InformalExample
+        el.title&.content
+      when Docbook::Elements::Table, Docbook::Elements::InformalTable
+        el.title&.content
+      when Docbook::Elements::Procedure
+        el.title&.content
+      when Docbook::Elements::Equation
+        el.title&.content
+      when Docbook::Elements::GlossEntry
+        el.glossterm&.content if el.respond_to?(:glossterm)
       when Docbook::Elements::Bibliomixed
         el.abbrev&.content ||
           el.citetitle&.first&.content ||
           format_bibliomixed_id(el.xml_id)
+      when Docbook::Elements::RefEntry
+        resolve_refentry_title(el)
       else
         begin
           el.title&.content
         rescue StandardError
           nil
+        end
+      end
+    end
+
+    def resolve_refentry_title(refentry)
+      if refentry.respond_to?(:refmeta) && refentry.refmeta
+        title = refentry.refmeta.refentrytitle
+        vol = refentry.refmeta.manvolnum
+        if title && vol
+          "#{title}(#{vol})"
+        elsif title
+          title
         end
       end
     end

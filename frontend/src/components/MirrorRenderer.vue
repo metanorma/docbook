@@ -8,7 +8,8 @@
 
       <!-- Section -->
       <section v-else-if="block.type === 'section'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="text-xl font-semibold heading-text mb-3">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text mr-2 font-normal">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h2>
@@ -17,7 +18,8 @@
 
       <!-- Chapter -->
       <section v-else-if="block.type === 'chapter'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="text-2xl font-bold heading-text mb-4">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
@@ -26,7 +28,8 @@
 
       <!-- Appendix -->
       <section v-else-if="block.type === 'appendix'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="text-2xl font-bold heading-text mb-4">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
@@ -35,7 +38,8 @@
 
       <!-- Part -->
       <section v-else-if="block.type === 'part'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="text-3xl font-bold heading-text mb-4">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-3xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-2xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
@@ -44,7 +48,8 @@
 
       <!-- Reference -->
       <section v-else-if="block.type === 'reference'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="text-2xl font-bold heading-text mb-4">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
         <MirrorRenderer :blocks="block.content || []" />
@@ -62,6 +67,201 @@
         <MirrorRenderer :blocks="block.content || []" />
       </div>
 
+      <!-- Preface -->
+      <section v-else-if="block.type === 'preface'" :id="block.attrs?.xml_id" class="mb-6">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h1>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- Dedication -->
+      <section v-else-if="block.type === 'dedication'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3 text-center">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <div class="max-w-lg mx-auto text-center italic">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </section>
+
+      <!-- Acknowledgements -->
+      <section v-else-if="block.type === 'acknowledgements'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- Colophon -->
+      <section v-else-if="block.type === 'colophon'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- Glossary -->
+      <section v-else-if="block.type === 'glossary'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <dl class="glossary-list">
+          <MirrorRenderer :blocks="block.content || []" />
+        </dl>
+      </section>
+
+      <!-- GlossEntry -->
+      <template v-else-if="block.type === 'gloss_entry'">
+        <MirrorRenderer :blocks="block.content || []" />
+      </template>
+
+      <!-- GlossTerm -->
+      <dt v-else-if="block.type === 'gloss_term'" class="font-bold ebook-text">
+        <MirrorRenderer :blocks="block.content || []" />
+      </dt>
+
+      <!-- GlossDef -->
+      <dd v-else-if="block.type === 'gloss_def'" class="ml-4 mb-2 ebook-text">
+        <MirrorRenderer :blocks="block.content || []" />
+      </dd>
+
+      <!-- GlossSee -->
+      <dd v-else-if="block.type === 'gloss_see'" class="ml-4 mb-1 text-sm muted-text italic">
+        See: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ getTextContent(block) }}</a>
+        <template v-else>{{ getTextContent(block) }}</template>
+      </dd>
+
+      <!-- GlossSeeAlso -->
+      <dd v-else-if="block.type === 'gloss_see_also'" class="ml-4 mb-1 text-sm muted-text italic">
+        See also: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ getTextContent(block) }}</a>
+        <template v-else>{{ getTextContent(block) }}</template>
+      </dd>
+
+      <!-- Bibliography -->
+      <section v-else-if="block.type === 'bibliography'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- BiblioEntry -->
+      <div v-else-if="block.type === 'biblio_entry'" :id="block.attrs?.xml_id" class="biblio-entry mb-3 pl-6 -indent-6">
+        <template v-for="(child, ci) in block.content" :key="ci">
+          <TextRenderer v-if="child.type === 'text'" :node="child" />
+        </template>
+      </div>
+
+      <!-- Index Block -->
+      <section v-else-if="block.type === 'index_block'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- Index Div -->
+      <div v-else-if="block.type === 'index_div'" class="mb-3">
+        <h3 v-if="block.attrs?.title" class="text-lg font-bold heading-text mb-2">{{ block.attrs.title }}</h3>
+        <MirrorRenderer :blocks="block.content || []" />
+      </div>
+
+      <!-- Index Entry -->
+      <div v-else-if="block.type === 'index_entry'" class="mb-1 pl-4 ebook-text">
+        <template v-for="(child, ci) in block.content" :key="ci">
+          <TextRenderer v-if="child.type === 'text'" :node="child" />
+        </template>
+      </div>
+
+      <!-- Procedure -->
+      <section v-else-if="block.type === 'procedure'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-lg font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <ol class="procedure-list">
+          <MirrorRenderer :blocks="block.content || []" />
+        </ol>
+      </section>
+
+      <!-- Step -->
+      <li v-else-if="block.type === 'step'" :id="block.attrs?.xml_id" class="step-item mb-3">
+        <div class="step-content">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </li>
+
+      <!-- SubSteps -->
+      <li v-else-if="block.type === 'substeps'" class="substeps-item">
+        <ol class="procedure-list ml-4">
+          <MirrorRenderer :blocks="block.content || []" />
+        </ol>
+      </li>
+
+      <!-- Equation -->
+      <div v-else-if="block.type === 'equation'" :id="block.attrs?.xml_id" class="equation-block my-6 text-center">
+        <div v-if="block.attrs?.title" class="text-sm font-semibold muted-text mb-2">
+          <span v-if="getNumbering(block.attrs?.xml_id)">Equation {{ getNumbering(block.attrs?.xml_id) }}: </span>{{ block.attrs.title }}
+        </div>
+        <div class="equation-content">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </div>
+
+      <!-- CalloutList -->
+      <div v-else-if="block.type === 'calloutlist'" :id="block.attrs?.xml_id" class="mb-4">
+        <div v-if="block.attrs?.title" class="text-sm font-semibold muted-text mb-2">{{ block.attrs.title }}</div>
+        <ol class="callout-list">
+          <MirrorRenderer :blocks="block.content || []" />
+        </ol>
+      </div>
+
+      <!-- Callout -->
+      <li v-else-if="block.type === 'callout'" :id="block.attrs?.xml_id" class="callout-item mb-2">
+        <MirrorRenderer :blocks="block.content || []" />
+      </li>
+
+      <!-- Sidebar -->
+      <aside v-else-if="block.type === 'sidebar'" :id="block.attrs?.xml_id" class="sidebar-block my-4">
+        <div v-if="block.attrs?.title" class="sidebar-title">{{ block.attrs.title }}</div>
+        <MirrorRenderer :blocks="block.content || []" />
+      </aside>
+
+      <!-- Set -->
+      <section v-else-if="block.type === 'set'" :id="block.attrs?.xml_id" class="mb-6">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-3xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h1>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
+      <!-- Article -->
+      <article v-else-if="block.type === 'article'" :id="block.attrs?.xml_id" class="mb-6">
+        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h1>
+        <MirrorRenderer :blocks="block.content || []" />
+      </article>
+
+      <!-- Topic -->
+      <section v-else-if="block.type === 'topic'" :id="block.attrs?.xml_id" class="mb-6">
+        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
+          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
+          {{ block.attrs.title }}
+        </h2>
+        <MirrorRenderer :blocks="block.content || []" />
+      </section>
+
       <!-- Synopsis -->
       <div v-else-if="block.type === 'synopsis'" class="mb-4 p-3 bg-ebook-bg-secondary rounded text-sm font-mono">
         <MirrorRenderer :blocks="block.content || []" />
@@ -76,6 +276,9 @@
          ]">
         <template v-for="(child, ci) in block.content" :key="ci">
           <TextRenderer v-if="child.type === 'text'" :node="child" />
+          <sup v-else-if="child.type === 'footnote_marker'" class="footnote-marker">
+            <a :href="`#${child.attrs?.id}`" :id="child.attrs?.ref_id">{{ child.attrs?.number }}</a>
+          </sup>
         </template>
       </p>
 
@@ -87,7 +290,19 @@
         <div v-else-if="getNumbering(block.attrs?.xml_id)" class="text-sm font-semibold muted-text mb-1">
           Example {{ getNumbering(block.attrs?.xml_id) }}
         </div>
-        <pre class="code-block overflow-x-auto text-sm font-mono" :class="block.attrs?.language ? 'language-' + block.attrs.language : ''"><code v-html="highlightCode(getTextContent(block), block.attrs?.language)"></code></pre>
+        <div class="code-block-wrapper relative group">
+          <span v-if="block.attrs?.language" class="code-language-badge">{{ block.attrs.language }}</span>
+          <pre class="code-block overflow-x-auto text-sm font-mono" :class="block.attrs?.language ? 'language-' + block.attrs.language : ''"><code v-html="highlightCode(getTextContent(block), block.attrs?.language)"></code></pre>
+          <button
+            class="copy-btn"
+            :class="{ 'copy-btn-done': copiedBlockId === getBlockId(block) }"
+            @click="copyCode(block, $event)"
+            title="Copy code"
+          >
+            <svg v-if="copiedBlockId !== getBlockId(block)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- Blockquote -->
@@ -130,7 +345,7 @@
       </dl>
 
       <!-- Image -->
-      <figure v-else-if="block.type === 'image'" :id="block.attrs?.xml_id" class="my-6 overflow-hidden rounded-lg">
+      <figure v-else-if="block.type === 'image'" :id="block.attrs?.xml_id" class="my-6 overflow-hidden rounded-lg cursor-zoom-in" @click="lightboxOpen(block.attrs?.src || '', block.attrs?.alt, block.attrs?.title)">
         <img :src="block.attrs?.src" :alt="block.attrs?.alt || ''" class="max-w-full h-auto rounded shadow" loading="lazy">
         <figcaption class="mt-2 text-sm muted-text text-center italic">
           <span v-if="getNumbering(block.attrs?.xml_id)">Figure {{ getNumbering(block.attrs?.xml_id) }}<span v-if="block.attrs?.title">: </span></span>{{ block.attrs?.title }}
@@ -138,9 +353,12 @@
       </figure>
 
       <!-- Admonition -->
-      <div v-else-if="block.type === 'admonition'" :class="getAdmonitionClass(block.attrs?.admonition_type)">
-        <div class="font-bold mb-1">{{ getAdmonitionTitle(block.attrs?.admonition_type) }}</div>
-        <MirrorRenderer :blocks="block.content || []" />
+      <div v-else-if="block.type === 'admonition'" :class="getAdmonitionClass(block.attrs?.admonition_type)" class="admonition">
+        <div class="admonition-icon" v-html="getAdmonitionIconSvg(block.attrs?.admonition_type)"></div>
+        <div class="admonition-content">
+          <div class="admonition-title">{{ getAdmonitionTitle(block.attrs?.admonition_type) }}</div>
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
       </div>
 
       <!-- Table -->
@@ -148,36 +366,54 @@
         <div v-if="block.attrs?.title" class="text-sm font-semibold muted-text mb-1">
           <span v-if="getNumbering(block.attrs?.xml_id)" class="mr-1">Table {{ getNumbering(block.attrs?.xml_id) }}: </span>{{ block.attrs.title }}
         </div>
-        <table class="w-full border-collapse text-sm">
-          <thead v-for="(section, si) in (block.content || []).filter(s => s.type === 'table_head')" :key="'h'+si">
-            <tr v-for="(row, ri) in section.content" :key="ri" class="border-b-2 border-ebook-border">
-              <th v-for="(cell, ci) in row.content" :key="ci"
-                  class="px-3 py-2 text-left font-semibold ebook-text border border-ebook-border"
-                  :colspan="cell.attrs?.nameend ? getColSpan(cell.attrs) : undefined"
-                  :rowspan="cell.attrs?.morerows ? parseInt(cell.attrs.morerows) + 1 : undefined">
-                <template v-for="(child, i) in cell.content" :key="i">
-                  <TextRenderer v-if="child.type === 'text'" :node="child" />
-                </template>
-              </th>
-            </tr>
-          </thead>
-          <tbody v-for="(section, si) in (block.content || []).filter(s => s.type === 'table_body')" :key="'b'+si">
-            <tr v-for="(row, ri) in section.content" :key="ri" class="border-b border-ebook-border">
-              <td v-for="(cell, ci) in row.content" :key="ci"
-                  class="px-3 py-2 ebook-text border border-ebook-border"
-                  :colspan="cell.attrs?.nameend ? getColSpan(cell.attrs) : undefined"
-                  :rowspan="cell.attrs?.morerows ? parseInt(cell.attrs.morerows) + 1 : undefined">
-                <template v-for="(child, i) in cell.content" :key="i">
-                  <TextRenderer v-if="child.type === 'text'" :node="child" />
-                </template>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-scroll-wrapper">
+          <table class="w-full border-collapse text-sm">
+            <thead v-for="(section, si) in (block.content || []).filter(s => s.type === 'table_head')" :key="'h'+si">
+              <tr v-for="(row, ri) in section.content" :key="ri" class="border-b-2 border-ebook-border">
+                <th v-for="(cell, ci) in row.content" :key="ci"
+                    class="px-3 py-2 text-left font-semibold ebook-text border border-ebook-border"
+                    :colspan="cell.attrs?.nameend ? getColSpan(cell.attrs) : undefined"
+                    :rowspan="cell.attrs?.morerows ? parseInt(cell.attrs.morerows) + 1 : undefined">
+                  <template v-for="(child, i) in cell.content" :key="i">
+                    <TextRenderer v-if="child.type === 'text'" :node="child" />
+                  </template>
+                </th>
+              </tr>
+            </thead>
+            <tbody v-for="(section, si) in (block.content || []).filter(s => s.type === 'table_body')" :key="'b'+si">
+              <tr v-for="(row, ri) in section.content" :key="ri" class="table-row border-b border-ebook-border">
+                <td v-for="(cell, ci) in row.content" :key="ci"
+                    class="px-3 py-2 ebook-text border border-ebook-border"
+                    :colspan="cell.attrs?.nameend ? getColSpan(cell.attrs) : undefined"
+                    :rowspan="cell.attrs?.morerows ? parseInt(cell.attrs.morerows) + 1 : undefined">
+                  <template v-for="(child, i) in cell.content" :key="i">
+                    <TextRenderer v-if="child.type === 'text'" :node="child" />
+                  </template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Footnotes collection -->
+      <div v-else-if="block.type === 'footnotes'" class="footnotes mt-8 pt-4 border-t border-ebook-border">
+        <ol class="pl-5 list-decimal">
+          <li v-for="fn in block.content" :key="fn.attrs?.id" :id="fn.attrs?.id" class="mb-2 text-sm ebook-text">
+            <MirrorRenderer :blocks="fn.content || []" />
+            <a :href="`#${fn.attrs?.ref_id}`" class="footnote-backref ml-1">&#8617;</a>
+          </li>
+        </ol>
       </div>
 
       <!-- Soft break -->
       <br v-else-if="block.type === 'soft_break'" />
+
+      <!-- Annotation -->
+      <div v-else-if="block.type === 'annotation'" class="annotation-block">
+        <div class="annotation-label">Annotation</div>
+        <MirrorRenderer :blocks="block.content || []" />
+      </div>
 
       <!-- Fallback: render as paragraph if text exists -->
       <p v-else-if="getTextContent(block)" class="mb-3 ebook-text">
@@ -188,6 +424,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, inject } from 'vue'
 import TextRenderer from './TextRenderer.vue'
 import type { MirrorBlockNode } from '@/stores/documentStore'
 import { useDocumentStore } from '@/stores/documentStore'
@@ -198,6 +435,58 @@ defineProps<{
 }>()
 
 const documentStore = useDocumentStore()
+const copiedBlockId = ref<string | null>(null)
+
+type LightboxOpener = (src: string, alt?: string, title?: string) => void
+const lightboxOpen = inject<LightboxOpener>('lightbox', () => {})
+
+function getBlockId(block: MirrorBlockNode): string {
+  return `${block.type}-${getTextContent(block).slice(0, 40)}`
+}
+
+function copyCode(block: MirrorBlockNode, event: Event) {
+  const btn = event.currentTarget as HTMLElement
+  const wrapper = btn.closest('.code-block-wrapper')
+  const codeEl = wrapper?.querySelector('code')
+  const text = codeEl?.textContent || getTextContent(block)
+
+  const id = getBlockId(block)
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+  } else {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  copiedBlockId.value = id
+  setTimeout(() => {
+    if (copiedBlockId.value === id) {
+      copiedBlockId.value = null
+    }
+  }, 2000)
+}
+
+function copyAnchor(id: string) {
+  const url = `${window.location.origin}${window.location.pathname}#${id}`
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url)
+  } else {
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+}
 
 function getNumbering(id: string | undefined): string {
   if (!id) return ''
@@ -223,19 +512,39 @@ function getColSpan(attrs: Record<string, string | undefined> | undefined): numb
 function getAdmonitionClass(type: string | undefined): string {
   switch (type) {
     case 'note':
-      return 'admonition admonition-note border-l-4 border-blue-500 rounded-r-lg p-4 my-4'
+      return 'admonition-note'
     case 'warning':
-      return 'admonition admonition-warning border-l-4 border-yellow-500 rounded-r-lg p-4 my-4'
+      return 'admonition-warning'
     case 'danger':
-      return 'admonition admonition-danger border-l-4 border-red-500 rounded-r-lg p-4 my-4'
+      return 'admonition-danger'
     case 'caution':
-      return 'admonition admonition-caution border-l-4 border-orange-500 rounded-r-lg p-4 my-4'
+      return 'admonition-caution'
     case 'important':
-      return 'admonition admonition-important border-l-4 border-purple-500 rounded-r-lg p-4 my-4'
+      return 'admonition-important'
     case 'tip':
-      return 'admonition admonition-tip border-l-4 border-green-500 rounded-r-lg p-4 my-4'
+      return 'admonition-tip'
     default:
-      return 'admonition admonition-note border-l-4 border-blue-500 rounded-r-lg p-4 my-4'
+      return 'admonition-note'
+  }
+}
+
+function getAdmonitionIconSvg(type: string | undefined): string {
+  const s = 'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+  switch (type) {
+    case 'note':
+      return `<svg ${s}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+    case 'warning':
+      return `<svg ${s}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+    case 'danger':
+      return `<svg ${s}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+    case 'caution':
+      return `<svg ${s}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+    case 'important':
+      return `<svg ${s}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+    case 'tip':
+      return `<svg ${s}><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>`
+    default:
+      return `<svg ${s}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
   }
 }
 
@@ -273,34 +582,337 @@ function getAdmonitionTitle(type: string | undefined): string {
   border-color: var(--ebook-border);
 }
 
-/* Admonition backgrounds using color-mix */
+/* Admonition layout */
+.admonition {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.admonition-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+
+.admonition-icon :deep(svg) {
+  width: 20px;
+  height: 20px;
+}
+
+.admonition-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  font-size: 0.75em;
+  letter-spacing: 0.04em;
+}
+
+.admonition-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Admonition colors */
 .admonition-note {
   background: color-mix(in srgb, #3b82f6 10%, var(--ebook-bg));
   color: #1d4ed8;
+  border-left: 3px solid #3b82f6;
 }
 
 .admonition-warning {
   background: color-mix(in srgb, #eab308 10%, var(--ebook-bg));
   color: #a16207;
+  border-left: 3px solid #eab308;
 }
 
 .admonition-danger {
   background: color-mix(in srgb, #ef4444 10%, var(--ebook-bg));
   color: #b91c1c;
+  border-left: 3px solid #ef4444;
 }
 
 .admonition-caution {
   background: color-mix(in srgb, #f97316 10%, var(--ebook-bg));
   color: #c2410c;
+  border-left: 3px solid #f97316;
 }
 
 .admonition-important {
   background: color-mix(in srgb, #a855f7 10%, var(--ebook-bg));
   color: #7e22ce;
+  border-left: 3px solid #a855f7;
 }
 
 .admonition-tip {
   background: color-mix(in srgb, #22c55e 10%, var(--ebook-bg));
   color: #15803d;
+  border-left: 3px solid #22c55e;
+}
+
+.code-block-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-block {
+  background: var(--ebook-code-bg);
+  color: var(--ebook-code-text);
+  border-left: 3px solid var(--ebook-accent);
+  padding: 16px 16px 16px 19px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Menlo', 'Consolas', monospace;
+  line-height: 1.5;
+}
+
+.code-block code {
+  font-family: inherit;
+}
+
+.code-language-badge {
+  position: absolute;
+  top: 6px;
+  right: 44px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--chrome-text-dim);
+  background: var(--chrome-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--chrome-border);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.code-block-wrapper:hover .code-language-badge {
+  opacity: 1;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--chrome-bg);
+  color: var(--chrome-text-dim);
+  border: 1px solid var(--chrome-border);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+
+.code-block-wrapper:hover .copy-btn,
+.copy-btn:focus,
+.copy-btn-done {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
+}
+
+.copy-btn-done {
+  background: color-mix(in srgb, #22c55e 15%, var(--chrome-bg));
+  color: #22c55e;
+  border-color: #22c55e;
+}
+
+.heading-with-anchor {
+  position: relative;
+  scroll-margin-top: 70px;
+}
+
+.anchor-link {
+  position: absolute;
+  left: -1.2em;
+  color: var(--ebook-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  text-decoration: none;
+  font-weight: 400;
+  font-size: 0.7em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.heading-with-anchor:hover .anchor-link,
+.anchor-link:focus {
+  opacity: 1;
+}
+
+.footnote-marker {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.footnote-marker a {
+  color: var(--ebook-link-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.footnote-marker a:hover {
+  text-decoration: underline;
+}
+
+.footnote-backref {
+  color: var(--ebook-link-color);
+  text-decoration: none;
+  font-size: 0.8em;
+}
+
+.footnote-backref:hover {
+  text-decoration: underline;
+}
+
+.annotation-block {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--ebook-link-color);
+  background: color-mix(in srgb, var(--ebook-link-color) 6%, var(--ebook-bg));
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9em;
+}
+
+.annotation-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ebook-link-color);
+  margin-bottom: 0.25rem;
+}
+
+/* Table horizontal scroll */
+.table-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
+  border: 1px solid var(--ebook-border);
+}
+
+.table-scroll-wrapper table {
+  min-width: 400px;
+}
+
+.table-scroll-wrapper thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ebook-bg-secondary);
+  z-index: 1;
+}
+
+.table-row:nth-child(even) {
+  background: color-mix(in srgb, var(--ebook-text) 3%, var(--ebook-bg));
+}
+
+/* Glossary */
+.glossary-list {
+  margin-left: 0;
+}
+
+.glossary-list dt {
+  font-weight: 700;
+  margin-top: 1rem;
+  color: var(--ebook-text-heading);
+}
+
+.glossary-list dd {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--ebook-text);
+}
+
+/* Bibliography entries - hanging indent */
+.biblio-entry {
+  hanging-punctuation: first;
+}
+
+/* Procedure */
+.procedure-list {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  counter-reset: procedure-counter;
+}
+
+.step-item {
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+}
+
+.step-content {
+  margin-top: 0.25rem;
+}
+
+.substeps-item {
+  list-style: none;
+}
+
+.substeps-item .procedure-list {
+  margin-top: 0.5rem;
+}
+
+/* Callout list */
+.callout-list {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.callout-item {
+  margin-bottom: 0.5rem;
+  font-size: 0.95em;
+}
+
+/* Sidebar */
+.sidebar-block {
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--ebook-accent);
+  background: color-mix(in srgb, var(--ebook-accent) 5%, var(--ebook-bg));
+  border-radius: 0 8px 8px 0;
+}
+
+.sidebar-title {
+  font-weight: 600;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ebook-accent);
+  margin-bottom: 0.5rem;
+}
+
+/* Equation */
+.equation-block {
+  padding: 1rem;
+  background: var(--ebook-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--ebook-border);
+}
+
+.equation-content {
+  font-size: 1.1em;
+}
+
+/* Link color utility */
+.ebook-link-color {
+  color: var(--ebook-link-color);
+}
+.ebook-link-color:hover {
+  text-decoration: underline;
 }
 </style>

@@ -32,6 +32,7 @@ module Docbook
       attribute :literallayout, LiteralLayout, collection: true
       attribute :indexterm, IndexTerm, collection: true
       attribute :bibliolist, Bibliolist, collection: true
+      attribute :annotation, Annotation, collection: true
 
       xml do
         element "section"
@@ -63,6 +64,7 @@ module Docbook
         map_element "literallayout", to: :literallayout
         map_element "indexterm", to: :indexterm
         map_element "bibliolist", to: :bibliolist
+        map_element "annotation", to: :annotation
       end
     end
   end

@@ -1,20 +1,12 @@
 <template>
-  <template v-for="(mark, index) in node.marks" :key="index">
-    <em v-if="mark.type === 'emphasis'" class="italic ebook-text">{{ node.text }}</em>
-    <strong v-else-if="mark.type === 'strong'" class="font-bold heading-text">{{ node.text }}</strong>
-    <em v-else-if="mark.type === 'italic'" class="italic ebook-text">{{ node.text }}</em>
-    <code v-else-if="mark.type === 'code'" :class="getCodeClass(mark)">{{ node.text }}</code>
-    <a v-else-if="mark.type === 'link'" :href="mark.attrs?.linkend ? '#' + mark.attrs.linkend : mark.attrs?.href" class="link-text hover:underline">{{ node.text }}</a>
-    <a v-else-if="mark.type === 'xref'" :href="`#${mark.attrs?.linkend}`" class="xref link-text hover:underline border-b border-dashed border-link">{{ mark.attrs?.resolved || node.text }}</a>
-    <span v-else-if="mark.type === 'citation'" class="citation citation-text italic">{{ node.text }}</span>
-    <span v-else-if="mark.type === 'tag'" class="tag">&lt;{{ node.text }}&gt;</span>
-  </template>
-  <template v-if="!node.marks || node.marks.length === 0">
-    <span>{{ node.text }}</span>
-  </template>
+  <component :is="wrapInMarks(node.marks || [])">
+    {{ node.text }}
+  </component>
 </template>
 
 <script setup lang="ts">
+import { h, type VNode, type Component } from 'vue'
+
 interface Mark {
   type: string
   attrs?: Record<string, any>
@@ -30,9 +22,101 @@ const props = defineProps<{
   node: MirrorTextNode
 }>()
 
+function markToTag(mark: Mark): string {
+  switch (mark.type) {
+    case 'emphasis':
+    case 'italic':
+      return 'em'
+    case 'strong':
+      return 'strong'
+    case 'code':
+      return 'code'
+    case 'link':
+    case 'xref':
+      return 'a'
+    case 'subscript':
+      return 'sub'
+    case 'superscript':
+      return 'sup'
+    case 'citation':
+    case 'tag':
+      return 'span'
+    default:
+      return 'span'
+  }
+}
+
+function markAttrs(mark: Mark): Record<string, any> {
+  switch (mark.type) {
+    case 'code':
+      return { class: getCodeClass(mark) }
+    case 'link':
+      if (mark.attrs?.linkend) {
+        return { href: '#' + mark.attrs.linkend }
+      }
+      return {
+        href: mark.attrs?.href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        class: 'link-text hover:underline external-link',
+      }
+    case 'xref':
+      return {
+        href: `#${mark.attrs?.linkend}`,
+        class: 'xref link-text hover:underline border-b border-dashed border-link',
+      }
+    case 'citation':
+      return { class: 'citation citation-text italic' }
+    case 'tag':
+      return { class: 'tag' }
+    case 'emphasis':
+      return { class: 'italic ebook-text' }
+    case 'strong':
+      return { class: 'font-bold heading-text' }
+    case 'italic':
+      return { class: 'italic ebook-text' }
+    case 'subscript':
+    case 'superscript':
+      return {}
+    default:
+      return {}
+  }
+}
+
 function getCodeClass(mark: Mark): string {
   const role = mark.attrs?.role || 'literal'
   return `code-${role} inline-code px-1.5 py-0.5 rounded text-sm font-mono border`
+}
+
+function wrapInMarks(marks: Mark[]): Component {
+  return {
+    setup(_, { slots }) {
+      return () => {
+        // Build the VNode tree from outermost to innermost mark
+        let inner: VNode | null = null
+
+        if (marks.length === 0) {
+          return h('span', {}, slots.default?.())
+        }
+
+        // Build from innermost mark outward
+        for (let i = marks.length - 1; i >= 0; i--) {
+          const mark = marks[i]
+          const tag = markToTag(mark)
+          const attrs = markAttrs(mark)
+
+          if (inner) {
+            inner = h(tag, attrs, inner)
+          } else {
+            // Innermost mark wraps the slot content (the text)
+            inner = h(tag, attrs, slots.default?.())
+          }
+        }
+
+        return inner || h('span', {}, slots.default?.())
+      }
+    },
+  }
 }
 </script>
 
@@ -61,5 +145,17 @@ function getCodeClass(mark: Mark): string {
   background: var(--ebook-inline-code-bg);
   color: var(--ebook-inline-code-text);
   border-color: var(--ebook-inline-code-border);
+}
+
+.external-link::after {
+  content: '↗';
+  font-size: 0.65em;
+  vertical-align: super;
+  margin-left: 2px;
+  opacity: 0.5;
+}
+
+.external-link:hover::after {
+  opacity: 1;
 }
 </style>

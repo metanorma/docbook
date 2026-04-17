@@ -12,5 +12,8 @@ module Docbook
     autoload :DocumentBuilder, "#{SERVICES_DIR}/document_builder"
     autoload :ElementIdHelper, "#{SERVICES_DIR}/element_id_helper"
     autoload :ImageResolver, "#{SERVICES_DIR}/image_resolver"
+    autoload :DocumentStats, "#{SERVICES_DIR}/document_stats"
+    autoload :Linter, "#{SERVICES_DIR}/linter"
+    autoload :ListOfGenerator, "#{SERVICES_DIR}/list_of_generator"
   end
 end

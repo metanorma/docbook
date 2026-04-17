@@ -9,6 +9,11 @@ gem "irb"
 gem "lutaml-model", github: "lutaml/lutaml-model", branch: "main"
 gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
+
+group :test do
+  gem "capybara"
+  gem "cuprite"
+end
 gem "rubocop", "~> 1.21"
 gem "rubocop-performance"
 gem "rubocop-rake"

@@ -4,6 +4,7 @@ require "docbook"
 require "docbook/mirror"
 
 require_relative "support/shared_examples"
+require_relative "support/mirror_helpers"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

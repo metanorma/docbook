@@ -83,7 +83,7 @@ File.write('guide.json', json)
 |Command |Description
 
 |`build`
-|Build an interactive HTML reader from DocBook XML. Pass `--demo` for the bundled sample.
+|Build an interactive HTML reader from DocBook XML. Pass `--demo` for the bundled sample, or `--demo=xslTNG` / `--demo=model-flow`.
 
 |`export`
 |Export as DocbookMirror JSON
@@ -109,7 +109,7 @@ $ docbook build --demo [options]
 Options:
 
 * `-o, --output FILE` -- Output HTML file path (default: `<input>.html` or `demo.html`)
-* `--demo` -- Use the bundled DocBook sample as input
+* `--demo` -- Use the bundled DocBook sample as input (accepts name: `xslTNG` or `model-flow`)
 * `--image-search-dir DIR` -- Directories to search for images (default: XML file directory)
 * `--image-strategy STRATEGY` -- Image handling: `data_url` (default), `file_url`, or `relative`
 * `--title TITLE` -- Page title (default: derived from document)
@@ -133,6 +133,9 @@ $ docbook build book.xml --image-strategy relative
 
 # Bundled demo
 $ docbook build --demo
+
+# Named demo
+$ docbook build --demo=model-flow
 ----
 
 === export

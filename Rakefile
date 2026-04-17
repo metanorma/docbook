@@ -9,6 +9,16 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
+begin
+  require "yard"
+  YARD::Rake::YardocTask.new do |t|
+    t.files = ["lib/**/*.rb"]
+    t.options = ["--output-dir", "docs/api", "--no-private"]
+  end
+rescue LoadError
+  # yard not available
+end
+
 # Load custom tasks
 Dir.glob("lib/tasks/*.rake").each { |task| load task }
 

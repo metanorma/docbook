@@ -72,18 +72,43 @@ module Docbook
         mirror_output = Docbook::Output::DocbookMirror.new(parsed)
         guide = JSON.parse(mirror_output.to_pretty_json)
 
-        # 6. Attach TOC, numbering, and index
+        # 6. Attach TOC, numbering, index, and metadata
         guide["toc"] =
           { "sections" => toc_sections, "numbering" => numbering_hash }
         guide["index"] = index_hash
 
-        # 7. Resolve image paths
+        stats = Services::DocumentStats.new(parsed).generate
+        guide["meta"] = {
+          "title" => stats["title"] || @title,
+          "subtitle" => stats["subtitle"],
+          "author" => stats["author"],
+          "pubdate" => stats["pubdate"],
+          "releaseinfo" => stats["releaseinfo"],
+          "copyright" => stats["copyright"],
+          "root_element" => stats["root_element"],
+        }.compact
+
+        # 7. Generate lists of figures/tables/examples
+        list_of = Services::ListOfGenerator.new(parsed).generate(numbering: numbering_hash)
+        list_of.each do |type, entries|
+          guide["list_of_#{type}"] = entries.map do |e|
+            {
+              "id" => e.id,
+              "title" => e.title,
+              "number" => e.number,
+              "section_id" => e.section_id,
+              "section_title" => e.section_title,
+            }.compact
+          end
+        end
+
+        # 8. Resolve image paths
         Services::ImageResolver.new(
           search_dirs: @image_search_dirs + [xml_dir],
           strategy: @image_strategy,
         ).resolve(guide)
 
-        # 8. Build HTML
+        # 9. Build HTML
         write_html(guide)
 
         @output_path

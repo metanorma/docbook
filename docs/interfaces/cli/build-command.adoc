@@ -34,7 +34,7 @@ $ docbook build --demo [options]
 | Option | Default | Description
 
 | `--output`, `-o` PATH | `<input>.html` or `demo.html` | Output HTML file path
-| `--demo` | _(off)_ | Use the bundled DocBook sample as input
+| `--demo` | _(off)_ | Build a bundled demo: `xslTNG` (default) or `model-flow`
 | `--xinclude` | `true` | Resolve XInclude elements before processing
 | `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
 | `--image-strategy` STRATEGY | `data_url` | Image handling: `data_url`, `file_url`, or `relative`
@@ -43,15 +43,20 @@ $ docbook build --demo [options]
 
 === Demo mode
 
-Pass `--demo` to build a reader from the bundled DocBook XSLT 2.0 Stylesheet Reference Guide. This is the quickest way to see the reader in action without providing your own DocBook file.
+Pass `--demo` to build a reader from a bundled demo fixture. Two demos are available:
 
-The demo showcases:
+* `xslTNG` (default) -- DocBook XSLT 2.0 Stylesheet Reference Guide. A multi-chapter book with code listings, admonitions, tables, images, cross-references, and index terms.
+* `model-flow` -- "The Art of the Model Flow." A stylistic essay on document transformation pipelines, written in the manner of Sun Tzu's Art of War.
 
-* Multi-chapter book structure with table of contents
-* Code listings, admonitions, tables, and images
-* Cross-references and index terms
-* All 4 themes (Day, Sepia, Night, OLED)
-* Full-text search and breadcrumb navigation
+[source,bash]
+----
+# Default demo (xslTNG)
+$ docbook build --demo
+
+# Named demo
+$ docbook build --demo=xslTNG
+$ docbook build --demo=model-flow
+----
 
 === Image Strategies
 
@@ -125,8 +130,11 @@ Built /path/to/article.html
 $ docbook build --demo
 Built /path/to/demo.html
 
-$ docbook build --demo -o /tmp/sample.html
+$ docbook build --demo=xslTNG -o /tmp/sample.html
 Built /tmp/sample.html
+
+$ docbook build --demo=model-flow -o /tmp/model-flow.html
+Built /tmp/model-flow.html
 ----
 
 === What's in the output

@@ -1,33 +1,56 @@
 import { reactive, computed, watch } from 'vue'
 
-export type ReadingMode = 'scroll' | 'page' | 'chapter' | 'reference'
 export type Theme = 'day' | 'sepia' | 'night' | 'oled'
+export type FontFamily = 'sans' | 'serif'
+export type ContentWidth = 'narrow' | 'default' | 'wide'
+export type LineHeight = 'compact' | 'comfortable' | 'relaxed' | 'spacious'
+export type TextAlignment = 'left' | 'justify'
 
 interface EbookState {
-  readingMode: ReadingMode
   fontSize: number
-  fontWeight: number
-  lineHeight: number
-  margin: number
+  fontFamily: FontFamily
+  contentWidth: ContentWidth
   theme: Theme
   uiVisible: boolean
   tocOpen: boolean
   settingsOpen: boolean
+  lineHeight: LineHeight
+  textAlignment: TextAlignment
+  hyphenation: boolean
+  focusMode: boolean
+  showProgress: boolean
 }
 
 const STORAGE_KEY = 'docbook_ebook_preferences'
 
+// Constants
+const CONTENT_WIDTHS: Record<ContentWidth, string> = {
+  narrow: '38rem',
+  default: '58rem',
+  wide: '82rem',
+}
+
+const LINE_HEIGHTS: Record<LineHeight, string> = {
+  compact: '1.4',
+  comfortable: '1.6',
+  relaxed: '1.8',
+  spacious: '2.0',
+}
+
 // Default state
 const defaultState: EbookState = {
-  readingMode: 'scroll',
   fontSize: 18,
-  fontWeight: 400,
-  lineHeight: 1.6,
-  margin: 48,
+  fontFamily: 'sans',
+  contentWidth: 'default',
   theme: 'day',
   uiVisible: true,
   tocOpen: false,
-  settingsOpen: false
+  settingsOpen: false,
+  lineHeight: 'comfortable',
+  textAlignment: 'left',
+  hyphenation: false,
+  focusMode: false,
+  showProgress: true,
 }
 
 // Load from localStorage
@@ -46,7 +69,7 @@ function loadPreferences(): Partial<EbookState> {
 // Save to localStorage
 function savePreferences(state: EbookState) {
   try {
-    const { uiVisible, tocOpen, settingsOpen, ...persisted } = state
+    const { uiVisible, tocOpen, settingsOpen, focusMode, ...persisted } = state
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
   } catch (e) {
     console.warn('Failed to save preferences:', e)
@@ -57,17 +80,20 @@ function savePreferences(state: EbookState) {
 const loadedPrefs = loadPreferences()
 // Ensure settingsOpen is never true from localStorage
 delete loadedPrefs.settingsOpen
-const state = reactive<EbookState>(Object.assign({}, defaultState, loadedPrefs, { settingsOpen: false }))
+delete loadedPrefs.focusMode
+const state = reactive<EbookState>(Object.assign({}, defaultState, loadedPrefs, { settingsOpen: false, focusMode: false }))
 
 // Auto-save when persisted fields change (not deep watch for performance)
 watch(
   () => ({
-    readingMode: state.readingMode,
     fontSize: state.fontSize,
-    fontWeight: state.fontWeight,
+    fontFamily: state.fontFamily,
+    contentWidth: state.contentWidth,
+    theme: state.theme,
     lineHeight: state.lineHeight,
-    margin: state.margin,
-    theme: state.theme
+    textAlignment: state.textAlignment,
+    hyphenation: state.hyphenation,
+    showProgress: state.showProgress,
   }),
   () => savePreferences(state),
   { immediate: true }
@@ -89,35 +115,32 @@ watch(() => state.theme, applyTheme)
 
 export function useEbookStore() {
   // Computed getters - these ARE reactive and will auto-unwrap in templates
-  const readingMode = computed(() => state.readingMode)
   const fontSize = computed(() => state.fontSize)
-  const fontWeight = computed(() => state.fontWeight)
-  const lineHeight = computed(() => state.lineHeight)
-  const margin = computed(() => state.margin)
+  const fontFamily = computed(() => state.fontFamily)
+  const contentWidth = computed(() => state.contentWidth)
   const theme = computed(() => state.theme)
   const uiVisible = computed(() => state.uiVisible)
   const tocOpen = computed(() => state.tocOpen)
   const settingsOpen = computed(() => state.settingsOpen)
+  const lineHeight = computed(() => state.lineHeight)
+  const textAlignment = computed(() => state.textAlignment)
+  const hyphenation = computed(() => state.hyphenation)
+  const focusMode = computed(() => state.focusMode)
+  const showProgress = computed(() => state.showProgress)
 
   // Actions
-  function setReadingMode(mode: ReadingMode) {
-    state.readingMode = mode
-  }
-
   function setFontSize(size: number) {
     state.fontSize = Math.max(12, Math.min(32, size))
   }
 
-  function setFontWeight(weight: number) {
-    state.fontWeight = Math.max(300, Math.min(700, weight))
+  function setFontFamily(f: FontFamily) {
+    state.fontFamily = f
+    document.body.classList.toggle('font-serif', f === 'serif')
+    document.body.classList.toggle('font-sans', f === 'sans')
   }
 
-  function setLineHeight(height: number) {
-    state.lineHeight = Math.max(1.2, Math.min(2.0, height))
-  }
-
-  function setMargin(m: number) {
-    state.margin = Math.max(16, Math.min(96, m))
+  function setContentWidth(w: ContentWidth) {
+    state.contentWidth = w
   }
 
   function setTheme(t: Theme) {
@@ -127,6 +150,30 @@ export function useEbookStore() {
 
   function setUiVisible(visible: boolean) {
     state.uiVisible = visible
+  }
+
+  function setLineHeight(lh: LineHeight) {
+    state.lineHeight = lh
+  }
+
+  function setTextAlignment(ta: TextAlignment) {
+    state.textAlignment = ta
+  }
+
+  function setHyphenation(h: boolean) {
+    state.hyphenation = h
+  }
+
+  function setFocusMode(fm: boolean) {
+    state.focusMode = fm
+  }
+
+  function toggleFocusMode() {
+    state.focusMode = !state.focusMode
+  }
+
+  function setShowProgress(sp: boolean) {
+    state.showProgress = sp
   }
 
   function toggleToc() {
@@ -153,43 +200,59 @@ export function useEbookStore() {
     return `theme-${state.theme}`
   }
 
-  // Generate CSS variables object
-  function getCssVariables(): Record<string, string | number> {
+  // Generate CSS variables object for direct application on content elements
+  function getCssVariables(): Record<string, string> {
     return {
       '--ebook-font-size': `${state.fontSize}px`,
-      '--ebook-font-weight': state.fontWeight,
-      '--ebook-line-height': state.lineHeight,
-      '--ebook-margin': `${state.margin}px`,
+      '--ebook-max-width': state.focusMode ? '100%' : CONTENT_WIDTHS[state.contentWidth],
+      '--ebook-line-height': LINE_HEIGHTS[state.lineHeight],
+      '--ebook-text-align': state.textAlignment,
+      '--ebook-hyphens': state.hyphenation ? 'auto' : 'manual',
     }
+  }
+
+  // Apply font family on load
+  if (typeof document !== 'undefined') {
+    document.body.classList.toggle('font-serif', state.fontFamily === 'serif')
+    document.body.classList.toggle('font-sans', state.fontFamily === 'sans')
   }
 
   return {
     // Computed getters (reactive, auto-unwrap in templates)
-    readingMode,
     fontSize,
-    fontWeight,
-    lineHeight,
-    margin,
+    fontFamily,
+    contentWidth,
     theme,
     uiVisible,
     tocOpen,
     settingsOpen,
+    lineHeight,
+    textAlignment,
+    hyphenation,
+    focusMode,
+    showProgress,
 
     // Actions
-    setReadingMode,
     setFontSize,
-    setFontWeight,
-    setLineHeight,
-    setMargin,
+    setFontFamily,
+    setContentWidth,
     setTheme,
     applyTheme,
     setUiVisible,
+    setLineHeight,
+    setTextAlignment,
+    setHyphenation,
+    setFocusMode,
+    toggleFocusMode,
+    setShowProgress,
     toggleToc,
     toggleSettings,
     closeAll,
 
     // Utilities
     getThemeClass,
-    getCssVariables
+    getCssVariables,
+    CONTENT_WIDTHS,
+    LINE_HEIGHTS,
   }
 }
