@@ -25,3 +25,11 @@ frontend/dist/
 
 Gemfile.lock
 
+# Generated demo files
+demo.html
+
+# Generated test artifacts
+spec/tmp/
+
+docs/api/
+yardoc

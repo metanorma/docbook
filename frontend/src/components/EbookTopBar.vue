@@ -1,10 +1,11 @@
 <template>
-  <div class="ebook-topbar" :class="{ 'ebook-topbar--with-sidebar': sidebarOpen }">
+  <div class="ebook-topbar" role="banner" :class="{ 'ebook-topbar--with-sidebar': sidebarOpen }">
     <div class="flex items-center justify-between px-4 py-2">
       <!-- Left: Menu button -->
       <button
         @click="$emit('toggle-toc')"
         class="topbar-btn"
+        aria-label="Toggle table of contents"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -24,7 +25,7 @@
         <button
           @click="$emit('toggle-settings')"
           class="topbar-btn"
-          title="Display settings"
+          aria-label="Display settings"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
@@ -125,5 +126,12 @@ function cycleTheme() {
 .topbar-btn:hover {
   background: var(--chrome-bg-hover);
   color: var(--chrome-text);
+}
+
+/* Mobile: smaller top bar */
+@media (max-width: 640px) {
+  .topbar-title {
+    display: none;
+  }
 }
 </style>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="bib-test">
+  <title>Bibliography Test</title>
+  <chapter><title>Body</title><para>See <citation>RFC2119</citation>.</para></chapter>
+  <bibliography>
+    <bibliomixed xml:id="bib-rfc2119">
+      <abbrev>RFC2119</abbrev>
+      <citetitle>Key Words for Use in RFCs</citetitle>, S. Bradner, 1997.
+    </bibliomixed>
+    <bibliomixed xml:id="bib-walsh">
+      <abbrev>Walsh</abbrev>
+      <citetitle>DocBook: The Definitive Guide</citetitle>, N. Walsh, 2016.
+    </bibliomixed>
+  </bibliography>
+</book>

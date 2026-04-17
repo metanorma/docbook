@@ -11,6 +11,7 @@ module Docbook
       attribute :para, Para, collection: true
       attribute :simplesect, Simplesect, collection: true
       attribute :section, Section, collection: true
+      attribute :annotation, Annotation, collection: true
 
       xml do
         element "article"
@@ -24,6 +25,7 @@ module Docbook
         map_element "para", to: :para
         map_element "simplesect", to: :simplesect
         map_element "section", to: :section
+        map_element "annotation", to: :annotation
       end
     end
   end

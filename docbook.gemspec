@@ -21,10 +21,12 @@ Gem::Specification.new do |spec|
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   gemspec = File.basename(__FILE__)
-  spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
+  spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__,
+                                             err: IO::NULL) do |ls|
     ls.readlines("\x0", chomp: true).reject do |f|
       (f == gemspec) ||
-        f.start_with?(*%w[bin/ Gemfile .gitignore .rspec spec/ .github/ .rubocop.yml])
+        f.start_with?(*%w[bin/ Gemfile .gitignore .rspec spec/ .github/
+                          .rubocop.yml])
     end
   end
   # Include frontend dist assets (built locally, not committed to git)
@@ -34,7 +36,6 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "liquid", "~> 5.0"
   spec.add_dependency "lutaml-model", "~> 0.8.0"
   spec.add_dependency "marcel"
   spec.add_dependency "nokogiri"

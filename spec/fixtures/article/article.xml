@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article xmlns="http://docbook.org/ns/docbook"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         version="5.0"
+         xml:id="test-article">
+  <info>
+    <title>A Test Article</title>
+    <subtitle>Article-Type Document Fixture</subtitle>
+    <author>
+      <personname><firstname>Test</firstname><surname>Author</surname></personname>
+    </author>
+    <pubdate>2026-03-01</pubdate>
+    <abstract>
+      <para>This is a standalone article fixture for testing article rendering.</para>
+    </abstract>
+  </info>
+
+  <para>The article starts directly with content, unlike a book which has chapters.</para>
+
+  <section xml:id="art-intro">
+    <title>Introduction</title>
+    <para>Articles are simpler than books — they have sections but no chapters.
+    This makes them suitable for shorter documents like blog posts, white papers,
+    and technical notes.</para>
+  </section>
+
+  <section xml:id="art-code">
+    <title>Code Examples</title>
+    <para>Articles can contain the same block elements as chapters:</para>
+    <programlisting language="python">def hello():
+    print("Hello from an article!")</programlisting>
+
+    <example xml:id="art-ex-table">
+      <title>Article Table</title>
+      <table>
+        <title>Data</title>
+        <tgroup cols="2">
+          <tbody>
+            <row><entry>A</entry><entry>1</entry></row>
+            <row><entry>B</entry><entry>2</entry></row>
+          </tbody>
+        </tgroup>
+      </table>
+    </example>
+  </section>
+
+  <section xml:id="art-conclusion">
+    <title>Conclusion</title>
+    <para>Articles work well for focused, self-contained content.</para>
+  </section>
+</article>

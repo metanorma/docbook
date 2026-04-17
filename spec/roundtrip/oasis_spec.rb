@@ -7,7 +7,10 @@ RSpec.describe "OASIS DocBook fixtures" do
       it "parses and re-serializes" do
         input = File.read(file, encoding: "bom|utf-8")
         # Force UTF-8 for files that may be in other encodings
-        input = input.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?") unless input.valid_encoding?
+        unless input.valid_encoding?
+          input = input.encode("UTF-8", invalid: :replace, undef: :replace,
+                                        replace: "?")
+        end
 
         expect do
           parsed = Docbook::Elements::Article.from_xml(input)

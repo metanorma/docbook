@@ -8,32 +8,18 @@ has_children: true
 
 # HTML Output
 
-The HTML output system converts parsed DocBook XML into an interactive web publication. It uses a two-stage rendering approach: a Ruby-based data extraction layer that builds structured JSON data, and a Vue 3 single-page application (SPA) that renders the content client-side.
+The HTML output system converts parsed DocBook XML into an interactive web publication. It uses a two-stage rendering approach: a Ruby-based data extraction layer that builds DocbookMirror JSON, and a Vue 3 single-page application (SPA) that renders the content client-side.
 
 ## How It Works
 
-The `Docbook::Output::Html` class orchestrates the entire output pipeline:
+The `Docbook::Output::SinglePage` class orchestrates the entire output pipeline:
 
 . **Section Collection** -- Traverses the document tree to build a `SectionData` hierarchy (the TOC)
 . **Numbering** -- `NumberingBuilder` assigns formatted numbers to each section
-. **Content Extraction** -- For each section, the element tree is walked to produce `ContentBlock` trees
+. **Content Extraction** -- `DocbookMirror` (via `Mirror::Transformer`) converts the element tree into ProseMirror-compatible JSON nodes
 . **Index Collection** -- `IndexCollector` gathers all `indexterm` elements
-. **Data Assembly** -- Everything is packaged into a `DocbookOutput` model
-. **Template Rendering** -- A Liquid template produces the HTML shell with placeholders
-
-## Template System
-
-The HTML shell is generated using https://github.com/Shopify/liquid[Liquid templates] stored in `lib/docbook/templates/`. The main template (`document.html.liquid`) includes two partials:
-
-- `_head.liquid` -- Prism.js CSS for syntax highlighting, Google Fonts (Inter, Merriweather, JetBrains Mono), Tailwind CSS, and the compiled app CSS
-- `_scripts.liquid` -- Prism.js core with autoloader for additional languages, and the compiled Vue SPA JavaScript
-
-The template uses four placeholder tokens that are replaced during rendering:
-
-- `[[DOCBOOK_DATA]]` -- Document title and metadata
-- `[[DOCBOOK_TOC]]` -- TOC tree and numbering map
-- `[[DOCBOOK_CONTENT]]` -- Section content blocks
-- `[[DOCBOOK_INDEX]]` -- Generated index data
+. **Data Assembly** -- Everything is packaged into the output model
+. **HTML Generation** -- The HTML shell is produced with inline or external assets and data
 
 ## Vue 3 SPA Frontend
 
@@ -59,32 +45,19 @@ The frontend is a Vue 3 application built with Vite and TypeScript, located in `
 | `EbookContainer.vue` | Main layout container with theme application and CSS variables
 | `AppSidebar.vue` | Table of contents sidebar with recursive tree
 | `TocTreeItem.vue` | Recursive TOC item with expand/collapse and type badges
-| `ContentRenderer.vue` | Renders `ContentBlock` trees into HTML
-| `BlockRenderer.vue` | Renders individual `ContentBlock` items (paragraphs, code, lists, etc.)
-| `SectionContent.vue` | Section wrapper with heading and numbering
-| `PartSection.vue` | Part-specific rendering with Roman numeral prefix
-| `ChapterSection.vue` | Chapter-specific rendering with Arabic numeral prefix
-| `AppendixSection.vue` | Appendix-specific rendering with Alpha prefix
-| `ReferenceEntry.vue` | Reference page entry with badge, name, and description sections
+| `MirrorRenderer.vue` | Renders DocbookMirror (ProseMirror) nodes into HTML (paragraphs, code, lists, etc.)
+| `TextRenderer.vue` | Renders inline text nodes with marks (emphasis, code, link, xref)
 | `EbookTopBar.vue` | Top navigation bar with search and settings toggles
 | `SearchModal.vue` | Full-text search modal with FlexSearch integration
 | `SettingsPanel.vue` | Display settings panel (theme, font, size, margins)
 |===
 
-## Output Modes
+## Output Mode
 
-The gem supports two output modes, chosen by the `output_mode` parameter:
-
-### Single File Mode (`:single_file`)
-
-All assets are inlined into one self-contained HTML file. See <<single-file-mode,Single File Mode>> for details.
-
-### Directory Mode (`:directory`)
-
-A directory of files suitable for web serving. See <<directory-mode,Directory Mode>> for details.
+The `build` command produces a single self-contained HTML file with all
+assets inlined. This is the default and only output mode.
 
 ## Child Pages
 
 - <<single-file-mode,Single File Mode>> -- Self-contained HTML with base64 images
-- <<directory-mode,Directory Mode>> -- Multi-file output for web serving
-- <<data-model,Output Data Model>> -- JSON data structures and ContentBlock types
+- <<data-model,Output Data Model>> -- JSON data structures and DocbookMirror node types

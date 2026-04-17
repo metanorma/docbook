@@ -1,0 +1,316 @@
+= DocbookMirror Translation Reference
+
+This document describes how `Docbook::Mirror::Transformer` converts between DocBook element objects (Ruby) and DocbookMirror JSON (ProseMirror-compatible format).
+
+== Overview
+
+The bidirectional conversion is handled by `Docbook::Mirror::Transformer`:
+
+Forward:: `Docbook::Elements::*` objects → `Mirror::Node` / `Mirror::Mark` tree → JSON
+Reverse:: JSON → `Mirror::Node` / `Mirror::Mark` tree → `Docbook::Elements::*` objects
+
+[source,ruby]
+----
+# Forward: DocBook → Mirror JSON
+transformer = Docbook::Mirror::Transformer.new
+doc_node = transformer.from_docbook(parsed_docbook)  # Returns Mirror::Node::Document
+json = doc_node.to_json
+
+# Reverse: Mirror JSON → DocBook
+mirror_node = Docbook::Mirror::Node.from_h(JSON.parse(json))
+docbook_doc = transformer.to_docbook(mirror_node)  # Returns Docbook::Elements::*
+----
+
+== How the Transformer Works
+
+=== Forward: DocBook → DocbookMirror
+
+The `from_docbook` method:
+
+1. Builds an `xml_id_map` by walking all elements that have `xml:id` attributes, mapping IDs to their resolved titles (used for `<xref>` resolution).
+2. Creates a `Mirror::Node::Document` as the root node.
+3. Calls `extract_content` which walks the element's `each_mixed_content` enumerator.
+4. Each `Docbook::Elements::*` class is pattern-matched via `case/when` to produce the corresponding Mirror node type.
+
+The tree structure is:
+
+```
+Mirror::Node::Document          ← Root
+├─ Mirror::Node::Chapter        ← Structural
+├─ Mirror::Node::Section        ← Structural
+├─ Mirror::Node::Part           ← Structural
+├─ Mirror::Node::Appendix       ← Structural
+├─ Mirror::Node::Reference      ← Structural
+├─ Mirror::Node::RefEntry       ← Structural
+├─ Mirror::Node::RefSection     ← Structural
+├─ Mirror::Node::Paragraph      ← Block
+├─ Mirror::Node::CodeBlock      ← Block
+├─ Mirror::Node::Blockquote     ← Block
+├─ Mirror::Node::OrderedList    ← Block
+├─ Mirror::Node::BulletList     ← Block
+├─ Mirror::Node::DefinitionList ← Block
+├─ Mirror::Node::Image          ← Block
+├─ Mirror::Node::Table          ← Block
+├─ Mirror::Node::Admonition     ← Block
+└─ Mirror::Node::Text           ← Leaf (with optional marks)
+```
+
+=== Reverse: DocbookMirror → DocBook
+
+The `to_docbook` method:
+
+1. Pattern-matches on `mirror_node.type` to select the reverse builder method.
+2. Constructs `Docbook::Elements::*` objects from the Mirror node's `attrs` and `content`.
+3. Inline marks on text nodes are converted back to their corresponding DocBook inline elements.
+
+== Element-to-Node Mapping (Block Elements)
+
+[#block-mapping]
+=== Structural Nodes
+
+|===
+|DocBook Element Class |Mirror Node Type |PM_TYPE |Key Attrs
+
+|`Elements::Book` / `Elements::Article` |`Node::Document` |`doc` |`title` (from info.title)
+|`Elements::Chapter` |`Node::Chapter` |`chapter` |`xml_id`, `title`, `number`
+|`Elements::Section` |`Node::Section` |`section` |`xml_id`, `title`, `number`
+|`Elements::Part` |`Node::Part` |`part` |`xml_id`, `title`, `number`
+|`Elements::Appendix` |`Node::Appendix` |`appendix` |`xml_id`, `title`, `number`
+|`Elements::Reference` |`Node::Reference` |`reference` |`xml_id`, `title`
+|`Elements::RefEntry` |`Node::RefEntry` |`refentry` |`xml_id`, `title`
+|`Elements::RefSection` / `RefSect1` / `RefSect2` / `RefSect3` |`Node::RefSection` |`refsection` |`xml_id`, `title`
+|`Elements::Simplesect` |`Node::Section` |`section` |`title`
+|===
+
+=== Content Block Nodes
+
+|===
+|DocBook Element Class |Mirror Node Type |PM_TYPE |Key Attrs
+
+|`Elements::Para` / `Elements::FormalPara` |`Node::Paragraph` |`paragraph` |
+|`Elements::Code` / `Elements::ProgramListing` |`Node::CodeBlock` |`code_block` |`language`
+|`Elements::Screen` |`Node::CodeBlock` |`code_block` |`language: "text"`
+|`Elements::LiteralLayout` |`Node::CodeBlock` |`code_block` |`language: "text"`
+|`Elements::BlockQuote` |`Node::Blockquote` |`blockquote` |
+|`Elements::OrderedList` |`Node::OrderedList` |`ordered_list` |
+|`Elements::ItemizedList` |`Node::BulletList` |`bullet_list` |
+|`Elements::VariableList` |`Node::DefinitionList` |`dl` |
+|`Elements::Figure` / `Elements::InformalFigure` |`Node::Image` |`image` |`xml_id`, `title`, `src`
+|`Elements::Table` / `Elements::InformalTable` |`Node::Table` |`table` |`xml_id`, `title`, `cols`
+|`Elements::Note` |`Node::Admonition` |`admonition` |`admonition_type: "note"`
+|`Elements::Warning` |`Node::Admonition` |`admonition` |`admonition_type: "warning"`
+|`Elements::Tip` |`Node::Admonition` |`admonition` |`admonition_type: "tip"`
+|`Elements::Caution` |`Node::Admonition` |`admonition` |`admonition_type: "caution"`
+|`Elements::Important` |`Node::Admonition` |`admonition` |`admonition_type: "important"`
+|`Elements::Danger` |`Node::Admonition` |`admonition` |`admonition_type: "danger"`
+|===
+
+=== Table Sub-Nodes
+
+|===
+|DocBook Element |Mirror Node Type |PM_TYPE
+|`Elements::TGroup → thead` |`Node::TableHead` |`table_head`
+|`Elements::TGroup → tbody` |`Node::TableBody` |`table_body`
+|`Elements::Row` |`Node::TableRow` |`table_row`
+|`Elements::Entry` |`Node::TableCell` |`table_cell`
+|===
+
+=== Definition List Sub-Nodes
+
+|===
+|DocBook Element |Mirror Node Type |PM_TYPE
+|`Elements::Varlistentry → term` |`Node::DefinitionTerm` |`definition_term`
+|`Elements::Varlistentry → definition` |`Node::DefinitionDescription` |`definition_description`
+|===
+
+=== Special Cases
+
+**Figure with code**: When a `Figure` or `InformalFigure` contains a `ProgramListing` or `Screen`, it produces a `CodeBlock` instead of an `Image`, preserving the title and xml_id.
+
+**Example**: `Elements::Example` produces a `CodeBlock` with `xml_id` and `title` attrs. This ensures xref targets are preserved even when the example contains mixed content.
+
+**InformalExample**: Unwrapped if it contains a single child with no xml_id.
+
+**RefEntry**: Builds a synopsis paragraph from `refmeta.fieldsynopsis` (type, varname, initializer) or falls back to `refentrytitle(manvolnum)`.
+
+== Element-to-Mark Mapping (Inline Elements)
+
+Inline elements become *marks* on `Mirror::Node::Text` nodes. This follows the ProseMirror model where inline formatting is applied as annotations rather than nested nodes.
+
+=== Emphasis Family
+
+|===
+|DocBook Element |Condition |Mark Type |PM_TYPE
+|`Elements::Emphasis` |`role="bold"` or `role="strong"` |`Mark::Strong` |`strong`
+|`Elements::Emphasis` |`role="italic"` |`Mark::Italic` |`italic`
+|`Elements::Emphasis` |no role (default) |`Mark::Emphasis` |`emphasis`
+|`Elements::FirstTerm` |always |`Mark::Emphasis` |`emphasis`
+|`Elements::GlossTerm` |always |`Mark::Emphasis` |`emphasis`
+|===
+
+=== Code Family
+
+All code-related inline elements produce a `Mark::Code` with a `role` attribute to distinguish the specific DocBook element type:
+
+|===
+|DocBook Element |Code Role
+|`Elements::Literal` |`literal`
+|`Elements::Code` |`code`
+|`Elements::UserInput` |`userinput`
+|`Elements::ComputerOutput` |`computeroutput`
+|`Elements::Filename` |`filename`
+|`Elements::ClassName` |`classname`
+|`Elements::Function` |`function`
+|`Elements::Parameter` |`parameter`
+|`Elements::Replaceable` |`replaceable`
+|`Elements::Command` |`command`
+|`Elements::Option` |`option`
+|`Elements::Envar` |`envar`
+|`Elements::Property` |`property`
+|`Elements::Varname` |`varname`
+|`Elements::Type` |`type`
+|`Elements::Errortype` |`errortype`
+|`Elements::Errorcode` |`errorcode`
+|`Elements::Exceptionname` |`exceptionname`
+|`Elements::Constant` |`constant`
+|`Elements::Prompt` |`prompt`
+|`Elements::BuildTarget` |`buildtarget`
+|`Elements::Enumvalue` |`enumvalue`
+|`Elements::Tag` |`tag`
+|`Elements::KeyCap` |`keycap`
+|===
+
+=== Link Family
+
+|===
+|DocBook Element |Mark Type |PM_TYPE |Key Attrs
+|`Elements::Link` |`Mark::Link` |`link` |`href` (xlink:href) or `linkend`
+|`Elements::Xref` |`Mark::Xref` |`xref` |`linkend`, `resolved` (resolved title)
+|`Elements::Biblioref` |`Mark::Citation` |`citation` |`bibref` (linkend)
+|`Elements::CiteTitle` |`Mark::Citation` |`citation` |`bibref` (href)
+|`Elements::Email` |`Mark::Link` |`link` |`href: "mailto:..."`
+|`Elements::Uri` |`Mark::Link` |`link` |`href: text content`
+|===
+
+=== Plain Text Elements (No Marks)
+
+These inline elements produce text nodes with no marks:
+
+|===
+|DocBook Element |Behavior
+|`Elements::Subscript` |Plain text (subscript styling handled by CSS)
+|`Elements::Superscript` |Plain text (superscript styling handled by CSS)
+|`Elements::Abbrev` |Plain text
+|`Elements::Phrase` |Plain text
+|`Elements::Application` |Plain text
+|`Elements::WordAsWord` |Plain text
+|`Elements::Date` |Plain text
+|`Elements::ReleaseInfo` |Plain text
+|`Elements::CiterefEntry` |Plain text (`title(manvol)`)
+|`Elements::Footnote` |Bracketed text: `[content]`
+|===
+
+=== Special Inline Elements
+
+|===
+|DocBook Element |Behavior
+|`Elements::ProductName` |`Mark::Strong` or `Mark::Link` depending on `class_name` and `href`; appends trademark symbols (™, ®, ©, ℠)
+|`Elements::TradeMark` |Plain text with trademark suffix (™ default, ®, ©, ℠)
+|`Elements::InlineMediaObject` |`Node::Image` with `src` from imagedata
+|`Elements::Quote` |Inline content recursively processed (supports nested marks)
+|===
+
+== PM_TYPE Constants
+
+Every `Mirror::Node` and `Mirror::Mark` subclass defines a `PM_TYPE` constant that serves as the type discriminator in the JSON output:
+
+[source,ruby]
+----
+class Paragraph < Node
+  PM_TYPE = "paragraph"  # Appears as {"type": "paragraph", ...} in JSON
+end
+----
+
+The `NODES` hash maps PM_TYPE strings to their Ruby classes for deserialization:
+
+[source,ruby]
+----
+NODES = Hash.new
+NODES["paragraph"] = Paragraph
+NODES["chapter"] = Chapter
+# ...
+
+# Deserialize: look up class by type string
+klass = NODES[hash["type"]] || Node
+----
+
+Similarly, `MARKS` maps mark type strings to their classes:
+
+[source,ruby]
+----
+MARKS = Hash.new
+MARKS["emphasis"] = Emphasis
+MARKS["strong"] = Strong
+# ...
+----
+
+== JSON Output Format
+
+The DocbookMirror JSON follows ProseMirror document structure:
+
+[source,json]
+----
+{
+  "type": "doc",
+  "attrs": { "title": "My Document" },
+  "content": [
+    {
+      "type": "chapter",
+      "attrs": { "xml_id": "ch1", "title": "Introduction", "number": "1" },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "This is " },
+            { "type": "text", "text": "important", "marks": [{"type": "strong"}] },
+            { "type": "text", "text": " text." }
+          ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+== Reverse Translation Details
+
+The `to_docbook` method converts each Mirror node type back to its corresponding DocBook element:
+
+1. **Structural nodes** (chapter, section, part, appendix) → create the element, set `xml_id`, `title`, `number`, then recurse into content.
+2. **Block nodes** (paragraph, code_block, blockquote, etc.) → create the element, populate content by recursing.
+3. **Text nodes with marks** → the `process_paragraph_content` and `apply_mark_to_element` methods create the appropriate inline element and add it to the parent element's collection.
+4. **Mark-to-element reverse mapping**:
+   - `emphasis` mark → `Elements::Emphasis` (no role)
+   - `strong` mark → `Elements::Emphasis` with `role: "bold"`
+   - `italic` mark → `Elements::Emphasis` with `role: "italic"`
+   - `code` mark with role → `role_to_class` maps back to the specific element class (e.g., `filename` → `Elements::Filename`)
+   - `link` mark → `Elements::Link` with `xlink_href`
+   - `xref` mark → `Elements::Xref` with `linkend`
+   - `citation` mark → `Elements::Biblioref` with `linkend`
+   - `tag` mark → `Elements::Tag` with stripped angle brackets
+
+== Usage in the Build Pipeline
+
+The `Docbook::Output::SinglePage` class uses the transformer to produce the JSON that gets embedded in the HTML reader:
+
+[source,ruby]
+----
+# In SinglePage#generate
+mirror_output = Docbook::Output::DocbookMirror.new(parsed_document)
+mirror_doc = mirror_output.to_document
+
+# Embed as window.DOCBOOK_DATA in the HTML
+# Also attaches TOC, numbering, and index data
+----
+
+The Vue SPA's `documentStore` detects the DocbookMirror format by checking `data.type === 'doc'` and `Array.isArray(data.content)`, then passes the content array to `MirrorRenderer.vue` which recursively renders each node type.

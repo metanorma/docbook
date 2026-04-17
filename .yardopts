@@ -1,0 +1,7 @@
+--output-dir docs/api
+--markup markdown
+--no-private
+--charset utf-8
+--title "DocBook Ruby Gem API"
+lib/**/*.rb
+- lib/docbook/schemas/*.rng

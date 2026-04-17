@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="proc-test">
+  <title>Procedure Test</title>
+  <chapter>
+    <title>Procedures</title>
+    <procedure>
+      <title>How to Test</title>
+      <step><para>Write the test.</para></step>
+      <step><para>Run the test.</para></step>
+      <step>
+        <para>If it fails, debug:</para>
+        <substeps>
+          <step><para>Read the error message.</para></step>
+          <step><para>Fix the code.</para></step>
+          <step><para>Re-run the test.</para></step>
+        </substeps>
+      </step>
+    </procedure>
+  </chapter>
+</book>

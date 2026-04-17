@@ -92,8 +92,14 @@ const typeLabel = computed(() => {
     case 'bibliography': return 'Bib'
     case 'index': return 'Idx'
     case 'preface': return 'Pref'
+    case 'dedication': return 'Ded'
+    case 'acknowledgements': return 'Ack'
+    case 'colophon': return 'Col'
     case 'reference': return 'Ref'
     case 'refentry': return 'p'
+    case 'set': return 'Set'
+    case 'article': return 'Art'
+    case 'topic': return 'Top'
     default: return ''
   }
 })
@@ -108,6 +114,9 @@ const typeBadgeClass = computed(() => {
     case 'bibliography': return 'toc-badge-red'
     case 'index': return 'toc-badge-indigo'
     case 'preface': return 'toc-badge-orange'
+    case 'dedication': return 'toc-badge-muted'
+    case 'acknowledgements': return 'toc-badge-muted'
+    case 'colophon': return 'toc-badge-muted'
     case 'reference': return 'toc-badge-cyan'
     case 'refentry': return 'toc-badge-neutral toc-badge-mono'
     default: return 'toc-badge-neutral'
@@ -121,6 +130,10 @@ const buttonClass = computed(() => {
   return ''
 })
 
+const isFrontmatter = computed(() => {
+  return ['dedication', 'acknowledgements', 'preface', 'colophon'].includes(props.item.type)
+})
+
 const linkClass = computed(() => {
   const isActive = uiStore.activeSectionId === props.item.id
   if (isActive) {
@@ -128,6 +141,9 @@ const linkClass = computed(() => {
   }
   if (props.item.type === 'part') {
     return 'toc-text-bold'
+  }
+  if (isFrontmatter.value) {
+    return 'toc-text-frontmatter'
   }
   return 'toc-text-muted'
 })
@@ -172,6 +188,11 @@ function getNumber(id: string): string {
 }
 .toc-text-muted {
   color: var(--chrome-text-dim);
+}
+
+.toc-text-frontmatter {
+  color: var(--chrome-text-dim);
+  font-style: italic;
 }
 
 .toc-active {
@@ -222,6 +243,12 @@ function getNumber(id: string): string {
 .toc-badge-neutral {
   background: var(--chrome-bg-hover);
   color: var(--chrome-text-dim);
+}
+
+.toc-badge-muted {
+  background: transparent;
+  color: var(--chrome-text-dim);
+  opacity: 0.7;
 }
 .toc-badge-mono {
   font-family: ui-monospace, monospace;

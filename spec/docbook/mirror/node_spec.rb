@@ -5,12 +5,12 @@ RSpec.describe Docbook::Mirror::Node::Text do
     it "serializes with marks" do
       text = described_class.new(
         text: "must",
-        marks: [Docbook::Mirror::Mark::Emphasis.new]
+        marks: [Docbook::Mirror::Mark::Emphasis.new],
       )
       expect(text.to_h).to eq({
                                 "type" => "text",
                                 "text" => "must",
-                                "marks" => [{ "type" => "emphasis" }]
+                                "marks" => [{ "type" => "emphasis" }],
                               })
     end
 
@@ -18,7 +18,7 @@ RSpec.describe Docbook::Mirror::Node::Text do
       text = described_class.new(text: "hello")
       expect(text.to_h).to eq({
                                 "type" => "text",
-                                "text" => "hello"
+                                "text" => "hello",
                               })
     end
   end
@@ -35,11 +35,11 @@ RSpec.describe Docbook::Mirror::Node::Text do
       hash = {
         "type" => "text",
         "text" => "hello",
-        "marks" => [{ "type" => "emphasis" }]
+        "marks" => [{ "type" => "emphasis" }],
       }
       text = Docbook::Mirror::Node.from_h(hash)
 
-      expect(text).to be_a(Docbook::Mirror::Node::Text)
+      expect(text).to be_a(described_class)
       expect(text.text).to eq("hello")
       expect(text.marks.first).to be_a(Docbook::Mirror::Mark::Emphasis)
     end
@@ -51,7 +51,7 @@ RSpec.describe Docbook::Mirror::Node::Paragraph do
     it "serializes content" do
       para = described_class.new(content: [
                                    Docbook::Mirror::Node::Text.new(text: "Hello "),
-                                   Docbook::Mirror::Node::Text.new(text: "world")
+                                   Docbook::Mirror::Node::Text.new(text: "world"),
                                  ])
       expect(para.to_h["type"]).to eq("paragraph")
       expect(para.to_h["content"].size).to eq(2)
@@ -62,7 +62,7 @@ RSpec.describe Docbook::Mirror::Node::Paragraph do
     it "returns combined text content" do
       para = described_class.new(content: [
                                    Docbook::Mirror::Node::Text.new(text: "Hello "),
-                                   Docbook::Mirror::Node::Text.new(text: "world")
+                                   Docbook::Mirror::Node::Text.new(text: "world"),
                                  ])
       expect(para.text_content).to eq("Hello world")
     end
@@ -76,9 +76,9 @@ RSpec.describe Docbook::Mirror::Node::Document do
         attrs: { title: "Test Document" },
         content: [
           Docbook::Mirror::Node::Paragraph.new(content: [
-                                                 Docbook::Mirror::Node::Text.new(text: "Hello world")
-                                               ])
-        ]
+                                                 Docbook::Mirror::Node::Text.new(text: "Hello world"),
+                                               ]),
+        ],
       )
 
       expect(doc.to_h["type"]).to eq("doc")

@@ -202,7 +202,7 @@ export function useSearch() {
 
   // Watch for document data changes to rebuild indexes
   watch(
-    () => documentStore.documentData,
+    () => documentStore.mirrorDocument,
     async () => {
       // Try loading from IndexedDB first
       const loaded = await loadFromDb()

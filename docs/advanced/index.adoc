@@ -10,5 +10,5 @@ has_children: true
 This section covers advanced topics for developers who want to customize
 or extend the Metanorma DocBook gem beyond its default behavior.
 
-Topics include the Liquid template system, frontend customization, and
+Topics include the HTML generation system, frontend customization, and
 the design patterns behind element classes.

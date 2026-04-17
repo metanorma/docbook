@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      version="5.1"
+      xml:id="art-of-the-model-flow">
+<info>
+  <title>The Art of the Model Flow</title>
+  <subtitle>On the Transformations of Form Without Loss of Meaning</subtitle>
+  <author>
+    <personname><firstname>The Metanorma</firstname><surname>Collective</surname></personname>
+  </author>
+  <date>2026</date>
+  <abstract>
+    <para>The master programmer said: Water takes the shape of its vessel
+    yet never loses its substance. Ice, vapor, stream, rain — the molecule
+    persists through every transformation. So too the document model. From
+    serialized XML to object graph, from object graph to mirror representation,
+    from mirror to JSON, from JSON to the living DOM — each transformation
+    preserves the whole. This is the Model Flow: a chain of explicit models
+    and deterministic transformers through which a document passes without
+    losing a single atom of meaning.</para>
+  </abstract>
+</info>
+
+<chapter xml:id="ch-purpose">
+<title>I. On Purpose</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>The generals who
+understand war prevail; those who do not, perish.</quote></para>
+
+<section xml:id="ch-purpose-why">
+<title>Why the Model Flow Matters</title>
+
+<para>A document is not its syntax. A DocBook document is not the angle brackets
+that enclose it, nor the indentation that formats it, nor the file system path
+that stores it. The document is a structure of meaning — chapters that contain
+sections, paragraphs that contain emphasis, tables that organize knowledge into
+rows and columns.</para>
+
+<para>The challenge of document engineering is this: how do we carry that
+structure through multiple representations without corruption? How do we
+transform from one form to another, each serving a different purpose, and
+arrive at the end with the same meaning we began with?</para>
+
+<para>The answer is the <emphasis>Model Flow</emphasis>: a precisely defined
+chain where each link is a typed model with unambiguous semantics, and each
+transition is a deterministic transformer with a defined inverse. The chain is:</para>
+
+<orderedlist>
+  <listitem>
+    <para><emphasis role="bold">XML text</emphasis> — the serialized, interoperable form</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Lutaml model objects</emphasis> — the parsed, typed Ruby object graph</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">DocbookMirror nodes</emphasis> — the presentation-oriented intermediate representation</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Mirror JSON</emphasis> — the serialized intermediate, ready for any consumer</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">HTML DOM</emphasis> — the rendered, interactive form in the browser</para>
+  </listitem>
+</orderedlist>
+
+<para>Like water passing from glacier to river to cloud to rain, the substance
+remains H&#x2082;O. The document remains a document.</para>
+
+</section>
+
+<section xml:id="ch-purpose-principle">
+<title>The Principle of Reversible Transformation</title>
+
+<para>The ancients said: <quote>What can be assembled can be disassembled; what
+can be disassembled can be reassembled.</quote> This is the test of a true model
+flow: every transformer must be invertible. If you can go from XML to object
+to mirror to JSON, you must be able to return from JSON to mirror to object to
+XML without loss.</para>
+
+<para>This is not a theoretical aspiration. It is an engineering requirement.
+A transformer that discards information is not a transformer — it is a filter.
+Filters have their place, but a model flow demands transformers that preserve
+the complete semantic content of their input.</para>
+
+<para>Consider the calligrapher who copies a poem. If the copy omits a single
+character, the meaning is corrupted. The model flow must copy every character,
+every emphasis, every cross-reference, every footnote — transforming the
+<emphasis>form</emphasis> but never the <emphasis>substance</emphasis>.</para>
+
+</section>
+
+</chapter>
+
+<chapter xml:id="ch-architecture">
+<title>II. On Architecture</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>In the practical
+art of war, the best thing of all is to take the enemy's country whole and
+intact.</quote></para>
+
+<section xml:id="ch-architecture-overview">
+<title>The Five Layers</title>
+
+<para>The model flow is organized as five layers, each with a distinct model
+type and a pair of transformers (forward and reverse):</para>
+
+<table>
+<title>The Five Layers of the Model Flow</title>
+<tgroup cols="4" align="left" colsep="1" rowsep="1">
+  <thead>
+    <row>
+      <entry>Layer</entry>
+      <entry>Model Type</entry>
+      <entry>Forward Transformer</entry>
+      <entry>Reverse Transformer</entry>
+    </row>
+  </thead>
+  <tbody>
+    <row>
+      <entry>Serialization</entry>
+      <entry>XML text (String)</entry>
+      <entry>Lutaml XML parser</entry>
+      <entry>Lutaml XML serializer</entry>
+    </row>
+    <row>
+      <entry>Object</entry>
+      <entry><code>Docbook::Elements::*</code></entry>
+      <entry>Automatic via <code>from_xml</code></entry>
+      <entry>Automatic via <code>to_xml</code></entry>
+    </row>
+    <row>
+      <entry>Mirror</entry>
+      <entry><code>Mirror::Node::*</code> / <code>Mirror::Mark::*</code></entry>
+      <entry><code>Mirror::Transformer.from_docbook</code></entry>
+      <entry><code>Mirror::Transformer.to_docbook</code></entry>
+    </row>
+    <row>
+      <entry>Transport</entry>
+      <entry>JSON text (String)</entry>
+      <entry><code>JSON.generate</code></entry>
+      <entry><code>JSON.parse</code></entry>
+    </row>
+    <row>
+      <entry>Presentation</entry>
+      <entry>HTML DOM (Vue components)</entry>
+      <entry>Vue reactive rendering</entry>
+      <entry>DOM inspection / serialization</entry>
+    </row>
+  </tbody>
+</tgroup>
+</table>
+
+<para>Each layer depends only on its immediate neighbor. The XML parser knows
+nothing of the mirror. The mirror transformer knows nothing of JSON. The JSON
+serializer knows nothing of the DOM. This separation is not accidental — it is
+the source of the system's strength.</para>
+
+<para><emphasis role="bold">The principle of separation:</emphasis> When each
+layer sees only its neighbor, a change in one layer cannot corrupt another. The
+calligrapher need not understand the paper-maker's craft; both produce work that
+the other can use.</para>
+
+</section>
+
+<section xml:id="ch-architecture-diagram">
+<title>The Flow Diagram</title>
+
+<para>The model flow proceeds in one direction for rendering, and can proceed
+in the reverse for round-tripping:</para>
+
+<programlisting language="text">FORWARD (Rendering):
+
+  XML ──parse──▶ Elements ──transform──▶ Mirror ──serialize──▶ JSON ──render──▶ DOM
+  String          Objects              Nodes               String          HTML
+
+REVERSE (Round-trip):
+
+  DOM ──extract──▶ JSON ──parse──▶ Mirror ──rebuild──▶ Elements ──emit──▶ XML
+  HTML             String            Nodes                Objects           String</programlisting>
+
+<para>Both directions traverse the same models. The transformers are different,
+but the models are shared. This is what makes round-trip fidelity possible: the
+same types serve as the contract between every pair of transformers.</para>
+
+</section>
+
+</chapter>
+
+<chapter xml:id="ch-models">
+<title>III. On Model Kinds</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>Know the terrain
+and know yourself; in a hundred battles you will never be in
+peril.</quote></para>
+
+<section xml:id="ch-models-xml">
+<title>The XML Model: Form as Syntax</title>
+
+<para>XML is the outer garment of the document. It is the form in which
+documents travel between systems, are stored in repositories, and are exchanged
+between organizations. XML is universal but inert — it is text, not behavior.</para>
+
+<para>In the model flow, XML is the <emphasis>serialization layer</emphasis>.
+It serves one purpose: to encode the document as a stream of characters that any
+conforming parser can reconstruct. The encoding is well-defined by the DocBook 5
+schema, which constrains which elements may appear where and what attributes they
+carry.</para>
+
+<para>A DocBook XML document names its elements by semantic role —
+<code>&lt;chapter&gt;</code>, <code>&lt;section&gt;</code>,
+<code>&lt;para&gt;</code>, <code>&lt;emphasis&gt;</code>. These names are the
+contract between the author and the system. They carry meaning that survives
+every transformation in the chain.</para>
+
+<para><emphasis>The bamboo scroll carries the poem; the poem is not the
+scroll.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-models-elements">
+<title>The Element Model: Form as Objects</title>
+
+<para>When XML text enters the Lutaml parser, it becomes a graph of typed Ruby
+objects. Each DocBook element — <code>&lt;book&gt;</code>,
+<code>&lt;chapter&gt;</code>, <code>&lt;para&gt;</code> — is instantiated as a
+class in the <code>Docbook::Elements</code> namespace.</para>
+
+<para>These element classes are not passive data structures. They are active
+models with:</para>
+
+<itemizedlist>
+  <listitem>
+    <para><emphasis role="bold">Typed attributes</emphasis> — a
+    <code>title</code> is a <code>Title</code> object, not a string; an
+    <code>xml_id</code> is an <code>XmlIdType</code>, not untyped text</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Collections</emphasis> — a
+    <code>chapter</code> holds zero or more <code>Section</code> objects,
+    automatically accumulated from multiple XML elements</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Mixed content</emphasis> — a
+    <code>para</code> contains an interleaving of text strings and inline
+    elements (emphasis, links, code), traversable via
+    <code>each_mixed_content</code></para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Round-trip guarantee</emphasis> — every
+    element can serialize back to XML via <code>to_xml</code>, producing output
+    that re-parses to the same object graph</para>
+  </listitem>
+</itemizedlist>
+
+<para>The element model is the <emphasis>canonical representation</emphasis>.
+It is the form in which the document's semantics are most directly accessible to
+program logic. Every other form in the chain is derived from this one, or can
+reproduce it.</para>
+
+<para><emphasis>The sculptor sees the figure within the stone; the element
+model sees the document within the XML.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-models-mirror">
+<title>The Mirror Model: Form as Nodes and Marks</title>
+
+<para>The DocbookMirror is a <emphasis>presentation-oriented intermediate
+representation</emphasis> inspired by the ProseMirror editor model. Where the
+element model organizes content by DocBook semantics (chapters, sections,
+paragraphs), the mirror model organizes content by rendering role (block nodes,
+inline text, marks for styling).</para>
+
+<para>The mirror has two kinds of primitives:</para>
+
+<variablelist>
+  <varlistentry>
+    <term><emphasis role="bold">Nodes</emphasis></term>
+    <listitem>
+      <para>Block-level structures that form the document tree. A
+      <code>Mirror::Node::Document</code> contains
+      <code>Mirror::Node::Section</code> nodes, which contain
+      <code>Mirror::Node::Paragraph</code> nodes, which contain
+      <code>Mirror::Node::Text</code> leaves. Each node has a
+      <code>PM_TYPE</code> — a string constant that identifies its kind:
+      <code>"chapter"</code>, <code>"paragraph"</code>,
+      <code>"code_block"</code>, <code>"table"</code>,
+      <code>"image"</code>, and so on.</para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><emphasis role="bold">Marks</emphasis></term>
+    <listitem>
+      <para>Inline annotations that decorate text without altering the tree
+      structure. A <code>Mirror::Mark::Emphasis</code> wraps text in italic
+      meaning; a <code>Mirror::Mark::Code</code> wraps it in monospace; a
+      <code>Mirror::Mark::Link</code> binds it to a URL. Marks compose freely
+      — a text node can carry both emphasis and a link simultaneously.</para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+
+<para>The mirror model is not a simplification of the element model. It is a
+<emphasis>re-perspective</emphasis>. The same information, viewed from the angle
+of rendering rather than the angle of authoring. Every DocBook element that has a
+visual representation maps to exactly one mirror node type or one mark type.</para>
+
+<para><emphasis>The mountain appears different from east and west; it is the
+same mountain.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-models-json">
+<title>The JSON Model: Form as Transport</title>
+
+<para>JSON is the lingua franca of the web. When the mirror model is serialized
+to JSON, it becomes a data structure that any programming language can consume:
+JavaScript in the browser, Python in a notebook, Rust in a build pipeline.</para>
+
+<para>The JSON format is dictated by the mirror's structure:</para>
+
+<programlisting language="json">{
+  "type": "doc",
+  "content": [
+    {
+      "type": "chapter",
+      "attrs": { "xml_id": "ch-purpose", "title": "I. On Purpose" },
+      "content": [
+        {
+          "type": "section",
+          "attrs": { "xml_id": "ch-purpose-why", "title": "Why the Model Flow Matters" },
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "A document is " },
+                { "type": "text", "text": "not", "marks": [{ "type": "emphasis" }] },
+                { "type": "text", "text": " its syntax." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</programlisting>
+
+<para>Each node becomes a JSON object with <code>"type"</code>,
+<code>"attrs"</code>, and <code>"content"</code>. Each text fragment carries
+its text and an optional array of marks. The structure is self-describing — a
+consumer need not read a schema to understand it.</para>
+
+<para>The JSON model is the <emphasis>transport layer</emphasis>. It is the form
+in which the document crosses the boundary from server to client, from Ruby to
+JavaScript, from build pipeline to browser.</para>
+
+<para><emphasis>The river carries the mountain's reflection to the valley below;
+the reflection is faithful, though the medium has changed.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-models-dom">
+<title>The DOM Model: Form as Living Interface</title>
+
+<para>At the end of the forward chain, the mirror JSON arrives in the browser
+and is rendered by Vue components into the HTML DOM. The
+<code>MirrorRenderer</code> walks the node tree and emits the appropriate HTML
+for each type — a <code>&lt;section&gt;</code> for sections, a
+<code>&lt;p&gt;</code> for paragraphs, a <code>&lt;code&gt;</code> for inline
+code, a <code>&lt;table&gt;</code> for tables.</para>
+
+<para>The DOM is not the terminus — it is the <emphasis>living form</emphasis>.
+Here the document becomes interactive: themes change its colors, search indexes
+its text, the sidebar maps its structure, and the reader turns its pages.</para>
+
+<para>Crucially, the DOM rendering is <emphasis>derived entirely from the
+mirror JSON</emphasis>. There is no hidden state, no server dependency, no
+auxiliary data source. The JSON is the document, and the DOM is its projection.
+A single self-contained HTML file carries everything — styles, scripts, data —
+and works offline from the local filesystem.</para>
+
+<para><emphasis>The water in the cup takes the shape of the cup; the document
+in the browser takes the shape of the reader.</emphasis></para>
+
+</section>
+
+</chapter>
+
+<chapter xml:id="ch-transformers">
+<title>IV. On Transformers</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>The skillful
+fighter puts himself beyond defeat and waits for the opportunity to defeat the
+enemy.</quote></para>
+
+<section xml:id="ch-transformers-forward">
+<title>The Forward Path: From XML to DOM</title>
+
+<para>The forward transformation proceeds in four stages, each stage consuming
+the output of the previous:</para>
+
+<orderedlist>
+  <listitem>
+    <para><emphasis role="bold">Parse.</emphasis> The Lutaml XML parser reads
+    the XML string and constructs the element object graph. Each XML element
+    becomes a typed Ruby object. Each attribute becomes a typed property. Mixed
+    content is preserved through <code>each_mixed_content</code>.</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Transform.</emphasis>
+    <code>Mirror::Transformer.from_docbook</code> walks the element tree. For
+    each structural element (chapter, section, paragraph), it produces a
+    <code>Mirror::Node</code>. For each inline element (emphasis, code, link),
+    it produces a <code>Mirror::Mark</code> on a text node. The result is a
+    <code>Mirror::Node::Document</code> containing the full node tree.</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Serialize.</emphasis> The mirror tree is
+    converted to a JSON string via <code>to_h</code> (which produces a plain
+    Hash) and <code>JSON.generate</code> (which produces a string). The JSON is
+    embedded in the HTML as <code>window.DOCBOOK_DATA</code>.</para>
+  </listitem>
+  <listitem>
+    <para><emphasis role="bold">Render.</emphasis> The Vue application reads
+    <code>window.DOCBOOK_DATA</code>, stores it in Pinia, and the
+    <code>MirrorRenderer</code> component walks the node tree to produce the
+    interactive HTML reader.</para>
+  </listitem>
+</orderedlist>
+
+<para>Four transformers, four forms, one document. The substance never
+changes.</para>
+
+</section>
+
+<section xml:id="ch-transformers-reverse">
+<title>The Reverse Path: From Mirror to XML</title>
+
+<para>The reverse transformation — from mirror nodes back to DocBook elements —
+is the proof of the model flow's integrity. If the reverse produces the same
+semantics as the original, the chain is faithful.</para>
+
+<para><code>Mirror::Transformer.to_docbook</code> performs this reverse walk:
+mirror nodes become element objects, text nodes with marks become mixed-content
+paragraphs, and the resulting element tree serializes to XML.</para>
+
+<para>The round-trip test exercises this path:</para>
+
+<programlisting language="ruby"># The complete round-trip
+xml_string  = File.read("book.xml")
+elements    = Docbook::Document.from_xml(xml_string)       # XML → Elements
+mirror      = Mirror::Transformer.from_docbook(elements)   # Elements → Mirror
+recovered   = Mirror::Transformer.to_docbook(mirror)       # Mirror → Elements
+output_xml  = recovered.to_xml                             # Elements → XML
+# output_xml parses to the same semantic structure as xml_string</programlisting>
+
+<para>Not every detail is preserved character-for-character — whitespace may
+differ, attribute order may change. But <emphasis>semantic equivalence</emphasis>
+is maintained: the same chapters, the same sections, the same emphasis, the same
+cross-references.</para>
+
+<para><emphasis>The potter's wheel reshapes the clay, but the clay is the same
+clay.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-transformers-xinclude">
+<title>On XIncludes and Cross-References</title>
+
+<para>Before parsing, the model flow must handle a practical concern: real
+DocBook documents are often split across many files, joined by
+<code>&lt;xi:include&gt;</code> elements. The
+<code>Docbook::XIncludeResolver</code> resolves these includes <emphasis>before
+parsing</emphasis>, producing a single unified XML document that the parser can
+consume.</para>
+
+<para>After parsing, cross-references — <code>&lt;xref&gt;</code> elements with
+<code>linkend</code> attributes — must be resolved to their target titles. The
+<code>Docbook::XrefResolver</code> builds an <code>xml:id</code> lookup map by
+traversing the element tree, enabling O(1) resolution of any reference.</para>
+
+<para>These are not part of the core model flow but are essential
+<emphasis>pre-processing</emphasis> and <emphasis>post-processing</emphasis>
+stages that prepare the document for the transformation chain.</para>
+
+<para><emphasis>Before the battle, the general must gather intelligence. Before
+the flow, the resolver must gather includes.</emphasis></para>
+
+</section>
+
+</chapter>
+
+<chapter xml:id="ch-realization">
+<title>V. On Realization</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>Let your plans be
+dark and impenetrable as night, and when you move, fall like a
+thunderbolt.</quote></para>
+
+<section xml:id="ch-realization-pipeline">
+<title>The SinglePage Pipeline</title>
+
+<para>The <code>Docbook::Output::SinglePage</code> class orchestrates the
+complete forward model flow. Given an XML file path, it:</para>
+
+<orderedlist>
+  <listitem>
+    <para><emphasis>Resolves XIncludes</emphasis> — flattening multi-file
+    documents into a single XML tree</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Parses to elements</emphasis> — building the typed object
+    graph via <code>Document.from_xml</code></para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Generates a table of contents</emphasis> — extracting the
+    hierarchical section structure as a navigable tree</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Generates section numbering</emphasis> — computing
+    hierarchical numbers (1, 1.1, 1.2, 2, 2.1) for each section</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Collects index terms</emphasis> — gathering
+    <code>&lt;indexterm&gt;</code> elements into an organized index</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Transforms to mirror</emphasis> — converting the element
+    tree to DocbookMirror nodes and marks</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Resolves image paths</emphasis> — converting relative
+    <code>fileref</code> paths to embedded data URLs or absolute references</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Assembles the HTML</emphasis> — inlining CSS, JavaScript,
+    and the mirror JSON into a single self-contained file</para>
+  </listitem>
+</orderedlist>
+
+<para>The output is one HTML file. Open it in any browser, from any filesystem,
+with no server. The document lives.</para>
+
+</section>
+
+<section xml:id="ch-realization-fidelity">
+<title>On Fidelity</title>
+
+<para>The measure of the model flow is fidelity: does the final output convey
+the same meaning as the original input?</para>
+
+<para>Fidelity is not a binary — it is a spectrum. At one end, the raw XML
+string (perfect fidelity, no utility). At the other, a plain-text extraction
+(maximum utility, zero fidelity). The model flow occupies the optimal point:
+<emphasis>full semantic fidelity with maximum presentation utility</emphasis>.</para>
+
+<para>Consider what is preserved at each layer:</para>
+
+<table>
+<title>What Is Preserved at Each Layer</title>
+<tgroup cols="3" align="left" colsep="1" rowsep="1">
+  <thead>
+    <row>
+      <entry>Layer</entry>
+      <entry>Preserved</entry>
+      <entry>Transformed</entry>
+    </row>
+  </thead>
+  <tbody>
+    <row>
+      <entry>XML → Elements</entry>
+      <entry>Element names, attributes, text, mixed content, xml:id</entry>
+      <entry>Syntax (text → objects), nesting (tags → references)</entry>
+    </row>
+    <row>
+      <entry>Elements → Mirror</entry>
+      <entry>Semantic structure, text content, inline styling, links</entry>
+      <entry>Organization (semantic roles → rendering roles)</entry>
+    </row>
+    <row>
+      <entry>Mirror → JSON</entry>
+      <entry>All node types, all marks, all attributes</entry>
+      <entry>Encoding (objects → strings)</entry>
+    </row>
+    <row>
+      <entry>JSON → DOM</entry>
+      <entry>All content, all structure, all styling</entry>
+      <entry>Representation (data → interactive HTML)</entry>
+    </row>
+  </tbody>
+</tgroup>
+</table>
+
+<para>At no point is content discarded. At no point is structure flattened. The
+document that emerges from the chain carries every atom of meaning that entered
+it.</para>
+
+<para><emphasis>The master painter's copy is indistinguishable from the
+original because both capture the same truth.</emphasis></para>
+
+</section>
+
+</chapter>
+
+<chapter xml:id="ch-future">
+<title>VI. On What Comes After</title>
+
+<para><emphasis role="bold">Sun Tzu said:</emphasis> <quote>In the midst of
+chaos, there is also opportunity.</quote></para>
+
+<section xml:id="ch-future-extension">
+<title>Extending the Model Flow</title>
+
+<para>The model flow is designed for extension. Adding a new DocBook element
+requires adding an element class, a mirror node type, and a case in the
+transformer — three points of change, each in its own layer. The layers do not
+entangle; they compose.</para>
+
+<para>New output formats follow the same pattern. Today the chain produces HTML.
+Tomorrow it could produce:</para>
+
+<itemizedlist>
+  <listitem>
+    <para><emphasis>PDF</emphasis> — via a mirror-to-PDF transformer that walks
+    the node tree and emits typeset pages</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>EPUB</emphasis> — via a mirror-to-EPUB transformer that
+    packages the content as a reflowable ebook</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Editor state</emphasis> — by loading the mirror JSON into a
+    ProseMirror editor, enabling WYSIWYG editing with round-trip back to
+    DocBook XML</para>
+  </listitem>
+  <listitem>
+    <para><emphasis>Search index</emphasis> — by extracting text from the mirror
+    nodes into a structured index optimized for full-text search</para>
+  </listitem>
+</itemizedlist>
+
+<para>Each new output requires only a new transformer from the mirror model. The
+element model, the XML parser, and the forward chain up to the mirror remain
+untouched.</para>
+
+<para><emphasis>Dig the canal once, and every field benefits from the
+water.</emphasis></para>
+
+</section>
+
+<section xml:id="ch-future-principle">
+<title>The Model Flow Principle</title>
+
+<para>Let us state the principle plainly:</para>
+
+<blockquote>
+<para><emphasis role="bold">The Model Flow Principle:</emphasis> A document
+processing system achieves round-trip fidelity when every transformation in its
+pipeline is governed by explicit, typed models connected by deterministic,
+invertible transformers.</para>
+</blockquote>
+
+<para>The implications are clear:</para>
+
+<orderedlist>
+  <listitem>
+    <para>Every form in the pipeline must have a defined model — not ad hoc
+    hashes or untyped strings, but typed classes with declared attributes.</para>
+  </listitem>
+  <listitem>
+    <para>Every transition must be a deterministic function — given the same
+    input, always producing the same output, with no hidden state or side
+    effects.</para>
+  </listitem>
+  <listitem>
+    <para>Every transformer must be invertible — the reverse transformation
+    recovers the original semantics.</para>
+  </listitem>
+  <listitem>
+    <para>Every layer must be independent — a change in one layer's
+    implementation must not require changes in any other.</para>
+  </listitem>
+</orderedlist>
+
+<para>Violate any of these, and the flow breaks. The document loses an atom of
+meaning. The round-trip fails. The copy differs from the original.</para>
+
+<para>Honor them, and the document flows like water — through XML, through
+objects, through mirrors, through JSON, through the DOM — always the same
+substance, always whole, always true.</para>
+
+<para><emphasis>The greatest victory is the one that requires no battle. The
+greatest transformation is the one that preserves everything.</emphasis></para>
+
+</section>
+
+</chapter>
+
+</book>

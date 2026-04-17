@@ -33,11 +33,13 @@ module Docbook
         mark_class = MARKS[type] || Mark
 
         # Use class-specific from_h if this class defines its own class method (not inherited)
-        if mark_class != Mark && mark_class.singleton_class.method_defined?(:from_h, false)
+        if mark_class != Mark && mark_class.singleton_class.method_defined?(
+          :from_h, false
+        )
           mark_class.from_h(hash)
         else
           mark_class.new(
-            attrs: attrs.transform_keys(&:to_sym)
+            attrs: attrs.transform_keys(&:to_sym),
           )
         end
       end
@@ -119,6 +121,8 @@ module Docbook
       MARKS["link"] = Link
       MARKS["xref"] = Xref
       MARKS["citation"] = Citation
+      MARKS["subscript"] = Mark
+      MARKS["superscript"] = Mark
     end
   end
 end

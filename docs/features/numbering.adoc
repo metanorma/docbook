@@ -172,12 +172,9 @@ The numbering map is computed alongside the TOC tree and stored in the `Toc` mod
 
 [source,ruby]
 ----
-output = DocbookOutput.new(
-  title: extract_title,
-  toc: Toc.new(
-    sections: sections_data,
-    numbering: numbering_hash.map { |id, value| NumberingEntry.new(id: id, value: value) }
-  ),
-  # ...
+toc = Toc.new(
+  sections: sections_data,
+  numbering: numbering_hash.map { |id, value| NumberingEntry.new(id: id, value: value) }
 )
+# The TOC is attached to the DocbookMirror output during SinglePage generation
 ----

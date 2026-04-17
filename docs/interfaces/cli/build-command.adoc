@@ -14,7 +14,8 @@ Build an interactive HTML reader from a DocBook XML file. The output is a single
 
 [source,bash]
 ----
-$ docbook build INPUT -o OUTPUT [options]
+$ docbook build [INPUT] [options]
+$ docbook build --demo [options]
 ----
 
 === Arguments
@@ -23,7 +24,7 @@ $ docbook build INPUT -o OUTPUT [options]
 |===
 | Argument | Description
 
-| `INPUT` | Path to the DocBook XML file (required)
+| `INPUT` | Path to the DocBook XML file (required unless `--demo` is used)
 |===
 
 === Options
@@ -32,12 +33,30 @@ $ docbook build INPUT -o OUTPUT [options]
 |===
 | Option | Default | Description
 
-| `--output`, `-o` PATH | _(required)_ | Output HTML file path
+| `--output`, `-o` PATH | `<input>.html` or `demo.html` | Output HTML file path
+| `--demo` | _(off)_ | Build a bundled demo: `xslTNG` (default) or `model-flow`
 | `--xinclude` | `true` | Resolve XInclude elements before processing
 | `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
 | `--image-strategy` STRATEGY | `data_url` | Image handling: `data_url`, `file_url`, or `relative`
 | `--title` TITLE | Derived from document | Page title shown in the browser tab
 |===
+
+=== Demo mode
+
+Pass `--demo` to build a reader from a bundled demo fixture. Two demos are available:
+
+* `xslTNG` (default) -- DocBook XSLT 2.0 Stylesheet Reference Guide. A multi-chapter book with code listings, admonitions, tables, images, cross-references, and index terms.
+* `model-flow` -- "The Art of the Model Flow." A stylistic essay on document transformation pipelines, written in the manner of Sun Tzu's Art of War.
+
+[source,bash]
+----
+# Default demo (xslTNG)
+$ docbook build --demo
+
+# Named demo
+$ docbook build --demo=xslTNG
+$ docbook build --demo=model-flow
+----
 
 === Image Strategies
 
@@ -56,19 +75,27 @@ The `--image-strategy` option controls how images are handled in the output:
 
 === Examples
 
-==== Basic usage
+==== Build from a file (output derived automatically)
 
 [source,bash]
 ----
-$ docbook build book.xml -o book.html
+$ docbook build book.xml
 Built /path/to/book.html
+----
+
+==== Build with explicit output path
+
+[source,bash]
+----
+$ docbook build book.xml -o output.html
+Built /path/to/output.html
 ----
 
 ==== Custom image directories
 
 [source,bash]
 ----
-$ docbook build book.xml -o book.html --image-search-dir media/ images/
+$ docbook build book.xml --image-search-dir media/ images/
 Built /path/to/book.html
 ----
 
@@ -76,15 +103,15 @@ Built /path/to/book.html
 
 [source,bash]
 ----
-$ docbook build book.xml -o /var/www/book.html --image-strategy relative
-Built /var/www/book.html
+$ docbook build book.xml --image-strategy relative
+Built /path/to/book.html
 ----
 
 ==== Custom title
 
 [source,bash]
 ----
-$ docbook build manual.xml -o manual.html --title "Product Manual v3.0"
+$ docbook build manual.xml --title "Product Manual v3.0"
 Built /path/to/manual.html
 ----
 
@@ -92,8 +119,22 @@ Built /path/to/manual.html
 
 [source,bash]
 ----
-$ docbook build article.xml -o article.html --no-xinclude
+$ docbook build article.xml --no-xinclude
 Built /path/to/article.html
+----
+
+==== Build the bundled demo
+
+[source,bash]
+----
+$ docbook build --demo
+Built /path/to/demo.html
+
+$ docbook build --demo=xslTNG -o /tmp/sample.html
+Built /tmp/sample.html
+
+$ docbook build --demo=model-flow -o /tmp/model-flow.html
+Built /tmp/model-flow.html
 ----
 
 === What's in the output
@@ -110,6 +151,5 @@ The file works offline because all CSS, JavaScript, and (with `data_url` strateg
 
 === See Also
 
-* link:../demo-command[demo] -- Build a demo reader from the bundled sample
-* link:../convert-command[convert] -- Convert to static HTML (no JavaScript)
+* link:../export-command[export] -- Export as DocbookMirror JSON
 * link:../../ruby-api/single-page[Ruby API: SinglePage] -- Programmatic reader generation

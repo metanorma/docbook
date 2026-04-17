@@ -18,7 +18,7 @@ module Docbook
           index: generate_index,
           numbering: generate_numbering,
           generator: "docbook-gem/#{Docbook::VERSION}",
-          generated_at: Time.now.utc.iso8601
+          generated_at: Time.now.utc.iso8601,
         )
       end
 
@@ -55,7 +55,8 @@ module Docbook
 
         if author.respond_to?(:personname)
           author.personname&.content ||
-            [author.personname&.firstname&.content, author.personname&.surname&.content].compact.join(" ")
+            [author.personname&.firstname&.content,
+             author.personname&.surname&.content].compact.join(" ")
         elsif author.respond_to?(:orgname)
           author.orgname&.content
         else
@@ -111,7 +112,7 @@ module Docbook
           id: element.xml_id || generate_id(element),
           type: type,
           title: extract_element_title(element),
-          number: get_section_number(element)
+          number: get_section_number(element),
         )
 
         # Convert content to hash
@@ -124,7 +125,7 @@ module Docbook
         # For refentry, extract refname
         if element.is_a?(Elements::RefEntry)
           section.refname = element.refnamediv&.refname&.map(&:content)&.join(" ") ||
-                            element.refmeta&.refentrytitle&.content
+            element.refmeta&.refentrytitle&.content
         end
 
         section

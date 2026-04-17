@@ -118,16 +118,10 @@ To build an interactive reader:
 docbook build article.xml -o article.html
 ....
 
-For static HTML output:
+To export as DocbookMirror JSON:
 
 ....
-docbook convert article.xml -o article.html
-....
-
-For directory output:
-
-....
-docbook convert article.xml -o article-out --output-type directory
+docbook export article.xml -o article.json
 ....
 
 Note that XInclude resolution is enabled by default. If
@@ -139,23 +133,13 @@ your article does not use XIncludes, this has no effect.
 ----
 require "docbook"
 
-xml = File.read("article.xml")
-
-# Parse the article
-doc = Docbook::Document.from_xml(xml)
-
-# Resolve cross-references
-xref = Docbook::XrefResolver.new(doc).resolve!
-
-# Generate HTML (single file)
-html = Docbook::Output::Html.new(
-  doc,
-  xref_resolver: xref,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("article.xml"))
-).to_html
-
-File.write("article.html", html)
+# Build an interactive reader
+Docbook::Output::SinglePage.new(
+  xml_path: "article.xml",
+  output_path: "article.html",
+  image_search_dirs: ["media/"],
+  image_strategy: :data_url
+).generate
 ----
 
 == What to expect in the output

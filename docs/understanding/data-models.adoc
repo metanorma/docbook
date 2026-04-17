@@ -7,93 +7,57 @@ nav_order: 3
 
 # Data Models
 
-The gem uses two separate model namespaces, each serving a distinct
-purpose in the pipeline. All model classes inherit from
-`Lutaml::Model::Serializable`, which provides XML and JSON
-serialization through a declarative DSL.
+The gem uses two model namespaces: the DocbookMirror nodes and marks
+for content representation, and the Models namespace for SPA metadata.
+All model classes inherit from `Lutaml::Model::Serializable`, which
+provides XML and JSON serialization through a declarative DSL.
 
-== Output::Data models (`Docbook::Output`)
+== DocbookMirror models (`Docbook::Mirror`)
 
-These classes are defined in `lib/docbook/output/data.rb` and are used
-by the HTML generator to build the intermediate representation that
-becomes the JSON payload for the Vue SPA.
+The DocbookMirror system transforms DocBook element objects into a
+ProseMirror-compatible JSON tree. The `Mirror::Transformer` walks the
+element tree and produces typed nodes and marks.
 
-=== DocbookOutput
+=== Mirror::Node types
 
-The top-level output model. Contains `title`, `toc` (a `Toc` instance),
-`content` (a `ContentData` instance), and `index` (an `Index`
-instance). This single model encapsulates everything the Vue SPA needs
-to render the document.
+The transformer produces a tree of node types including:
 
-=== ContentBlock
+* `Mirror::Node::Document` -- The root node containing all content
+* `Mirror::Node::Block` -- Typed block nodes (paragraph, heading, code_block,
+  blockquote, image, list, table, admonition, footnote, etc.)
+* `Mirror::Node::Text` -- Text content with optional marks
 
-A recursive tree node representing a single block of content. Each
-block has a `type` (such as `:paragraph`, `:code`, `:image`), optional
-text, source URL, alt text, title, language, and CSS class name. Block
-types that can contain nested content use the `children` attribute,
-which holds an array of child `ContentBlock` instances.
+=== Mirror::Mark types
 
-=== SectionData
+Inline annotations applied to text nodes:
 
-Represents a section in the table of contents tree. Each entry has an
-`id`, `title`, `type` (part, chapter, section, appendix, etc.), an
-optional `number`, and `children` (an array of nested `SectionData`
-instances).
+* `emphasis` -- Emphasized text
+* `strong` -- Bold text
+* `code` -- Inline code
+* `link` -- Hyperlink with href
+* `xref` -- Internal cross-reference
+* `citation` -- Bibliographic citation
 
-=== NumberingEntry
+=== TOC and Numbering
 
-A simple key-value pair mapping a section ID to its formatted number
-string. These are collected into an array within the `Toc` model.
+The `SectionData` class represents the table of contents tree. Each
+entry has an `id`, `title`, `type` (part, chapter, section, appendix,
+etc.), an optional `number`, and `children` (an array of nested
+`SectionData` instances).
 
-=== ContentData and ContentEntry
+`NumberingEntry` maps a section ID to its formatted number string.
+The `NumberingBuilder` assigns numbers using different schemes:
+Roman numerals for parts (I, II, III), Arabic numerals for chapters
+(1, 2, 3), hierarchical dotted numbers for sections (1.1, 1.2.3),
+and uppercase letters for appendices (A, B, C).
 
-`ContentData` wraps a collection of `ContentEntry` objects. Each
-`ContentEntry` maps a section ID (the `key`) to a `SectionContent`
-instance containing the section's rendered content blocks. This
-key-value structure serializes cleanly to JSON and provides O(1)
-section lookup in the Vue SPA.
+=== IndexTerm and IndexGroup
 
-=== SectionContent
-
-Holds the content for a single section: a `section_id` and an array
-of `ContentBlock` instances representing the section's body.
-
-=== Toc
-
-Combines the `SectionData` tree (the recursive TOC structure) with the
-`NumberingEntry` collection (the computed numbering map).
-
-=== IndexTerm
-
-Represents a single index entry with `primary`, `secondary`, and
-`tertiary` term text, plus the `section_id` and `section_title` where
-the term appears. Also holds `sees` and `see_alsos` arrays for
-cross-references.
-
-=== IndexGroup
-
-Groups index terms under a `letter` heading. Contains an array of
-`IndexTerm` entries.
-
-=== Index
-
-The top-level index model with a `title` and an array of `IndexGroup`
-instances, one per letter of the alphabet.
-
-=== DocumentData
-
-A minimal model holding only the document `title`. Used in single-file
-mode to initialize the `DOCBOOK_DATA` JavaScript object before merging
-in the TOC, content, and index.
-
-=== NumberingBuilder
-
-A stateful builder that tracks counters for parts (Roman numerals),
-chapters (Arabic, scoped per part), sections (hierarchical, scoped per
-parent), and appendices (uppercase letters). It exposes methods like
-`next_part`, `next_chapter`, `next_section`, and `next_appendix` that
-increment the appropriate counter and return the formatted number. The
-final `numbering` hash maps section IDs to their computed numbers.
+`IndexTerm` represents a single index entry with `primary`, `secondary`,
+and `tertiary` term text, plus the `section_id` and `section_title`
+where the term appears. `IndexGroup` groups terms under a `letter`
+heading. The `Index` model holds a `title` and an array of `IndexGroup`
+instances.
 
 == Models namespace (`Docbook::Models`)
 
@@ -147,10 +111,8 @@ This data is persisted in the Vue SPA via localStorage.
 
 == Serialization
 
-Both model namespaces serialize to JSON for the Vue SPA. The output
-data models (`Output::Data`) are what the Ruby HTML generator
-constructs and serializes. The `Models` namespace provides the
-TypeScript-compatible schema that the Vue SPA expects. In practice,
-the HTML generator uses the `Output::Data` classes directly, and the
-JSON they produce is consumed by the Pinia `documentStore` in the
-frontend.
+Both model namespaces serialize to JSON for the Vue SPA. The DocbookMirror
+nodes and marks produce the content tree that `MirrorRenderer` renders in
+the frontend. The `Models` namespace provides additional metadata like
+TOC, numbering, and index data. The `Output::SinglePage` class combines
+all of these into a single self-contained HTML file.

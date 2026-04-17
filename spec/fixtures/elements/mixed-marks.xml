@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:id="marks-test">
+  <title>Mixed Marks Test</title>
+  <chapter>
+    <title>Inline Mark Combinations</title>
+    <para><emphasis>italic</emphasis></para>
+    <para><emphasis role="strong">bold</emphasis></para>
+    <para><emphasis role="strong"><emphasis>bold italic</emphasis></emphasis></para>
+    <para><emphasis><emphasis role="strong">also bold italic</emphasis></emphasis></para>
+    <para><code>inline code</code></para>
+    <para><emphasis role="strong"><code>bold code</code></emphasis></para>
+    <para><emphasis><code>italic code</code></emphasis></para>
+    <para><link xlink:href="https://example.com">a link</link></para>
+    <para><emphasis role="strong"><link xlink:href="https://example.com">bold link</link></emphasis></para>
+    <para>H<subscript>2</subscript>O</para>
+    <para>E=mc<superscript>2</superscript></para>
+    <para><emphasis role="strong"><superscript>bold superscript</superscript></emphasis></para>
+    <para><quote>a quoted phrase</quote></para>
+    <para><tag>&lt;para&gt;</tag></para>
+    <para><email>test@example.com</email></para>
+    <para><filename>/etc/config</filename></para>
+    <para><command>ls -la</command></para>
+    <para><replaceable>placeholder</replaceable></para>
+  </chapter>
+</book>

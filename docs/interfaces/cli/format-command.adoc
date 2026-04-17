@@ -105,5 +105,5 @@ This is useful for producing a single merged file from a modular DocBook project
 
 === See Also
 
-* link:convert-command[convert] -- Convert DocBook XML to HTML (also supports `--xinclude`)
+* link:build-command[build] -- Build an interactive HTML reader (also supports `--xinclude`)
 * <<roundtrip-command,roundtrip>> -- Round-trip test to verify parse/serialize fidelity

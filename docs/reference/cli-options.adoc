@@ -7,8 +7,8 @@ nav_order: 1
 
 # CLI Options
 
-The `docbook` command-line tool is built on Thor. It provides six
-primary commands plus a development-only `roundtrip` command.
+The `docbook` command-line tool is built on Thor. It provides four
+primary commands: `build`, `export`, `validate`, and `format`.
 
 == Global behavior
 
@@ -23,7 +23,8 @@ Build an interactive HTML reader from DocBook XML. Produces a self-contained
 file that works offline.
 
 ....
-docbook build INPUT -o OUTPUT [options]
+docbook build [INPUT] [options]
+docbook build --demo [options]
 ....
 
 [cols="1,1,1,1,3"]
@@ -32,8 +33,13 @@ docbook build INPUT -o OUTPUT [options]
 
 | `--output PATH`
 | `-o`
-| _(required)_
+| `<input>.html` or `demo.html`
 | Output HTML file path.
+
+| `--demo`
+| _(none)_
+| _(off)_
+| Use the bundled DocBook sample as input.
 
 | `--xinclude`
 | _(none)_
@@ -59,63 +65,21 @@ docbook build INPUT -o OUTPUT [options]
 === Examples
 
 ....
-# Basic usage
-docbook build book.xml -o book.html
+# Basic usage (output defaults to book.html)
+docbook build book.xml
+
+# Custom output path
+docbook build book.xml -o output.html
 
 # Custom image paths
-docbook build book.xml -o book.html --image-search-dir media/ images/
+docbook build book.xml --image-search-dir media/ images/
 
 # For web hosting
-docbook build book.xml -o book.html --image-strategy relative
+docbook build book.xml --image-strategy relative
 
-# Build the bundled demo
-docbook demo -o demo.html
+# Bundled demo
+docbook build --demo
 ....
-
-== convert
-
-Convert DocBook XML to static HTML (no JavaScript).
-
-....
-docbook convert INPUT [options]
-....
-
-[cols="1,1,1,1,3"]
-|===
-| Option | Alias | Default | Description
-
-| `--output PATH`
-| `-o`
-| stdout
-| Output file path (single-file mode) or directory path (directory mode).
-
-| `--xinclude`
-| _(none)_
-| `true`
-| Resolve XInclude directives before processing.
-
-| `--output-type TYPE`
-| _(none)_
-| `single_file`
-| Output type: `single_file` or `directory`.
-|===
-
-=== Single-file mode
-
-....
-docbook convert book.xml -o output.html
-....
-
-Produces a single `output.html` with all JSON data, CSS, and JavaScript
-embedded inline.
-
-=== Directory mode
-
-....
-docbook convert book.xml -o my-book --output-type directory
-....
-
-Creates a directory with `index.html`, `docbook.data.json`, and `assets/`.
 
 == export
 
@@ -203,54 +167,6 @@ docbook format INPUT [options]
 | Resolve XInclude directives before formatting.
 |===
 
-== demo
-
-Build a demo reader from the bundled DocBook sample.
-
-....
-docbook demo [options]
-....
-
-[cols="1,1,1,1,3"]
-|===
-| Option | Alias | Default | Description
-
-| `--output PATH`
-| `-o`
-| `demo.html`
-| Output HTML file path.
-|===
-
-== roundtrip
-
-Round-trip test one or more DocBook XML files.
-
-....
-docbook roundtrip INPUT [INPUT...]
-....
-
-This command has no options. It parses each file, serializes it,
-re-parses the output, and reports success or failure.
-
-== Deprecated commands
-
-[cols="1,1,3"]
-|===
-| Deprecated | Use Instead | Notes
-
-| `to-single-page`
-| `build`
-| Prints deprecation warning
-
-| `to-html`
-| `convert`
-| Prints deprecation warning
-
-| `to-docbook-mirror`
-| `export`
-| Prints deprecation warning
-|===
-
 == Quick reference table
 
 [cols="1,1,1"]
@@ -258,12 +174,8 @@ re-parses the output, and reports success or failure.
 | Command | Input | Output
 
 | `build`
-| File path
+| File path (or `--demo`)
 | Self-contained interactive HTML
-
-| `convert`
-| File path
-| Static HTML (file or directory)
 
 | `export`
 | File path
@@ -276,12 +188,4 @@ re-parses the output, and reports success or failure.
 | `format`
 | File path
 | Pretty-printed XML (file or stdout)
-
-| `demo`
-| _(none)_
-| Interactive HTML from bundled sample
-
-| `roundtrip`
-| One or more file paths
-| Pass/fail status per file
 |===

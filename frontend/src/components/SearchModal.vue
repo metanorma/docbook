@@ -2,6 +2,8 @@
   <Teleport to="body">
     <div
       v-if="uiStore.searchOpen"
+      role="dialog"
+      aria-label="Search"
       class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-[10vh] transition-opacity duration-200"
       @click.self="uiStore.closeSearch"
     >
@@ -76,19 +78,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
-import { useDocumentStore, type TocItem, type ContentBlock } from '@/stores/documentStore'
+import { ref, watch, onMounted, nextTick, inject } from 'vue'
+import { useDocumentStore, type TocItem, type MirrorBlockNode, type MirrorTextNode } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import FlexSearch from 'flexsearch'
 
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
+const navigateToId = inject<(id: string) => void>('navigateToId', () => {})
 
 interface SearchResult {
   id: string
   title: string
   type: 'chapter' | 'appendix' | 'part' | 'section' | 'glossary' | 'bibliography' | 'index' | 'reference' | 'preface'
-  children?: TocItem[]
   snippet?: string
 }
 
@@ -98,83 +100,125 @@ const isSearching = ref(false)
 const focusedIndex = ref(0)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-// FlexSearch Document index for titles
+// FlexSearch Document index for titles and body text
 const index = new (FlexSearch as any).Document({
   document: {
     id: 'id',
-    index: ['title'],
-    store: ['id', 'title', 'type']
+    index: ['title', 'body'],
+    store: ['id', 'title', 'type', 'body']
   },
   tokenize: 'forward',
-  resolution: 9
+  resolution: 9,
+  minlength: 2
 })
 
-function buildIndexes() {
-  const sections = documentStore.sections
-  addToIndex(sections)
+// Map from section id to its body text for snippet extraction
+const sectionTexts = new Map<string, string>()
+
+const SECTION_TYPES = new Set(['chapter', 'section', 'appendix', 'part', 'preface', 'dedication', 'acknowledgements', 'colophon', 'glossary', 'bibliography', 'reference', 'refentry', 'refsection'])
+
+function extractTextFromNode(node: any): string {
+  if (!node) return ''
+  if (node.type === 'text') return node.text || ''
+  if (node.content && Array.isArray(node.content)) {
+    return node.content.map((c: any) => extractTextFromNode(c)).join(' ')
+  }
+  return ''
 }
 
-function addToIndex(items: TocItem[]) {
-  items.forEach(item => {
-    index.add({
-      id: item.id,
-      title: item.title,
-      type: item.type
-    })
-    if (item.children && item.children.length > 0) {
-      addToIndex(item.children)
+function buildSectionIndex(nodes: any[], parentTitle: string = '', parentType: string = '') {
+  if (!nodes) return
+  nodes.forEach(node => {
+    if (!node || !node.attrs) return
+
+    const xmlId = node.attrs?.xml_id
+    if (!xmlId) {
+      // Not a sectioned node — recurse children
+      if (node.content) buildSectionIndex(node.content, parentTitle, parentType)
+      return
+    }
+
+    const title = node.attrs?.title || parentTitle
+    const type = node.type || parentType
+
+    // Collect all text from this node's content (excluding nested sections)
+    const bodyText = collectBodyText(node.content)
+    const fullText = bodyText.join(' ').trim()
+
+    if (fullText.length > 0) {
+      sectionTexts.set(xmlId, fullText)
+      index.add({
+        id: xmlId,
+        title: title,
+        type: type,
+        body: fullText
+      })
+    } else if (title) {
+      // Section with title but no body text (container section)
+      index.add({
+        id: xmlId,
+        title: title,
+        type: type,
+        body: ''
+      })
+    }
+
+    // Recurse into child sections
+    if (node.content) {
+      buildSectionIndex(node.content, title, type)
     }
   })
 }
 
-function extractTextFromBlocks(blocks: ContentBlock[]): string {
-  return blocks.map(block => {
-    let text = block.text || ''
-    if (block.children) {
-      text += ' ' + extractTextFromBlocks(block.children)
-    }
-    return text
-  }).join(' ')
+function collectBodyText(content: any[] | undefined): string[] {
+  if (!content) return []
+  const texts: string[] = []
+  content.forEach(node => {
+    if (!node) return
+    // Don't descend into nested section-like nodes — those get their own index entry
+    if (SECTION_TYPES.has(node.type) && node.attrs?.xml_id) return
+    const text = extractTextFromNode(node)
+    if (text) texts.push(text)
+  })
+  return texts
 }
 
-function searchContent(query: string): SearchResult[] {
-  const content = documentStore.content
-  const searchResults: SearchResult[] = []
-  const lowerQuery = query.toLowerCase()
-
-  for (const [id, sectionContent] of Object.entries(content)) {
-    const text = extractTextFromBlocks(sectionContent.blocks || []).toLowerCase()
-    if (text.includes(lowerQuery)) {
-      // Find the snippet around the match
-      const matchPos = text.indexOf(lowerQuery)
-      const start = Math.max(0, matchPos - 50)
-      const end = Math.min(text.length, matchPos + query.length + 100)
-      let snippet = extractTextFromBlocks(sectionContent.blocks || []).substring(start, end)
-      if (start > 0) snippet = '...' + snippet
-      if (end < text.length) snippet = snippet + '...'
-
-      // Get section info from TOC
-      const section = findSection(documentStore.sections, id)
-      searchResults.push({
-        id,
-        title: section?.title || id,
-        type: (section?.type || 'section') as SearchResult['type'],
-        snippet
+function buildTocIndex(items: TocItem[]) {
+  items.forEach(item => {
+    // Only add if not already indexed from body content
+    if (!sectionTexts.has(item.id)) {
+      index.add({
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        body: ''
       })
     }
-  }
-  return searchResults
+    if (item.children && item.children.length > 0) {
+      buildTocIndex(item.children)
+    }
+  })
 }
 
-function findSection(items: TocItem[], id: string): TocItem | null {
-  for (const item of items) {
-    if (item.id === id) return item
-    if (item.children && item.children.length > 0) {
-      const found = findSection(item.children, id)
-      if (found) return found
-    }
+function buildIndexes() {
+  sectionTexts.clear()
+  const doc = documentStore.mirrorDocument
+  if (doc?.content) {
+    buildSectionIndex(doc.content)
   }
-  return null
+  // Also index TOC entries not captured from body (e.g. top-level chapters without xml_id in mirror)
+  buildTocIndex(documentStore.sections)
+}
+
+function getSnippet(id: string, query: string): string {
+  const text = sectionTexts.get(id)
+  if (!text || !query) return ''
+  const lower = text.toLowerCase()
+  const idx = lower.indexOf(query.toLowerCase())
+  if (idx === -1) return text.slice(0, 120) + (text.length > 120 ? '...' : '')
+  const start = Math.max(0, idx - 50)
+  const end = Math.min(text.length, idx + query.length + 70)
+  return (start > 0 ? '...' : '') + text.slice(start, end) + (end < text.length ? '...' : '')
 }
 
 function search() {
@@ -185,48 +229,28 @@ function search() {
 
   isSearching.value = true
 
-  // Search titles with FlexSearch
   const searchResults = index.search(searchQuery.value, { limit: 30, enrich: true })
 
-  const titleResults: Map<string, TocItem> = new Map()
+  const combined: SearchResult[] = []
   const seen = new Set<string>()
 
   if (Array.isArray(searchResults)) {
-    searchResults.forEach((field: { result: Array<{ id: string; doc?: TocItem }> }) => {
+    searchResults.forEach((field: { result: Array<{ id: string; doc?: any }> }) => {
       if (field.result && Array.isArray(field.result)) {
-        field.result.forEach((r: { id: string; doc?: TocItem }) => {
+        field.result.forEach((r: { id: string; doc?: any }) => {
           if (r.doc && !seen.has(r.id)) {
             seen.add(r.id)
-            titleResults.set(r.id, r.doc)
+            combined.push({
+              id: r.doc.id,
+              title: r.doc.title,
+              type: r.doc.type,
+              snippet: getSnippet(r.doc.id, searchQuery.value)
+            })
           }
         })
       }
     })
   }
-
-  // Search full content
-  const contentResults = searchContent(searchQuery.value)
-
-  // Combine results, prioritizing title matches
-  const combined: SearchResult[] = []
-
-  // First add title matches
-  titleResults.forEach((tocItem) => {
-    combined.push({
-      id: tocItem.id,
-      title: tocItem.title,
-      type: tocItem.type,
-      children: tocItem.children
-    })
-  })
-
-  // Then add content-only matches
-  contentResults.forEach((cr) => {
-    if (!seen.has(cr.id)) {
-      seen.add(cr.id)
-      combined.push(cr)
-    }
-  })
 
   results.value = combined.slice(0, 50)
   isSearching.value = false
@@ -241,7 +265,7 @@ watch(searchQuery, () => {
 
 // Watch for document data changes to rebuild indexes
 watch(
-  () => documentStore.documentData,
+  () => documentStore.mirrorDocument,
   () => {
     buildIndexes()
   },
@@ -268,14 +292,10 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 function selectResult(result: SearchResult) {
-  // Scroll to section and close search
-  const element = document.getElementById(result.id)
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth' })
-    uiStore.closeSearch()
-    searchQuery.value = ''
-    results.value = []
-  }
+  navigateToId(result.id)
+  uiStore.closeSearch()
+  searchQuery.value = ''
+  results.value = []
 }
 
 function highlightMatch(text: string): string {

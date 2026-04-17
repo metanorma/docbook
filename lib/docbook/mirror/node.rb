@@ -21,7 +21,9 @@ module Docbook
           result["marks"] = marks.map { |m| m.respond_to?(:to_h) ? m.to_h : m }
         end
         if content && !content.empty?
-          result["content"] = content.map { |i| i.respond_to?(:to_h) ? i.to_h : i }
+          result["content"] = content.map do |i|
+            i.respond_to?(:to_h) ? i.to_h : i
+          end
         end
         result
       end
@@ -48,7 +50,7 @@ module Docbook
           klass.new(
             attrs: attrs.transform_keys(&:to_sym),
             content: content.map { |c| Node.from_h(c) },
-            marks: marks.map { |m| Docbook::Mirror::Mark.from_h(m) }
+            marks: marks.map { |m| Docbook::Mirror::Mark.from_h(m) },
           )
         end
       end
@@ -93,7 +95,9 @@ module Docbook
           new(
             text: hash["text"] || "",
             attrs: (hash["attrs"] || {}).transform_keys(&:to_sym),
-            marks: (hash["marks"] || []).map { |m| Docbook::Mirror::Mark.from_h(m) }
+            marks: (hash["marks"] || []).map do |m|
+              Docbook::Mirror::Mark.from_h(m)
+            end,
           )
         end
       end
@@ -178,6 +182,138 @@ module Docbook
         PM_TYPE = "section"
       end
 
+      # Frontmatter / Backmatter
+      class Preface < Node
+        PM_TYPE = "preface"
+      end
+
+      class Dedication < Node
+        PM_TYPE = "dedication"
+      end
+
+      class Acknowledgements < Node
+        PM_TYPE = "acknowledgements"
+      end
+
+      class Colophon < Node
+        PM_TYPE = "colophon"
+      end
+
+      # Glossary
+      class Glossary < Node
+        PM_TYPE = "glossary"
+      end
+
+      class GlossEntry < Node
+        PM_TYPE = "gloss_entry"
+      end
+
+      class GlossTerm < Node
+        PM_TYPE = "gloss_term"
+      end
+
+      class GlossDef < Node
+        PM_TYPE = "gloss_def"
+      end
+
+      class GlossSee < Node
+        PM_TYPE = "gloss_see"
+      end
+
+      class GlossSeeAlso < Node
+        PM_TYPE = "gloss_see_also"
+      end
+
+      # Bibliography
+      class Bibliography < Node
+        PM_TYPE = "bibliography"
+      end
+
+      class BiblioEntry < Node
+        PM_TYPE = "biblio_entry"
+      end
+
+      # Index
+      class IndexBlock < Node
+        PM_TYPE = "index_block"
+      end
+
+      class IndexDiv < Node
+        PM_TYPE = "index_div"
+      end
+
+      class IndexEntry < Node
+        PM_TYPE = "index_entry"
+      end
+
+      # Content blocks
+      class Procedure < Node
+        PM_TYPE = "procedure"
+      end
+
+      class Step < Node
+        PM_TYPE = "step"
+      end
+
+      class SubSteps < Node
+        PM_TYPE = "substeps"
+      end
+
+      class Equation < Node
+        PM_TYPE = "equation"
+      end
+
+      class CalloutList < Node
+        PM_TYPE = "calloutlist"
+      end
+
+      class Callout < Node
+        PM_TYPE = "callout"
+      end
+
+      class Sidebar < Node
+        PM_TYPE = "sidebar"
+      end
+
+      class SimPara < Node
+        PM_TYPE = "simpara"
+      end
+
+      # Structural
+      class Set < Node
+        PM_TYPE = "set"
+      end
+
+      class Article < Node
+        PM_TYPE = "article"
+      end
+
+      class Topic < Node
+        PM_TYPE = "topic"
+      end
+
+      # Footnotes
+      class Footnotes < Node
+        PM_TYPE = "footnotes"
+      end
+
+      class FootnoteMarker < Node
+        PM_TYPE = "footnote_marker"
+      end
+
+      class FootnoteEntry < Node
+        PM_TYPE = "footnote_entry"
+      end
+
+      # Caption & Figure
+      class Caption < Node
+        PM_TYPE = "caption"
+      end
+
+      class Figure < Node
+        PM_TYPE = "figure"
+      end
+
       class Table < Node
         PM_TYPE = "table"
       end
@@ -220,6 +356,37 @@ module Docbook
       NODES["refentry"] = RefEntry
       NODES["refsection"] = RefSection
       NODES["section"] = Section
+      NODES["preface"] = Preface
+      NODES["dedication"] = Dedication
+      NODES["acknowledgements"] = Acknowledgements
+      NODES["colophon"] = Colophon
+      NODES["glossary"] = Glossary
+      NODES["gloss_entry"] = GlossEntry
+      NODES["gloss_term"] = GlossTerm
+      NODES["gloss_def"] = GlossDef
+      NODES["gloss_see"] = GlossSee
+      NODES["gloss_see_also"] = GlossSeeAlso
+      NODES["bibliography"] = Bibliography
+      NODES["biblio_entry"] = BiblioEntry
+      NODES["index_block"] = IndexBlock
+      NODES["index_div"] = IndexDiv
+      NODES["index_entry"] = IndexEntry
+      NODES["procedure"] = Procedure
+      NODES["step"] = Step
+      NODES["substeps"] = SubSteps
+      NODES["equation"] = Equation
+      NODES["calloutlist"] = CalloutList
+      NODES["callout"] = Callout
+      NODES["sidebar"] = Sidebar
+      NODES["simpara"] = SimPara
+      NODES["set"] = Set
+      NODES["article"] = Article
+      NODES["topic"] = Topic
+      NODES["footnotes"] = Footnotes
+      NODES["footnote_marker"] = FootnoteMarker
+      NODES["footnote_entry"] = FootnoteEntry
+      NODES["caption"] = Caption
+      NODES["figure"] = Figure
       NODES["table"] = Table
       NODES["table_head"] = TableHead
       NODES["table_body"] = TableBody

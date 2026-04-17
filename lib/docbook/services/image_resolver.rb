@@ -42,7 +42,8 @@ module Docbook
       def walk(obj)
         case obj
         when Hash
-          resolve_image(obj) if obj["type"] == "image" && obj.dig("attrs", "src")
+          resolve_image(obj) if obj["type"] == "image" && obj.dig("attrs",
+                                                                  "src")
           obj.each_value { |v| walk(v) }
         when Array
           obj.each { |v| walk(v) }
@@ -57,16 +58,18 @@ module Docbook
         return if src.start_with?("file://")
 
         abs_path = find_image(src)
-        return unless abs_path
-
-        case @strategy
-        when :file_url
-          node["attrs"]["src"] = "file://#{abs_path}"
-        when :data_url
-          node["attrs"]["src"] = embed_data_url(abs_path)
-        when :relative
-          # Keep relative if base_url is set, adjust path
-          # For now just keep as-is
+        if abs_path
+          case @strategy
+          when :file_url
+            node["attrs"]["src"] = "file://#{abs_path}"
+          when :data_url
+            node["attrs"]["src"] = embed_data_url(abs_path)
+          when :relative
+            # Keep relative if base_url is set, adjust path
+            # For now just keep as-is
+          end
+        else
+          warn "docbook: image not found: #{src} (searched in #{search_dirs.join(", ")})"
         end
       end
 

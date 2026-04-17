@@ -8,23 +8,23 @@ nav_order: 2
 
 == HTML Output
 
-The `Docbook::Output::Html` class generates static HTML from a parsed DocBook document.
+The `Docbook::Output::SinglePage` class generates a self-contained interactive HTML reader from a DocBook XML file. This is the primary output path for the gem.
 
 [NOTE]
 ====
-For building interactive HTML readers with the full pipeline (TOC, numbering, index, images), use link:../single-page[`Docbook::Output::SinglePage`] instead. The `Html` class produces static HTML without JavaScript interactivity.
+`Output::SinglePage` runs the full pipeline: parsing, TOC, numbering, index, image resolution, and HTML assembly. For exporting raw JSON without HTML, use link:../json-export[`Docbook::Output::DocbookMirror`].
 ====
 
 === Constructor
 
 [source,ruby]
 ----
-html_generator = Docbook::Output::Html.new(
-  document,                           # Parsed DocBook element (required)
-  xref_resolver: xref_resolver,       # XrefResolver instance (optional)
-  output_mode: :single_file,          # :single_file or :directory
-  base_path: "/path/to/xml/dir",      # Base path for image resolution
-  output_path: "/path/to/output"      # Output directory (required for directory mode)
+page = Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output/book.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "My Document"
 )
 ----
 
@@ -34,158 +34,96 @@ html_generator = Docbook::Output::Html.new(
 |===
 | Parameter | Required | Description
 
-| `document` | Yes | A parsed DocBook element from `Document.from_xml`
-| `xref_resolver` | No | A `Docbook::XrefResolver` instance (call `resolve!` first). Used to resolve `xref` elements to target titles.
-| `output_mode` | No | `:single_file` (default) or `:directory`. Controls how images and assets are handled.
-| `base_path` | No | Directory containing the source XML file. Used to locate images referenced by relative paths.
-| `output_path` | No | Output directory for directory mode. Required when `output_mode` is `:directory`.
+| `xml_path` | Yes | Path to the DocBook XML file
+| `output_path` | Yes | Output HTML file path
+| `dist_dir` | No | Frontend dist directory (defaults to gem-bundled `frontend/dist`)
+| `image_search_dirs` | No | Array of directories for image lookup (defaults to XML file directory)
+| `image_strategy` | No | `:data_url` (default), `:file_url`, or `:relative`
+| `title` | No | HTML page title (default: `"DocBook Library"`)
 |===
 
-=== Generating HTML
+=== Generating the Reader
 
-Call `to_html` on the generator instance to produce the HTML output:
-
-[source,ruby]
-----
-html = html_generator.to_html
-# => "<!DOCTYPE html><html>..."  (String)
-----
-
-=== Output Modes
-
-==== Single-File Mode
-
-Produces a self-contained HTML string with all assets embedded:
+Call `generate` to run the full pipeline and write the output file:
 
 [source,ruby]
 ----
-require "docbook"
-
-xml_string = File.read("article.xml")
-document = Docbook::Document.from_xml(xml_string)
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("article.xml"))
-).to_html
-
-File.write("output.html", html)
+page.generate
+# => "/path/to/output/book.html"
 ----
 
-In single-file mode:
+The method returns the output path.
 
-* CSS and JavaScript are embedded inline in the HTML
-* Images are converted to Base64 data URIs (using the `Marcel` gem for MIME type detection)
-* All content data (TOC, sections, index) is embedded in `<script>` tags as JSON
-* The resulting file is completely self-contained
+=== Pipeline Steps
 
-==== Directory Mode
+The `generate` method runs an 8-step pipeline:
 
-Produces an HTML shell plus separate data and asset files:
+. **Parse XML** -- Read and parse the DocBook XML file (with XInclude resolution)
+. **Generate TOC** -- Build hierarchical table of contents via `Services::TocGenerator`
+. **Generate Numbering** -- Compute section numbering via `Services::NumberingService`
+. **Collect Index** -- Gather `indexterm` elements and generate index
+. **Transform to DocbookMirror** -- Convert parsed document to DocbookMirror JSON via `Mirror::Transformer`
+. **Attach metadata** -- Attach TOC, numbering, and index to the mirror output
+. **Resolve images** -- Process image paths via `Services::ImageResolver`
+. **Write HTML** -- Assemble the HTML with all data and assets inlined, write to disk
+
+=== Complete Example
 
 [source,ruby]
 ----
 require "docbook"
-require "fileutils"
 
-xml_string = File.read("book.xml")
-resolved = Docbook::XIncludeResolver.resolve_string(xml_string, base_path: "book.xml")
-document = Docbook::Document.from_xml(resolved.to_xml)
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
+# Build an interactive reader from any DocBook XML
+page = Docbook::Output::SinglePage.new(
+  xml_path: "guide.xml",
+  output_path: "output/guide.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "Product Guide"
+)
 
-output_dir = "/var/www/html/book"
-FileUtils.mkdir_p(output_dir)
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :directory,
-  base_path: File.dirname(File.expand_path("book.xml")),
-  output_path: output_dir
-).to_html
-
-# The generator writes docbook.data.json to output_path automatically
-# The returned HTML string is the index.html content
-File.write(File.join(output_dir, "index.html"), html)
+page.generate
+puts "Built interactive reader at output/guide.html"
 ----
 
-In directory mode, the `to_html` method also writes `docbook.data.json` to the `output_path` directory. The directory structure is:
+=== Image Strategies
 
-[source]
-----
-output_dir/
-  index.html           # HTML returned by to_html
-  docbook.data.json    # Written automatically by to_html
-----
+[cols="2,5"]
+|===
+| Strategy | Description
 
-[NOTE]
-====
-The CLI's `write_output` method handles copying `app.css` and `app.iife.js` to the `assets/` subdirectory. When using the Ruby API directly, you are responsible for copying the frontend assets if you need them.
-====
+| `:data_url` | Images are Base64-encoded and embedded in the HTML. Fully self-contained. Default.
+
+| `:file_url` | Images reference absolute file system paths. For local viewing.
+
+| `:relative` | Images use relative paths from the output HTML. For web hosting.
+|===
 
 === Cross-Reference Resolution
 
-The `xref_resolver` parameter is used to resolve `<xref>` elements in the document. When an `xref` element has a `linkend` attribute, the resolver looks up the target element by its `xml:id` and returns the title text:
-
-[source,ruby]
-----
-# Without xref_resolver, xref elements display the raw linkend value
-# With xref_resolver, xref elements display the target's title
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file
-).to_html
-----
-
-=== Image Handling
-
-Images are handled differently based on the output mode:
-
-* *Single-file mode:* Images are read from disk, Base64-encoded, and embedded as data URIs
-* *Directory mode:* Images reference their original file paths (relative to the output directory)
-
-The `base_path` parameter is used to locate image files on disk. The generator searches the base path and all parent directories to find referenced images. It also checks common prefixes like `resources/` and `../resources/`.
+Cross-references are resolved automatically during the pipeline. The `XrefResolver` builds an O(1) lookup map of `xml:id` values to their titles, and `xref` elements in the output display the target's title text rather than the raw ID.
 
 === Generated Data Structure
 
-The `to_html` method builds a structured data model internally before rendering. This model includes:
+The `generate` method produces a self-contained HTML file containing:
 
 [cols="2,5"]
 |===
 | Component | Description
 
-| *Title* | The document title extracted from `<info><title>` or the root element's `<title>`
+| *DocbookMirror JSON* | The document content as ProseMirror-compatible nodes and marks
 | *TOC* | Hierarchical table of contents with section IDs, titles, and types
 | *Numbering* | Computed numbering for parts (Roman), chapters (Arabic), appendices (Alpha), and sections (hierarchical)
-| *Content* | Section content organized by section ID, with blocks for paragraphs, code, images, lists, etc.
 | *Index* | Collected `indexterm` elements grouped alphabetically with see/see-also support
+| *CSS* | The compiled Vue SPA stylesheet inlined as a `<style>` tag
+| *JavaScript* | The compiled Vue SPA bundle inlined as a `<script>` tag
+| *Images* | Embedded as Base64 data URIs (default) or referenced by path
 |===
-
-=== Supported Content Types
-
-The HTML generator processes the following block-level content types from each section:
-
-* Paragraphs (`para`, `formalpara`)
-* Code listings (`programlisting`, `screen`, `literallayout`)
-* Images and figures (`mediaobject`, `figure`, `informalfigure`, `inlinemediaobject`)
-* Lists (`orderedlist`, `itemizedlist`, `variablelist`)
-* Admonitions (`note`, `warning`, `caution`, `important`, `tip`, `danger`)
-* Examples (`example`, `informalexample`)
-* Block quotes (`blockquote`)
-* Glossary entries (`glossentry`)
-* Bibliography entries (`bibliomixed`)
-* Reference entries (`refentry`)
-* Index sections (`index`, `setindex`)
-* Nested sections (`section`, `simplesect`)
 
 === See Also
 
 * *<<parsing,Parsing Documents>>* -- Parse XML before generating HTML
+* *<<single-page,SinglePage Reader>>* -- Detailed SinglePage API documentation
+* *<<json-export,JSON Export>>* -- Export as DocbookMirror JSON without HTML
 * *<<xref-resolution,XRef Resolution>>* -- Resolve cross-references for the HTML generator
 * *<<xinclude,XInclude Resolution>>* -- Resolve XIncludes before parsing

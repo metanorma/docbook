@@ -21,7 +21,6 @@ The gem has the following runtime requirements:
 | *Nokogiri* | XML parsing library (installed automatically as a dependency)
 | *lutaml-model* | Declarative XML-to-Ruby object mapping (`~> 0.8.0`, installed automatically)
 | *Thor* | CLI framework (installed automatically)
-| *Liquid* | Template engine for HTML generation (`~> 5.0`, installed automatically)
 | *Marcel* | MIME type detection for image embedding (installed automatically)
 |===
 
@@ -75,13 +74,10 @@ You should see output listing the available commands:
 [source]
 ----
 Commands:
-  docbook build INPUT        # Build an interactive HTML reader from DocBook XML
-  docbook convert INPUT      # Convert DocBook XML to static HTML
-  docbook demo               # Build a demo reader from the bundled sample
+  docbook build [INPUT]      # Build an interactive HTML reader from DocBook XML
   docbook export INPUT       # Export DocBook XML as DocbookMirror JSON
   docbook format INPUT       # Format/prettify DocBook XML
   docbook help [COMMAND]     # Describe available commands or one specific command
-  docbook roundtrip INPUT... # Round-trip test DocBook XML files
   docbook validate INPUT     # Validate DocBook XML
 ----
 

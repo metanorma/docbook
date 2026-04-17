@@ -45,7 +45,7 @@ module Docbook
       def extract_section_info(element)
         {
           section_id: element.xml_id || generate_id(element),
-          section_title: get_element_title(element)
+          section_title: get_element_title(element),
         }
       end
 
@@ -94,14 +94,14 @@ module Docbook
           primary: primary,
           section_id: section_info[:section_id],
           section_title: section_info[:section_title],
-          sort_key: primary.downcase.strip
+          sort_key: primary.downcase.strip,
         )
 
         # Extract secondary terms
-        entry.secondary = Array(index_term.secondary).map(&:content).compact if index_term.respond_to?(:secondary)
+        entry.secondary = Array(index_term.secondary).filter_map(&:content) if index_term.respond_to?(:secondary)
 
         # Extract see-also
-        entry.see_also = Array(index_term.see_also).map(&:content).compact if index_term.respond_to?(:see_also)
+        entry.see_also = Array(index_term.see_also).filter_map(&:content) if index_term.respond_to?(:see_also)
 
         entry
       end

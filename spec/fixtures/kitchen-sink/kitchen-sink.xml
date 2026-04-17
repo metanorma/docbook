@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      version="5.0"
+      xml:id="kitchen-sink">
+
+  <info>
+    <title>Kitchen Sink Test Document</title>
+    <subtitle>Testing Every DocBook Element</subtitle>
+    <author>
+      <personname><firstname>Jane</firstname><surname>Doe</surname></personname>
+      <email>jane@example.com</email>
+    </author>
+    <author>
+      <personname><firstname>John</firstname><surname>Smith</surname></personname>
+    </author>
+    <pubdate>2026-01-15</pubdate>
+    <releaseinfo>Draft 1.0</releaseinfo>
+    <copyright>
+      <year>2026</year>
+      <holder>Test Holder Inc.</holder>
+    </copyright>
+    <abstract>
+      <para>A comprehensive test document exercising every DocBook element
+      the gem supports, for use in automated testing.</para>
+    </abstract>
+  </info>
+
+  <!-- Frontmatter -->
+  <dedication>
+    <title>Dedication</title>
+    <para>Dedicated to test fixtures everywhere. They work tirelessly
+    so we don't have to.</para>
+  </dedication>
+
+  <acknowledgements>
+    <title>Acknowledgements</title>
+    <para>Thanks to the <emphasis>DocBook</emphasis> community for creating
+    such a thorough schema.</para>
+  </acknowledgements>
+
+  <preface>
+    <title>Preface</title>
+    <para>This document tests the full range of DocBook elements supported
+    by the Metanorma DocBook gem. It covers block elements, inline formatting,
+    cross-references, lists, tables, and more.</para>
+    <para>Readers should find <emphasis role="strong">everything works correctly</emphasis>
+    after running through this fixture.</para>
+  </preface>
+
+  <!-- Part 1: Block Elements -->
+  <part xml:id="pt-blocks">
+    <title>Block Elements</title>
+
+    <chapter xml:id="ch-paragraphs">
+      <title>Paragraphs and Text</title>
+      <para>A simple paragraph with plain text.</para>
+      <para>Another paragraph with <emphasis>emphasized text</emphasis>,
+      <emphasis role="strong">strong text</emphasis>, <code>inline code</code>,
+      and a <link xlink:href="https://example.com">hyperlink</link>.</para>
+      <formalpara>
+        <title>A Formal Paragraph</title>
+        <para>This is a formal paragraph with its own title.</para>
+      </formalpara>
+    </chapter>
+
+    <chapter xml:id="ch-code">
+      <title>Code Blocks</title>
+      <programlisting language="ruby"># A Ruby code example
+def greet(name)
+  puts "Hello, #{name}!"
+end
+
+greet("World")</programlisting>
+
+      <screen language="shell">$ echo "Terminal output"
+Terminal output
+$ ls -la
+total 42</screen>
+
+      <literallayout>Literal layout preserves
+    whitespace and line breaks
+  exactly as written.</literallayout>
+    </chapter>
+
+    <chapter xml:id="ch-lists">
+      <title>Lists</title>
+
+      <para>An ordered list:</para>
+      <orderedlist>
+        <listitem><para>First item</para></listitem>
+        <listitem><para>Second item with <emphasis>emphasis</emphasis></para></listitem>
+        <listitem><para>Third item</para></listitem>
+      </orderedlist>
+
+      <para>An unordered list:</para>
+      <itemizedlist>
+        <listitem><para>Apples</para></listitem>
+        <listitem><para>Bananas</para></listitem>
+        <listitem><para>Cherries</para></listitem>
+      </itemizedlist>
+
+      <para>A variable list:</para>
+      <variablelist>
+        <varlistentry>
+          <term>Term One</term>
+          <listitem><para>Definition of term one.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Term Two</term>
+          <listitem><para>Definition of term two with <code>code</code>.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>Term Three</term>
+          <listitem>
+            <para>First paragraph of definition.</para>
+            <para>Second paragraph of definition.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </chapter>
+
+    <chapter xml:id="ch-tables">
+      <title>Tables</title>
+
+      <table xml:id="tbl-example" frame="all">
+        <title>A Sample Table</title>
+        <tgroup cols="3">
+          <thead>
+            <row>
+              <entry>Column A</entry>
+              <entry>Column B</entry>
+              <entry>Column C</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>Cell 1</entry>
+              <entry>Cell 2</entry>
+              <entry>Cell 3</entry>
+            </row>
+            <row>
+              <entry>Cell 4</entry>
+              <entry><emphasis>Formatted</emphasis></entry>
+              <entry><code>code-cell</code></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+
+      <informaltable>
+        <tgroup cols="2">
+          <tbody>
+            <row>
+              <entry>No title</entry>
+              <entry>Just data</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </chapter>
+
+    <chapter xml:id="ch-admonitions">
+      <title>Admonitions</title>
+
+      <note><para>This is a note with important information.</para></note>
+      <tip><para>This is a helpful tip for readers.</para></tip>
+      <important><para>This is important — don't skip it.</para></important>
+      <warning><para>Warning: potential data loss ahead.</para></warning>
+      <caution><para>Caution: proceed with care.</para></caution>
+    </chapter>
+
+    <chapter xml:id="ch-block-containers">
+      <title>Block Containers</title>
+
+      <blockquote>
+        <attribution>Albert Einstein</attribution>
+        <para>Imagination is more important than knowledge.</para>
+      </blockquote>
+
+      <example xml:id="ex-sample">
+        <title>Sample Example</title>
+        <programlisting language="xml">&lt;para&gt;Example content&lt;/para&gt;</programlisting>
+      </example>
+
+      <sidebar>
+        <title>A Sidebar</title>
+        <para>Additional context that supplements the main text but isn't
+        part of the primary narrative flow.</para>
+      </sidebar>
+
+      <figure xml:id="fig-sample">
+        <title>A Sample Figure</title>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="sample.png"/>
+          </imageobject>
+        </mediaobject>
+      </figure>
+
+      <informalfigure>
+        <mediaobject>
+          <imageobject>
+            <imagedata fileref="informal.png"/>
+          </imageobject>
+        </mediaobject>
+      </informalfigure>
+    </chapter>
+  </part>
+
+  <!-- Part 2: Cross-References and Inline -->
+  <part xml:id="pt-inline">
+    <title>Cross-References and Inline Elements</title>
+
+    <chapter xml:id="ch-xrefs">
+      <title>Cross-References</title>
+      <para>See <xref linkend="ch-paragraphs"/> for paragraph examples.</para>
+      <para>The table in <xref linkend="tbl-example"/> demonstrates table rendering.</para>
+      <para>Refer to <xref linkend="fig-sample"/> for figure handling.</para>
+      <para>Example <xref linkend="ex-sample"/> shows code examples.</para>
+    </chapter>
+
+    <chapter xml:id="ch-inline-marks">
+      <title>Inline Formatting</title>
+      <para>Plain text with <emphasis>emphasis (italic)</emphasis>.</para>
+      <para>Text with <emphasis role="strong">strong (bold)</emphasis>.</para>
+      <para>Nested: <emphasis role="strong"><emphasis>bold italic</emphasis></emphasis>.</para>
+      <para>Inline <code>code formatting</code> in a sentence.</para>
+      <para>Subscript: H<subscript>2</subscript>O and superscript: E=mc<superscript>2</superscript>.</para>
+      <para>A <quote>quoted phrase</quote> in text.</para>
+      <para>A <link xlink:href="https://example.com">hyperlink</link> to an external site.</para>
+      <para>Email: <email>test@example.com</email></para>
+      <para>URI: <uri>https://example.com</uri></para>
+      <para>Filename: <filename>/etc/config.yaml</filename></para>
+      <para>Command: <command>ls -la</command></para>
+      <para>Key: <keycap>Enter</keycap></para>
+      <para>Trademark: DocBook<trademark/> is a trademark.</para>
+      <para>First term: <firstterm>metadata</firstterm> means data about data.</para>
+      <para>Citation: <citation>RFC2119</citation>.</para>
+      <para>Tag: <tag>para</tag> is a block element.</para>
+      <para>Replaceable: <replaceable>filename</replaceable> should be replaced.</para>
+    </chapter>
+  </part>
+
+  <!-- Part 3: Advanced Structures -->
+  <part xml:id="pt-advanced">
+    <title>Advanced Structures</title>
+
+    <chapter xml:id="ch-procedures">
+      <title>Procedures</title>
+
+      <procedure xml:id="proc-install">
+        <title>Installation Procedure</title>
+        <step>
+          <para>Download the package from the website.</para>
+        </step>
+        <step>
+          <para>Extract the archive to a temporary directory.</para>
+        </step>
+        <step>
+          <para>Run the installer:</para>
+          <screen language="shell">$ ./install.sh</screen>
+        </step>
+        <step>
+          <para>Verify the installation:</para>
+          <substeps>
+            <step><para>Check the version number.</para></step>
+            <step><para>Run the test suite.</para></step>
+          </substeps>
+        </step>
+      </procedure>
+    </chapter>
+
+    <chapter xml:id="ch-equations">
+      <title>Equations</title>
+
+      <equation xml:id="eq-einstein">
+        <para>E = mc<superscript>2</superscript></para>
+      </equation>
+
+      <informalequation>
+        <para>a<superscript>2</superscript> + b<superscript>2</superscript> = c<superscript>2</superscript></para>
+      </informalequation>
+    </chapter>
+
+    <chapter xml:id="ch-callouts">
+      <title>Callouts</title>
+
+      <programlisting language="ruby" xml:id="co-code">def hello(name)    <co xml:id="co1" linkends="callout1"/>
+  puts "Hello!"    <co xml:id="co2" linkends="callout2"/>
+end</programlisting>
+
+      <calloutlist>
+        <callout arearefs="co1" xml:id="callout1">
+          <para>The method takes one parameter.</para>
+        </callout>
+        <callout arearefs="co2" xml:id="callout2">
+          <para>This prints a greeting to stdout.</para>
+        </callout>
+      </calloutlist>
+    </chapter>
+
+    <chapter xml:id="ch-footnotes">
+      <title>Footnotes</title>
+
+      <para>This paragraph has a footnote.<footnote>
+        <para>This is the footnote content explaining something in detail.</para>
+      </footnote> The footnote appears at the bottom.</para>
+
+      <para>Another reference to the same footnote or a different one
+      with <footnoteref linkend="fn-first"/>.</para>
+    </chapter>
+
+    <chapter xml:id="ch-index">
+      <title>Index Terms</title>
+
+      <para>This chapter uses <indexterm>
+        <primary>index terms</primary>
+      </indexterm> to demonstrate index generation.</para>
+
+      <para>More complex <indexterm>
+        <primary>index</primary>
+        <secondary>nested entries</secondary>
+      </indexterm> with secondary terms.</para>
+
+      <para>And even <indexterm>
+        <primary>index</primary>
+        <secondary>nested entries</secondary>
+        <tertiary>tertiary level</tertiary>
+      </indexterm> tertiary entries.</para>
+
+      <para><indexterm>
+        <primary>DocBook</primary>
+        <see>XML</see>
+      </indexterm>See-also references.</para>
+    </chapter>
+  </part>
+
+  <!-- Backmatter -->
+  <glossary xml:id="glossary">
+    <title>Glossary</title>
+    <glossentry>
+      <glossterm>DocBook</glossterm>
+      <glossdef>
+        <para>A semantic markup language for technical documentation.</para>
+      </glossdef>
+    </glossentry>
+    <glossentry>
+      <glossterm>XInclude</glossterm>
+      <glossdef>
+        <para>A W3C recommendation for including external XML files.</para>
+      </glossdef>
+    </glossentry>
+    <glossentry>
+      <glossterm>Lutaml</glossterm>
+      <see>XML</see>
+      <glossdef>
+        <para>A Ruby library for XML serialization and deserialization.</para>
+      </glossdef>
+    </glossentry>
+  </glossary>
+
+  <bibliography xml:id="bibliography">
+    <title>Bibliography</title>
+    <bibliomixed xml:id="bib-rfc2119"><abbrev>RFC2119</abbrev><citetitle>Key Words for Use in RFCs</citetitle>, S. Bradner, 1997.</bibliomixed>
+    <bibliomixed xml:id="bib-docbook5"><abbrev>DocBook5</abbrev><citetitle>DocBook 5.1: The Definitive Guide</citetitle>, N. Walsh, 2016.</bibliomixed>
+  </bibliography>
+
+  <index xml:id="index">
+    <title>Index</title>
+  </index>
+
+  <colophon xml:id="colophon">
+    <title>Colophon</title>
+    <para>This test document was generated as part of the Metanorma DocBook
+    gem test suite. It exercises all supported DocBook element types.</para>
+  </colophon>
+
+</book>

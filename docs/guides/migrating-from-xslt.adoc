@@ -1,0 +1,120 @@
+---
+layout: default
+title: Migrating from DocBook XSLT
+parent: Guides
+nav_order: 5
+---
+
+== Migrating from DocBook XSLT
+
+This guide helps you transition from `xsltproc` and DocBook XSLT stylesheets to the `docbook` Ruby gem.
+
+=== Why migrate?
+
+The `docbook` gem offers several advantages over XSLT-based pipelines:
+
+* **Self-contained output** -- A single HTML file with embedded CSS, JS, and images. No web server or file tree needed.
+* **Modern frontend** -- Vue 3 interactive reader with full-text search, themes, TOC navigation, and keyboard shortcuts.
+* **Ruby-native pipeline** -- No Java, no .NET, no external dependencies beyond Ruby gems.
+* **JSON export** -- DocbookMirror JSON for integration with web applications and editors.
+* **File:// protocol** -- Works offline. Open the output in any browser without a server.
+
+=== Command mapping
+
+[cols="2,4"]
+|===
+| XSLT Command | docbook gem Equivalent
+
+| `xsltproc book.xsl book.xml`
+| `docbook build book.xml`
+
+| `xsltproc --xinclude book.xsl book.xml`
+| `docbook build book.xml` (XInclude on by default)
+
+| `xmllint --valid book.xml`
+| `docbook validate book.xml`
+
+| `xmllint --format book.xml`
+| `docbook format book.xml`
+
+| `xsltproc --stringparam html.stylesheet style.css book.xsl book.xml`
+| `docbook build book.xml` (styles embedded automatically)
+|===
+
+=== Feature comparison
+
+[cols="2,2,4"]
+|===
+| Feature | XSLT | docbook gem
+
+| Single-page HTML | Yes | Yes
+| Multi-page HTML | Yes (chunked) | Not yet
+| PDF (via FO) | Yes | Not yet (planned)
+| EPUB | Yes | Not yet (planned)
+| XInclude | Yes | Yes
+| TOC generation | Yes | Yes
+| Index generation | Yes | Yes
+| Cross-references | Yes | Yes
+| Section numbering | Yes | Yes
+| Reference pages (refentry) | Yes | Yes
+| MathML/SVG | Yes | Not yet
+| Full-text search | No | Yes (FlexSearch)
+| Themes | CSS-based | 4 built-in themes
+| Offline reading | No | Yes (self-contained)
+| JSON export | No | Yes (DocbookMirror)
+|===
+
+=== What's different
+
+==== Output format
+
+The `docbook` gem produces a single self-contained HTML file. This differs from XSLT's multi-file chunked output. The HTML includes:
+
+* Inlined CSS and JavaScript (Vue 3 SPA)
+* Embedded images (with `data_url` strategy, the default)
+* Interactive TOC, search, and theme switching
+
+==== No XSLT customization layer
+
+Instead of `xsl:param` and customization stylesheets, configure via CLI flags or the Ruby API:
+
+[source,ruby]
+----
+Docbook::Output::SinglePage.new(
+  xml_path: 'book.xml',
+  output_path: 'build/book.html',
+  image_search_dirs: ['media/'],
+  image_strategy: :data_url,
+  title: "My Book"
+).generate
+----
+
+==== JSON export
+
+The `docbook export` command produces DocbookMirror JSON, a ProseMirror-compatible intermediate format:
+
+[source,bash]
+----
+$ docbook export book.xml -o book.json
+----
+
+This has no XSLT equivalent. Use it to integrate DocBook content into web applications, custom renderers, or editing tools.
+
+==== Image handling
+
+XSLT references images by relative path. The `docbook` gem offers three strategies:
+
+[cols="2,5"]
+|===
+| Strategy | Use case
+
+| `data_url` (default) | Self-contained HTML. Images are Base64-encoded and embedded.
+| `file_url` | Local viewing. Images referenced by absolute file system paths.
+| `relative` | Web hosting. Images use relative paths. Deploy HTML + images together.
+|===
+
+=== Getting help
+
+If you encounter DocBook features that the gem doesn't support yet, please https://github.com/metanorma/docbook/issues[open an issue on GitHub].
+
+See the link:../reference/supported-elements[supported elements page] for the full list of modeled DocBook elements.

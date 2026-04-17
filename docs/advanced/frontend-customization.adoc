@@ -53,17 +53,18 @@ The left sidebar containing the table of contents tree. It uses
 `TocTreeItem` components recursively to render the nested section
 hierarchy. Clicking a TOC entry navigates to the corresponding section.
 
-=== ContentRenderer
+=== MirrorRenderer
 
-Responsible for rendering the main document content. It looks up the
-active section's content blocks from the `documentStore` and delegates
-to `BlockRenderer` for each block.
+Renders the main document content from DocbookMirror JSON. It
+recursively walks the ProseMirror-compatible node tree and produces
+the appropriate HTML for each node type: paragraphs, code blocks,
+images, lists, admonitions, tables, and so on.
 
-=== BlockRenderer
+=== TextRenderer
 
-A recursive component that renders a single `ContentBlock`. It
-switches on the block's `type` to produce the appropriate HTML:
-paragraphs, code blocks, images, lists, admonitions, and so on.
+Handles inline text nodes with marks (emphasis, code, link, xref,
+citation). Used by `MirrorRenderer` for text content within block
+nodes.
 
 === SearchModal
 
@@ -82,19 +83,18 @@ in localStorage via the `useEbookStore` composable.
 Renders a single entry in the table of contents tree, including its
 section number and expand/collapse toggle for nested children.
 
-=== ReferenceEntry
+=== MirrorRenderer (reference entries)
 
-A specialized component for rendering `<refentry>` elements (man-page
-style reference entries) with their badge, name, definition, and
-description sections.
+The `MirrorRenderer` also handles `<refentry>` elements (man-page style
+reference entries), rendering them with their badge, name, definition,
+and description sections using the DocbookMirror node types.
 
 == State management
 
 === documentStore (Pinia)
 
 The central data store. It loads document data from
-`window.DOCBOOK_DATA` (single-file mode) or fetches
-`docbook.data.json` (directory mode). It exposes computed properties
+`window.DOCBOOK_DATA` (embedded in single-page HTML). It exposes computed properties
 for `title`, `sections`, `numbering`, `content`, and `index`, plus a
 `getSectionContent(id)` lookup method.
 

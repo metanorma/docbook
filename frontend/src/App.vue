@@ -1,52 +1,59 @@
 <template>
   <EbookContainer :class="['h-screen overflow-hidden', ebookStore.getThemeClass()]" :style="ebookStore.getCssVariables()">
+    <!-- Skip to content (accessibility) -->
+    <a href="#main-content" class="skip-link" @click.prevent="skipToContent">Skip to content</a>
+
+    <!-- Reading progress bar -->
+    <ReadingProgressBar :progress="readingProgress" :visible="ebookStore.showProgress.value" />
+
     <!-- Mobile overlay -->
     <div
-      v-if="uiStore.sidebarOpen"
+      v-if="uiStore.sidebarOpen && !ebookStore.focusMode.value"
       @click="uiStore.closeSidebar"
       class="fixed inset-0 bg-black/50 z-40 lg:hidden"
     ></div>
 
-    <AppSidebar />
+    <AppSidebar v-show="!ebookStore.focusMode.value" />
 
     <!-- Ebook Top Bar -->
-    <EbookTopBar
-      :title="documentStore.title"
-      :sidebar-open="uiStore.sidebarOpen"
-      @toggle-toc="toggleToc"
-      @toggle-settings="ebookStore.toggleSettings"
-    />
+    <div :class="['focus-mode-topbar', { 'focus-mode-topbar--hidden': ebookStore.focusMode.value, 'focus-mode-topbar--reveal': ebookStore.focusMode.value && focusRevealTopbar }]">
+      <EbookTopBar
+        :title="documentStore.title"
+        :sidebar-open="uiStore.sidebarOpen && !ebookStore.focusMode.value"
+        @toggle-toc="toggleToc"
+        @toggle-settings="ebookStore.toggleSettings"
+      />
+    </div>
 
-    <main ref="mainContent" :class="[
-      'h-screen overflow-y-auto pt-14 transition-all duration-200',
-      uiStore.sidebarOpen ? 'lg:pl-[280px]' : ''
+    <main ref="mainContent" id="main-content" role="main" :class="[
+      'h-screen overflow-y-auto transition-all duration-200',
+      !ebookStore.focusMode.value ? 'pt-14' : 'pt-0',
+      uiStore.sidebarOpen && !ebookStore.focusMode.value ? 'lg:pl-[280px]' : ''
     ]" @scroll="handleScroll">
       <!-- Active section breadcrumb -->
-      <BreadcrumbBar v-if="ancestorChain.length > 0" :ancestor-chain="ancestorChain" />
+      <BreadcrumbBar v-if="ancestorChain.length > 0 && !ebookStore.focusMode.value" :ancestor-chain="ancestorChain" />
 
-      <div class="px-6 py-10 lg:px-8 lg:py-12 mx-auto" :style="{ maxWidth: '72rem', margin: '0 auto' }">
+      <div class="px-6 py-10 lg:px-8 lg:py-12 mx-auto transition-[max-width] duration-300 ease-out" :style="contentStyle">
+        <!-- Title page -->
+        <TitlePage
+          v-if="documentStore.title && documentStore.title !== 'DocBook Document'"
+          :title="documentStore.title"
+          :subtitle="documentStore.subtitle"
+          :author="documentStore.author"
+          :pubdate="documentStore.pubdate"
+          :copyright="documentStore.copyright"
+        />
+
         <!-- DocbookMirror format (ProseMirror-style) -->
-        <div v-if="documentStore.hasMirrorFormat" class="db-content">
-          <MirrorRenderer v-if="documentStore.mirrorDocument" :blocks="documentStore.mirrorDocument.content || []" />
+        <div v-if="documentStore.mirrorDocument" class="db-content">
+          <MirrorRenderer :blocks="documentStore.mirrorDocument.content || []" />
+
+          <!-- Lists of figures/tables/examples -->
+          <ListOfSection
+            v-if="hasLists"
+            :list-of="documentStore.listOf"
+          />
         </div>
-
-        <!-- Legacy format -->
-        <template v-else>
-          <!-- Article content (no sections) -->
-          <div v-if="!hasSections" class="db-content">
-            <BlockRenderer v-if="articleContent" :blocks="articleContent.blocks" />
-          </div>
-
-          <!-- Section content -->
-          <template v-else>
-            <div v-for="section in documentStore.sections" :key="section.id">
-              <ChapterSection v-if="section.type === 'chapter'" :section="section" />
-              <AppendixSection v-else-if="section.type === 'appendix'" :section="section" />
-              <PartSection v-else-if="section.type === 'part'" :section="section" />
-              <SectionContent v-else :section="section" />
-            </div>
-          </template>
-        </template>
 
         <!-- Footer -->
         <footer class="app-footer mt-16 pt-8 border-t text-center text-sm">
@@ -57,31 +64,57 @@
 
     <SearchModal />
     <SettingsPanel />
+    <ImageLightbox
+      :visible="lightbox.visible"
+      :src="lightbox.src"
+      :alt="lightbox.alt"
+      :title="lightbox.title"
+      @close="lightbox.visible = false"
+    />
 
-    <!-- Keyboard shortcut listener -->
-    <Teleport to="body">
-      <div @keydown="handleGlobalKeydown"></div>
-    </Teleport>
+    <!-- Keyboard help overlay -->
+    <KeyboardHelp :visible="showKeyboardHelp" @close="showKeyboardHelp = false" />
+
+    <!-- Section prev/next navigation -->
+    <SectionNav
+      :section-ids="sectionIds"
+      :active-index="activeSectionIndex"
+      :visible="showSectionNav"
+      @navigate="navigateToId"
+    />
+
+    <!-- Back to top -->
+    <Transition name="back-to-top-fade">
+      <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" title="Back to top">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+        </svg>
+      </button>
+    </Transition>
+
+    <!-- Screen reader announcements -->
+    <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">{{ sectionAnnouncement }}</div>
   </EbookContainer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed, ref, reactive, provide } from 'vue'
 import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useEbookStore } from '@/composables/useEbookStore'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
-import ChapterSection from '@/components/ChapterSection.vue'
-import AppendixSection from '@/components/AppendixSection.vue'
-import PartSection from '@/components/PartSection.vue'
-import SectionContent from '@/components/SectionContent.vue'
-import BlockRenderer from '@/components/BlockRenderer.vue'
 import MirrorRenderer from '@/components/MirrorRenderer.vue'
 import EbookTopBar from '@/components/EbookTopBar.vue'
 import EbookContainer from '@/components/EbookContainer.vue'
 import BreadcrumbBar from '@/components/BreadcrumbBar.vue'
+import ImageLightbox from '@/components/ImageLightbox.vue'
+import ListOfSection from '@/components/ListOfSection.vue'
+import ReadingProgressBar from '@/components/ReadingProgressBar.vue'
+import KeyboardHelp from '@/components/KeyboardHelp.vue'
+import SectionNav from '@/components/SectionNav.vue'
+import TitlePage from '@/components/TitlePage.vue'
 import { findAncestorChain } from '@/utils/breadcrumb'
 
 const documentStore = useDocumentStore()
@@ -89,14 +122,50 @@ const uiStore = useUiStore()
 const ebookStore = useEbookStore()
 const mainContent = ref<HTMLElement | null>(null)
 
+// Compute content style directly from store state (bypasses CSS variable cascade issues)
+const contentStyle = computed(() => {
+  const vars = ebookStore.getCssVariables()
+  return {
+    maxWidth: vars['--ebook-max-width'],
+    margin: '0 auto',
+  }
+})
+
+// Reading progress
+const readingProgress = ref(0)
+
+// Keyboard help overlay
+const showKeyboardHelp = ref(false)
+
+// Focus mode: reveal topbar on mouse proximity to top
+const focusRevealTopbar = ref(false)
+
+// Back to top button
+const showBackToTop = ref(false)
+
+// Image lightbox state
+const lightbox = reactive({ visible: false, src: '', alt: '', title: '' })
+
+provide('lightbox', {
+  open(src: string, alt?: string, title?: string) {
+    lightbox.visible = true
+    lightbox.src = src
+    lightbox.alt = alt || ''
+    lightbox.title = title || ''
+  }
+})
+
+provide('navigateToId', navigateToId)
+
 function toggleToc() {
   uiStore.toggleSidebar()
 }
 
-const hasSections = computed(() => documentStore.sections && documentStore.sections.length > 0)
-
-// Article content for documents without sections
-const articleContent = computed(() => documentStore.getSectionContent('article-content'))
+// Lists of figures/tables/examples
+const hasLists = computed(() => {
+  const lo = documentStore.listOf
+  return (lo.figures?.length ?? 0) + (lo.tables?.length ?? 0) + (lo.examples?.length ?? 0) > 0
+})
 
 // Build ancestor chain for breadcrumb
 const ancestorChain = computed(() => {
@@ -130,6 +199,13 @@ function handleScroll() {
   scrollTimeout = setTimeout(() => {
     updateActiveSection()
   }, 50)
+  // Update reading progress
+  const container = mainContent.value
+  if (container) {
+    const scrollable = container.scrollHeight - container.clientHeight
+    readingProgress.value = scrollable > 0 ? Math.min(100, Math.max(0, (container.scrollTop / scrollable) * 100)) : 0
+    showBackToTop.value = container.scrollTop > container.clientHeight * 3
+  }
 }
 
 function updateActiveSection() {
@@ -168,8 +244,43 @@ function updateActiveSection() {
 
   if (foundSection && foundSection.id !== uiStore.activeSectionId) {
     uiStore.setActiveSection(foundSection.id)
+    history.replaceState(null, '', `#${foundSection.id}`)
+    try {
+      localStorage.setItem('docbook-position-' + documentStore.title, foundSection.id)
+    } catch {}
   }
 }
+
+// Flatten section IDs in document order for keyboard navigation
+const sectionIds = computed(() => {
+  const ids: string[] = []
+  function walk(items: TocItem[]) {
+    for (const item of items) {
+      ids.push(item.id)
+      if (item.children) walk(item.children)
+    }
+  }
+  walk(documentStore.sections)
+  return ids
+})
+
+// Active section index for SectionNav
+const activeSectionIndex = computed(() =>
+  sectionIds.value.indexOf(uiStore.activeSectionId || '')
+)
+
+// Show section nav when scrolled past first section and not in focus mode
+const showSectionNav = computed(() =>
+  !ebookStore.focusMode.value && activeSectionIndex.value >= 0
+)
+
+// Screen reader announcement for section changes
+const sectionAnnouncement = computed(() => {
+  const id = uiStore.activeSectionId
+  if (!id) return ''
+  const section = findSectionById(documentStore.sections, id)
+  return section ? section.title : ''
+})
 
 // Navigate to an element by ID, scrolling within the main container
 function navigateToId(id: string) {
@@ -230,10 +341,23 @@ onMounted(() => {
   // Global keyboard shortcuts
   document.addEventListener('keydown', handleGlobalKeydown)
 
+  // Focus mode: reveal topbar on mouse near top
+  document.addEventListener('mousemove', handleMouseMove)
+
   // Initial active section + handle hash from URL
   setTimeout(() => {
     updateActiveSection()
     handleHashChange()
+    // Restore saved reading position if no URL hash was provided
+    if (!window.location.hash) {
+      try {
+        const saved = localStorage.getItem('docbook-position-' + documentStore.title)
+        if (saved) {
+          const el = document.getElementById(saved)
+          if (el) navigateToId(saved)
+        }
+      } catch {}
+    }
   }, 200)
 })
 
@@ -241,6 +365,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
   window.removeEventListener('hashchange', handleHashChange)
   document.removeEventListener('keydown', handleGlobalKeydown)
+  document.removeEventListener('mousemove', handleMouseMove)
 })
 
 function handleHashChange() {
@@ -254,18 +379,87 @@ function handleHashChange() {
 }
 
 function handleGlobalKeydown(e: KeyboardEvent) {
-  if (e.key === '/' && !isInputFocused()) {
+  const inputFocused = isInputFocused()
+
+  if (e.key === '/' && !inputFocused) {
     e.preventDefault()
     uiStore.openSearch()
   }
+
   if (e.key === 'Escape') {
+    if (showKeyboardHelp.value) {
+      showKeyboardHelp.value = false
+      return
+    }
+    if (ebookStore.settingsOpen.value) {
+      ebookStore.toggleSettings()
+      return
+    }
     if (uiStore.searchOpen) {
       uiStore.closeSearch()
+      return
     }
     if (uiStore.sidebarOpen) {
       uiStore.closeSidebar()
+      return
     }
   }
+
+  if (inputFocused) return
+
+  // Toggle keyboard help
+  if (e.key === '?') {
+    e.preventDefault()
+    showKeyboardHelp.value = !showKeyboardHelp.value
+    return
+  }
+
+  // Toggle settings
+  if (e.key === 's') {
+    e.preventDefault()
+    ebookStore.toggleSettings()
+    return
+  }
+
+  // Toggle focus mode
+  if (e.key === 'f') {
+    e.preventDefault()
+    ebookStore.toggleFocusMode()
+    return
+  }
+
+  // Toggle sidebar
+  if (e.key === 't') {
+    e.preventDefault()
+    uiStore.toggleSidebar()
+    return
+  }
+
+  // j/k navigation between sections
+  if (sectionIds.value.length > 0) {
+    const current = sectionIds.value.indexOf(uiStore.activeSectionId || '')
+    if (e.key === 'j' && current < sectionIds.value.length - 1) {
+      e.preventDefault()
+      navigateToId(sectionIds.value[current + 1])
+    }
+    if (e.key === 'k' && current > 0) {
+      e.preventDefault()
+      navigateToId(sectionIds.value[current - 1])
+    }
+  }
+}
+
+function handleMouseMove(e: MouseEvent) {
+  focusRevealTopbar.value = ebookStore.focusMode.value && e.clientY < 48
+}
+
+function scrollToTop() {
+  mainContent.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function skipToContent() {
+  mainContent.value?.focus()
+  mainContent.value?.scrollTo({ top: 0 })
 }
 
 function isInputFocused(): boolean {
@@ -275,6 +469,25 @@ function isInputFocused(): boolean {
 </script>
 
 <style scoped>
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--chrome-accent);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 100;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+  transition: top 0.1s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 .app-footer {
   border-color: var(--ebook-border);
   color: var(--ebook-text-muted);
@@ -282,5 +495,66 @@ function isInputFocused(): boolean {
 
 .app-footer-link {
   color: var(--ebook-link-color);
+}
+
+.focus-mode-topbar {
+  transition: opacity 0.2s ease;
+}
+
+.focus-mode-topbar--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.focus-mode-topbar--reveal {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chrome-bg-glass);
+  color: var(--chrome-text);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  z-index: 35;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.back-to-top:hover {
+  background: var(--chrome-bg-hover);
+  transform: translateY(-2px);
+}
+
+.back-to-top-fade-enter-active,
+.back-to-top-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.back-to-top-fade-enter-from,
+.back-to-top-fade-leave-to {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

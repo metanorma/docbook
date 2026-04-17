@@ -8,63 +8,41 @@ nav_order: 1
 
 # Single File Mode
 
-Single file mode (`output_mode: :single_file`) produces a single, self-contained HTML file with all assets inlined. This is the default output mode and is ideal for distributing documents that can be opened directly in any browser, including via the `file://` protocol.
+The `build` command produces a single, self-contained HTML file with all assets inlined. This is the default and only output mode, ideal for distributing documents that can be opened directly in any browser, including via the `file://` protocol.
 
 ## How It Works
 
-When single file mode is active, the `Output::Html` class inlines every asset directly into the HTML:
+When building, the `Output::SinglePage` class inlines every asset directly into the HTML:
 
 . **CSS** -- The compiled `app.css` from `frontend/dist/` is injected inline via a `<style>` tag
 . **JavaScript** -- The compiled `app.iife.js` from `frontend/dist/` is injected inline via a `<script>` tag
-. **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN in `_head.liquid`
-. **JSON Data** -- All document data (TOC, content, index) is serialized to JSON and injected via `[[DOCBOOK_DATA]]` placeholders, with `</script>` tags escaped to `<\/script>`
-
-The Liquid template is rendered with `assets_inline: true`, which causes the partials to inline assets rather than reference external files.
+. **Fonts** -- Google Fonts (Inter, Merriweather, JetBrains Mono) are loaded from CDN
+. **DocbookMirror JSON** -- All document data (TOC, content, index) is serialized to DocbookMirror JSON and embedded as `window.DOCBOOK_DATA`
 
 ## Image Embedding
 
-Images are embedded as base64 data URIs. The `process_image` method in `Output::Html` handles this:
+Images are embedded as base64 data URIs by default. The image strategy can be configured:
 
-[source,ruby]
-----
-# When output_mode is :single_file, images are base64-encoded
-def process_image(fileref)
-  if @output_mode == :single_file
-    embed_image_base64(fileref)
-  else
-    find_file_path(fileref) || fileref
-  end
-end
+- `:data_url` -- Base64-encoded and embedded (default)
+- `:file_url` -- Absolute file system paths
+- `:relative` -- Relative paths for web hosting
 
-def embed_image_base64(fileref)
-  full_path = find_file_path(fileref)
-  data = File.binread(full_path)
-  mime = Marcel::MimeType.for(data)          # MIME detection via Marcel
-  encoded = Base64.strict_encode64(data)
-  "data:#{mime};base64,#{encoded}"
-end
-----
-
-The MIME type is detected automatically using the https://github.com/rails/marcel[Marcel] gem, which examines the file's magic bytes rather than relying on file extensions. This ensures correct MIME types even when file extensions are missing or incorrect.
+The MIME type is detected automatically using the https://github.com/rails/marcel[Marcel] gem, which examines the file's magic bytes rather than relying on file extensions.
 
 Image paths are resolved by searching the document's base path and its parent directories, trying common prefixes like `resources/` and `../resources/`. This accommodates the various directory structures used in DocBook projects.
 
 ## Data Injection
 
-The template contains four placeholder tokens that are replaced with inline JSON:
+The DocbookMirror JSON data is embedded in the HTML:
 
 [source,html]
 ----
 <script>
-window.DOCBOOK_DATA = Object.assign([[DOCBOOK_DATA]], {
-  toc: [[DOCBOOK_TOC]],
-  content: [[DOCBOOK_CONTENT]],
-  index: [[DOCBOOK_INDEX]]
-});
+window.DOCBOOK_DATA = { /* DocbookMirror JSON + TOC + numbering + index */ };
 </script>
 ----
 
-In single file mode, the placeholders are replaced with actual JSON data. The Vue SPA's `documentStore` detects `window.DOCBOOK_DATA` and loads the data synchronously without any network requests.
+The Vue SPA's `documentStore` detects `window.DOCBOOK_DATA` and loads the data synchronously without any network requests. The `MirrorRenderer` component renders the DocbookMirror nodes into HTML.
 
 ## Use Case
 
@@ -78,14 +56,14 @@ Single file mode is designed for:
 ## CLI Usage
 
 ```bash
-# Build an interactive reader (recommended)
+# Build an interactive reader
 docbook build document.xml -o output.html
 
-# Static HTML conversion
-docbook convert document.xml -o output.html
+# With custom image paths
+docbook build document.xml -o output.html --image-search-dir media/ images/
 
-# Explicit single file mode
-docbook convert document.xml -o output.html --output-type single_file
+# For web hosting (external image files)
+docbook build document.xml -o output.html --image-strategy relative
 ```
 
 ## Programmatic Usage
@@ -94,32 +72,11 @@ docbook convert document.xml -o output.html --output-type single_file
 ----
 require "docbook"
 
-document = Docbook::Document.from_xml(File.read("book.xml"))
-xref_resolver = Docbook::XrefResolver.new(document).resolve!
-base_path = File.dirname(File.expand_path("book.xml"))
-
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: base_path
-).to_html
-
-File.write("book.html", html)
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output/book.html",
+  image_search_dirs: ["media/", "images/"],
+  image_strategy: :data_url,
+  title: "My Book"
+).generate
 ----
-
-## Template Rendering Details
-
-The Liquid template is rendered with these variables in single file mode:
-
-[cols="1,2,3"]
-|===
-| Variable | Value | Purpose
-
-| `docbook_title` | Document title | Page `<title>` element
-| `base_url` | `""` (empty string) | Relative URL base (not needed for single file)
-| `assets_inline` | `true` | Controls whether CSS/JS are inlined or linked
-| `app_css` | Contents of `frontend/dist/app.css` | Inlined as `<style>` tag
-| `app_js` | Contents of `frontend/dist/app.iife.js` | Inlined as `<script>` tag
-| `data_url` | Not used | Only relevant for directory mode
-|===

@@ -21,8 +21,8 @@ layer. The XML may reference external files via XInclude or contain
 
 == Step 2: XInclude resolution
 
-If XInclude processing is enabled (the default for `build`, `convert`,
-and `export`), the
+If XInclude processing is enabled (the default for `build` and
+`export`), the
 `XIncludeResolver` preprocesses the Nokogiri document. It iterates
 through all `xi:include` elements, fetches the referenced files, and
 replaces the include directives with the actual content. This step
@@ -66,15 +66,13 @@ It uses different numbering schemes depending on the section type:
 
 The numbering map is a simple hash of ID to formatted number string.
 
-== Step 7: Content map building
+== Step 7: DocbookMirror transformation
 
-For each section, the HTML generator calls `each_mixed_content` on the
-corresponding element object. This yields `String` nodes and typed
-element objects in document order. A `case` statement dispatches each
-element to a builder method that produces `ContentBlock` instances.
-Paragraphs become `paragraph` blocks with inline children; code
-listings become `code` blocks with a `language` attribute; figures
-become `image` blocks with `src` and `alt` attributes.
+The `Mirror::Transformer` walks the parsed element tree and converts it
+into a ProseMirror-compatible JSON document. Each DocBook element is
+mapped to a corresponding mirror node type: paragraphs become `paragraph`
+nodes, code listings become `code_block` nodes, and so on. Inline
+elements produce text nodes with marks (emphasis, code, link, xref).
 
 == Step 8: Index collection and generation
 
@@ -84,20 +82,16 @@ terms along with their containing section IDs. The `IndexGenerator`
 then groups collected terms by first letter, producing an `Index` model
 with `IndexGroup` children, each containing sorted `IndexTerm` entries.
 
-== Step 9: Template rendering
+== Step 9: HTML assembly
 
-The assembled `DocbookOutput` model (containing title, TOC, content,
-and index) is serialized to JSON and inserted into a Liquid template.
-In single-file mode, the JSON replaces placeholder tokens
-(`[[DOCBOOK_DATA]]`, `[[DOCBOOK_TOC]]`, `[[DOCBOOK_CONTENT]]`,
-`[[DOCBOOK_INDEX]]`) directly in the HTML. In directory mode, the
-placeholders are set to `null` and the JSON is written to a separate
-file that the Vue SPA fetches at runtime.
+The `Output::SinglePage` class combines the DocbookMirror JSON with
+metadata (TOC, numbering, index, images) and renders the HTML shell
+with all assets (CSS, JS, images) inlined into a single self-contained
+file. The Vue SPA reads the embedded DocbookMirror data on load and
+renders the document using `MirrorRenderer`.
 
 == Step 10: Output
 
-The final step writes the rendered HTML to disk. Single-file mode
-produces one self-contained HTML file with all data inlined. Directory
-mode creates an output directory with `index.html`, `docbook.data.json`,
-and an `assets/` directory containing `app.css` and `app.iife.js` copied
-from the frontend build.
+The final step writes the rendered HTML to disk. The output is a single
+self-contained HTML file with all data, CSS, JS, and images inlined,
+ready to be opened directly in any browser.

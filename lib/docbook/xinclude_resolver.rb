@@ -66,7 +66,8 @@ module Docbook
 
     def self.resolve_xml_include(doc, inc, file_path)
       included_xml = File.read(file_path)
-      included_doc = Nokogiri::XML(included_xml, "file://#{File.expand_path(file_path)}")
+      included_doc = Nokogiri::XML(included_xml,
+                                   "file://#{File.expand_path(file_path)}")
 
       root = included_doc.root
       # Ensure namespace is declared in target document

@@ -31,7 +31,9 @@ RSpec.describe Docbook::Document do
         <?xml version="1.0" encoding="utf-8"?>
         <unknown xmlns="http://docbook.org/ns/docbook"/>
       XML
-      expect { described_class.from_xml(xml) }.to raise_error(Docbook::Error, /Unsupported/)
+      expect do
+        described_class.from_xml(xml)
+      end.to raise_error(Docbook::Error, /Unsupported/)
     end
   end
 

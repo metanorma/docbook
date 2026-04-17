@@ -2,12 +2,14 @@
 
 RSpec.describe Docbook do
   it "has a version number" do
-    expect(Docbook::VERSION).not_to be nil
+    expect(Docbook::VERSION).not_to be_nil
   end
 end
 
 RSpec.describe Docbook::Elements::Article do
-  let(:sample_xml) { File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml") }
+  let(:sample_xml) do
+    File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml")
+  end
 
   it "parses a minimal article" do
     article = described_class.from_xml(sample_xml)

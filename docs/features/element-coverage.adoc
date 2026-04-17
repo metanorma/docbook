@@ -359,7 +359,7 @@ Miscellaneous block elements.
 
 ## Elements Producing HTML Output
 
-The following elements are directly rendered as HTML `ContentBlock` types during the output build:
+The following elements are directly rendered as DocbookMirror node types during the output build:
 
 - **Blocks**: `Para`, `FormalPara`, `ProgramListing`, `Screen`, `LiteralLayout`, `BlockQuote`, `SimpleSect`
 - **Lists**: `OrderedList`, `ItemizedList`, `VariableList`

@@ -1,5 +1,7 @@
 <template>
   <aside
+    role="navigation"
+    aria-label="Table of contents"
     :class="[
       'sidebar-panel fixed top-0 left-0 z-50 w-[280px] h-full overflow-y-auto transition-transform duration-200',
       uiStore.sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -7,7 +9,7 @@
   >
     <!-- Sidebar Header -->
     <div class="sidebar-header sticky top-0 p-4 z-10">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-1">
         <span class="sidebar-title truncate pr-2">
           {{ documentStore.title }}
         </span>
@@ -20,6 +22,7 @@
           </svg>
         </button>
       </div>
+      <div v-if="documentStore.author" class="sidebar-author truncate mb-3">{{ documentStore.author }}</div>
 
       <!-- Search button -->
       <button
@@ -37,14 +40,14 @@
       <div class="flex gap-1 mt-3">
         <button
           @click="setFontFamily('sans')"
-          :class="uiStore.fontFamily === 'sans' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
+          :class="ebookStore.fontFamily.value === 'sans' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
           class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-sans"
         >
           Sans
         </button>
         <button
           @click="setFontFamily('serif')"
-          :class="uiStore.fontFamily === 'serif' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
+          :class="ebookStore.fontFamily.value === 'serif' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
           class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-serif"
         >
           Serif
@@ -111,7 +114,7 @@ function cycleTheme() {
 }
 
 function setFontFamily(font: 'sans' | 'serif') {
-  uiStore.setFontFamily(font)
+  ebookStore.setFontFamily(font as any)
 }
 </script>
 
@@ -133,6 +136,12 @@ function setFontFamily(font: 'sans' | 'serif') {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--chrome-text-dim);
+}
+
+.sidebar-author {
+  font-size: 0.7rem;
+  color: var(--chrome-text-dim);
+  opacity: 0.7;
 }
 
 .sidebar-btn {

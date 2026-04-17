@@ -47,7 +47,7 @@ title = xref_resolver.title_for("nonexistent-id")
 # => nil (no element with this ID)
 ----
 
-This is used internally by `Docbook::Output::Html` to resolve `<xref linkend="intro"/>` into the text "Introduction" in the generated HTML.
+This is used internally by `Docbook::Output::SinglePage` to resolve `<xref linkend="intro"/>` into the text "Introduction" in the generated HTML.
 
 === Retrieving Elements by ID
 
@@ -118,31 +118,28 @@ xref_title = xref_resolver.title_for("chapter-1")
 puts "XRef target: #{xref_title}"
 # => "XRef target: Getting Started"
 
-# Now generate HTML with resolved cross-references
-html = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file,
-  base_path: File.dirname(File.expand_path("book.xml"))
-).to_html
-
-File.write("output.html", html)
+# Now build the interactive reader
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  image_search_dirs: ["media/"],
+  image_strategy: :data_url
+).generate
 ----
 
 === Integration with HTML Output
 
-The `XrefResolver` is designed to work with `Docbook::Output::Html`. Pass the resolver to the HTML generator's constructor, and it will automatically resolve all `<xref>` elements:
+The `XrefResolver` is designed to work with `Docbook::Output::SinglePage`. The SinglePage pipeline resolves all `<xref>` elements automatically using the document's xml:id map:
 
 [source,ruby]
 ----
-# Without xref_resolver: <xref linkend="intro"/> renders as "intro"
-# With xref_resolver: <xref linkend="intro"/> renders as "Introduction"
+# xref elements are automatically resolved during build
+# <xref linkend="intro"/> renders as "Introduction"
 
-html_with_xrefs = Docbook::Output::Html.new(
-  document,
-  xref_resolver: xref_resolver,
-  output_mode: :single_file
-).to_html
+Docbook::Output::SinglePage.new(
+  xml_path: "book.xml",
+  output_path: "output.html"
+).generate
 ----
 
 === Element Lookup Fallback

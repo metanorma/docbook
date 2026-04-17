@@ -9,7 +9,8 @@ RSpec.describe Docbook::XIncludeResolver do
     remaining = resolved.xpath("//xi:include", "xi" => "http://www.w3.org/2001/XInclude")
     # Only xi:includes referencing non-existent files should remain
     remaining.each do |inc|
-      expect(File.exist?(File.join(File.dirname(guide_path), inc["href"]))).to be_falsey
+      expect(File).not_to exist(File.join(File.dirname(guide_path),
+                                          inc["href"]))
     end
   end
 
@@ -20,7 +21,8 @@ RSpec.describe Docbook::XIncludeResolver do
   end
 
   it "works without base_path for documents without XIncludes" do
-    sample = File.read(File.join(__dir__, "fixtures/xslTNG/guide/xml/examples/sample.xml"))
+    sample = File.read(File.join(__dir__,
+                                 "fixtures/xslTNG/guide/xml/examples/sample.xml"))
     resolved = described_class.resolve_string(sample)
     expect(resolved.to_xml).to include("Sample Document")
   end
