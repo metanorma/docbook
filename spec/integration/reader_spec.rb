@@ -4,6 +4,9 @@ require_relative "integration_helper"
 
 RSpec.describe "DocBook Reader", type: :feature do
   before(:all) do
+    unless frontend_built?
+      skip "Integration tests require frontend build artifacts (run `npm --prefix frontend run build`)"
+    end
     @html_path = TEST_HTML_PATH
   end
 
