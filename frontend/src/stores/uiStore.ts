@@ -11,6 +11,7 @@ export const useUiStore = defineStore('ui', () => {
   const sidebarOpen = ref(false)
   const searchOpen = ref(false)
   const activeSectionId = ref<string | null>(null)
+  const tocFollowFocus = ref(true)
 
   function openSidebar() {
     sidebarOpen.value = true
@@ -36,15 +37,21 @@ export const useUiStore = defineStore('ui', () => {
     activeSectionId.value = id
   }
 
+  function setTocFollowFocus(follow: boolean) {
+    tocFollowFocus.value = follow
+  }
+
   return {
     sidebarOpen,
     searchOpen,
     activeSectionId,
+    tocFollowFocus,
     openSidebar,
     closeSidebar,
     toggleSidebar,
     openSearch,
     closeSearch,
-    setActiveSection
+    setActiveSection,
+    setTocFollowFocus,
   }
 })
