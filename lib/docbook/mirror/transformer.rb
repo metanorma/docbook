@@ -48,7 +48,6 @@ module Docbook
         element.each_mixed_content do |node|
           case node
           when String
-            # Skip whitespace-only strings at top level
             next if node.strip.empty?
           when Docbook::Elements::Para
             content << paragraph_node(node)
@@ -101,51 +100,54 @@ module Docbook
             content << informal_example_node(node)
           when Docbook::Elements::Annotation
             content << annotation_node(node)
-          # Frontmatter / Backmatter
-          when Docbook::Elements::Preface
-            content << preface_node(node)
-          when Docbook::Elements::Dedication
-            content << titled_section_node(node, Node::Preface)
-          when Docbook::Elements::Acknowledgements
-            content << titled_section_node(node, Node::Acknowledgements)
-          when Docbook::Elements::Colophon
-            content << titled_section_node(node, Node::Colophon)
-          when Docbook::Elements::Glossary
-            content << glossary_node(node)
-          when Docbook::Elements::Bibliography
-            content << bibliography_node(node)
-          when Docbook::Elements::Index, Docbook::Elements::SetIndex
-            content << index_node(node)
-          when Docbook::Elements::Bibliolist
-            content << bibliolist_node(node)
-          # Content blocks
-          when Docbook::Elements::Equation
-            content << equation_node(node)
-          when Docbook::Elements::Procedure
-            content << procedure_node(node)
-          when Docbook::Elements::CalloutList
-            content << calloutlist_node(node)
-          when Docbook::Elements::SideBar
-            content << sidebar_node(node)
-          when Docbook::Elements::Address
-            content << address_node(node)
-          when Docbook::Elements::LegalNotice
-            content << legalnotice_node(node)
-          # Structural
-          when Docbook::Elements::Set
-            content << set_node(node)
-          when Docbook::Elements::Article
-            content << document_node(node)
-          when Docbook::Elements::Topic
-            content << topic_node(node)
-          # Numbered sections (sect1-5)
-          when Docbook::Elements::Sect1, Docbook::Elements::Sect2,
-               Docbook::Elements::Sect3, Docbook::Elements::Sect4,
-               Docbook::Elements::Sect5
-            content << sect_node(node)
+          else
+            dispatch_content_node(node, content)
           end
         end
         content.compact
+      end
+
+      def dispatch_content_node(node, content)
+        case node
+        when Docbook::Elements::Preface
+          content << preface_node(node)
+        when Docbook::Elements::Dedication
+          content << titled_section_node(node, Node::Preface)
+        when Docbook::Elements::Acknowledgements
+          content << titled_section_node(node, Node::Acknowledgements)
+        when Docbook::Elements::Colophon
+          content << titled_section_node(node, Node::Colophon)
+        when Docbook::Elements::Glossary
+          content << glossary_node(node)
+        when Docbook::Elements::Bibliography
+          content << bibliography_node(node)
+        when Docbook::Elements::Index, Docbook::Elements::SetIndex
+          content << index_node(node)
+        when Docbook::Elements::Bibliolist
+          content << bibliolist_node(node)
+        when Docbook::Elements::Equation
+          content << equation_node(node)
+        when Docbook::Elements::Procedure
+          content << procedure_node(node)
+        when Docbook::Elements::CalloutList
+          content << calloutlist_node(node)
+        when Docbook::Elements::SideBar
+          content << sidebar_node(node)
+        when Docbook::Elements::Address
+          content << address_node(node)
+        when Docbook::Elements::LegalNotice
+          content << legalnotice_node(node)
+        when Docbook::Elements::Set
+          content << set_node(node)
+        when Docbook::Elements::Article
+          content << document_node(node)
+        when Docbook::Elements::Topic
+          content << topic_node(node)
+        when Docbook::Elements::Sect1, Docbook::Elements::Sect2,
+             Docbook::Elements::Sect3, Docbook::Elements::Sect4,
+             Docbook::Elements::Sect5
+          content << sect_node(node)
+        end
       end
 
       # =========================================
