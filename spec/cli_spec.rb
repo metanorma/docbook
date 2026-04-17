@@ -9,10 +9,17 @@ RSpec.describe Docbook::CLI do
     File.read("spec/fixtures/xslTNG/guide/xml/examples/sample.xml")
   end
 
+  # Build tests require frontend dist artifacts (app.css, app.iife.js).
+  # Skip on CI where frontend is not built.
+  FRONTEND_DIST = File.expand_path("../../frontend/dist", __dir__)
+  def self.frontend_built?
+    File.exist?(File.join(FRONTEND_DIST, "app.css"))
+  end
+
   describe "build" do
     let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
 
-    it "builds an interactive HTML reader" do
+    it "builds an interactive HTML reader", if: frontend_built? do
       Tempfile.create(["test", ".html"]) do |out|
         expect do
           described_class.start(["build", guide_xml, "-o",
@@ -24,7 +31,7 @@ RSpec.describe Docbook::CLI do
       end
     end
 
-    it "derives output path from input when -o is omitted" do
+    it "derives output path from input when -o is omitted", if: frontend_built? do
       input = File.expand_path(guide_xml)
       expected_output = input.sub(/\.xml$/, ".html")
 
@@ -35,7 +42,7 @@ RSpec.describe Docbook::CLI do
       FileUtils.rm_f(expected_output)
     end
 
-    it "builds from --demo fixture (default xslTNG)" do
+    it "builds from --demo fixture (default xslTNG)", if: frontend_built? do
       Tempfile.create(["demo", ".html"]) do |out|
         expect do
           described_class.start(["build", "--demo", "-o",
@@ -47,7 +54,7 @@ RSpec.describe Docbook::CLI do
       end
     end
 
-    it "builds from --demo=model-flow fixture" do
+    it "builds from --demo=model-flow fixture", if: frontend_built? do
       Tempfile.create(["demo", ".html"]) do |out|
         expect do
           described_class.start(["build", "--demo=model-flow", "-o",
@@ -150,7 +157,7 @@ RSpec.describe Docbook::CLI do
   describe "build --verbose" do
     let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
 
-    it "shows detailed output with --verbose" do
+    it "shows detailed output with --verbose", if: frontend_built? do
       Tempfile.create(["test", ".html"]) do |out|
         expect do
           described_class.start(["build", guide_xml, "-o", out.path, "--verbose"])
@@ -159,7 +166,7 @@ RSpec.describe Docbook::CLI do
       end
     end
 
-    it "suppresses output with --quiet" do
+    it "suppresses output with --quiet", if: frontend_built? do
       Tempfile.create(["test", ".html"]) do |out|
         expect do
           described_class.start(["build", guide_xml, "-o", out.path, "--quiet"])
