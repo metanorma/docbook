@@ -105,11 +105,13 @@ RSpec.describe "DocBook Reader", type: :feature do
 
     it "can type and find search results" do
       visit_reader
+      # Allow FlexSearch index to build
+      expect(page).to have_css("#docbook-app .toc-link", wait: 10)
       find("body").send_keys("/")
       within("[role='dialog'][aria-label='Search']") do
         find(".search-input").set("paragraph")
       end
-      expect(page).to have_css(".search-result", wait: 5)
+      expect(page).to have_css(".search-result", wait: 15)
     end
 
     it "closes search modal with Escape" do
