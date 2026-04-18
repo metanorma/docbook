@@ -37,10 +37,23 @@
       Focus mode
     </button>
 
+    <!-- TTS indicator -->
+    <div v-if="tts.speaking.value" class="tts-indicator">
+      <button @click="tts.speak()" class="tts-btn" :title="tts.paused.value ? 'Resume' : 'Pause'">
+        <svg v-if="tts.paused.value" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </button>
+      <span class="tts-label">{{ tts.paused.value ? 'Paused' : 'Speaking...' }}</span>
+      <button @click="tts.stop()" class="tts-btn" title="Stop">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+      </button>
+    </div>
+
     <main ref="mainContent" id="main-content" role="main" :class="[
       'h-screen overflow-y-auto transition-all duration-200',
       !ebookStore.focusMode.value ? 'pt-14' : 'pt-0',
-      uiStore.sidebarOpen ? 'lg:pl-[280px]' : ''
+      uiStore.sidebarOpen ? 'lg:pl-[280px]' : '',
+      ebookStore.readingMode.value === 'paged' ? 'paged-mode' : ''
     ]" @scroll="handleScroll">
       <!-- Active section breadcrumb -->
       <BreadcrumbBar v-if="ancestorChain.length > 0 && !ebookStore.focusMode.value" :ancestor-chain="ancestorChain" />
@@ -58,7 +71,13 @@
 
         <!-- DocbookMirror format (ProseMirror-style) -->
         <div v-if="documentStore.mirrorDocument" class="db-content">
-          <MirrorRenderer :blocks="documentStore.mirrorDocument.content || []" />
+          <!-- Reference card swiper mode -->
+          <RefCardSwiper
+            v-if="ebookStore.refCardMode.value && refEntries.length > 0"
+            :entries="refEntries"
+          />
+          <!-- Default mirror renderer -->
+          <MirrorRenderer v-else :blocks="documentStore.mirrorDocument.content || []" />
 
           <!-- Lists of figures/tables/examples -->
           <ListOfSection
@@ -106,18 +125,43 @@
 
     <!-- Screen reader announcements -->
     <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">{{ sectionAnnouncement }}</div>
+
+    <!-- Page navigation for paged mode -->
+    <div v-if="ebookStore.readingMode.value === 'paged'" class="page-nav">
+      <button @click="prevPage" :disabled="currentPage <= 1" class="page-nav-btn" title="Previous page">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <span class="page-nav-info">{{ currentPage }} / {{ totalPages }}</span>
+      <button @click="nextPage" :disabled="currentPage >= totalPages" class="page-nav-btn" title="Next page">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Reading ruler -->
+    <div
+      v-if="rulerEnabled && rulerY >= 0"
+      class="reading-ruler"
+      :style="{ top: rulerY + 'px' }"
+    ></div>
   </EbookContainer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref, reactive, provide } from 'vue'
+import { onMounted, onUnmounted, computed, ref, reactive, provide, watch, nextTick } from 'vue'
 import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useEbookStore } from '@/composables/useEbookStore'
+import { useLazySections } from '@/composables/useLazySections'
+import { usePaginatedMode } from '@/composables/usePaginatedMode'
+import { useReadingRuler } from '@/composables/useReadingRuler'
+import { useBookmarks } from '@/composables/useBookmarks'
+import { useReadingStats } from '@/composables/useReadingStats'
+import { useTts } from '@/composables/useTts'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
 import MirrorRenderer from '@/components/MirrorRenderer.vue'
+import RefCardSwiper from '@/components/RefCardSwiper.vue'
 import EbookTopBar from '@/components/EbookTopBar.vue'
 import EbookContainer from '@/components/EbookContainer.vue'
 import BreadcrumbBar from '@/components/BreadcrumbBar.vue'
@@ -133,6 +177,30 @@ const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const ebookStore = useEbookStore()
 const mainContent = ref<HTMLElement | null>(null)
+
+// Lazy section rendering
+const { isVisible, observeSection, initialized: lazyInitialized } = useLazySections(mainContent)
+provide('lazySectionVisible', isVisible)
+provide('lazyObserveSection', observeSection)
+provide('lazyInitialized', lazyInitialized)
+
+// Paginated reading mode
+const {
+  currentPage, totalPages, progress: pageProgress,
+  calculatePages, nextPage, prevPage, handleScroll: handlePagedScroll,
+} = usePaginatedMode(mainContent)
+
+// Recalculate pages when reading mode or document changes
+watch(() => [ebookStore.readingMode.value, documentStore.mirrorDocument], () => {
+  nextTick(() => calculatePages())
+}, { immediate: false })
+
+// Reading ruler
+const { enabled: rulerEnabled, rulerY, toggle: toggleRuler } = useReadingRuler()
+
+// Bookmarks
+const bookmarks = useBookmarks(documentStore.title)
+provide('bookmarks', bookmarks)
 
 // Compute content style directly from store state (bypasses CSS variable cascade issues)
 const contentStyle = computed(() => {
@@ -215,6 +283,9 @@ function findSectionById(sections: TocItem[], id: string): TocItem | null {
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
 function handleScroll() {
+  if (ebookStore.readingMode.value === 'paged') {
+    handlePagedScroll()
+  }
   if (scrollTimeout) clearTimeout(scrollTimeout)
   scrollTimeout = setTimeout(() => {
     updateActiveSection()
@@ -264,6 +335,8 @@ function updateActiveSection() {
 
   if (foundSection && foundSection.id !== uiStore.activeSectionId) {
     uiStore.setActiveSection(foundSection.id)
+    readingStats.markSectionRead(foundSection.id)
+    readingStats.recordActivity()
     history.replaceState(null, '', `#${foundSection.id}`)
     try {
       localStorage.setItem('docbook-position-' + documentStore.title, foundSection.id)
@@ -288,6 +361,34 @@ const sectionIds = computed(() => {
 const activeSectionIndex = computed(() =>
   sectionIds.value.indexOf(uiStore.activeSectionId || '')
 )
+
+// Reading statistics
+const readingStats = useReadingStats(
+  documentStore.title,
+  sectionIds.value.length,
+  sectionIds.value
+)
+provide('readingStats', readingStats)
+
+// Text-to-speech
+const tts = useTts()
+
+// Refentry card swiper: extract refentries from document
+const refEntries = computed(() => {
+  const doc = documentStore.mirrorDocument
+  if (!doc?.content) return []
+  const entries: any[] = []
+  function collect(nodes: any[]) {
+    for (const node of nodes) {
+      if (node.type === 'refentry') {
+        entries.push(node)
+      }
+      if (node.content) collect(node.content)
+    }
+  }
+  collect(doc.content)
+  return entries
+})
 
 // Show section nav when scrolled past first section and not in focus mode
 const showSectionNav = computed(() =>
@@ -368,6 +469,8 @@ onMounted(() => {
   setTimeout(() => {
     updateActiveSection()
     handleHashChange()
+    // Calculate pages for paged mode after content renders
+    calculatePages()
     // Restore saved reading position if no URL hash was provided
     if (!window.location.hash) {
       try {
@@ -448,6 +551,44 @@ function handleGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
+  // Toggle reading ruler
+  if (e.key === 'r') {
+    e.preventDefault()
+    toggleRuler()
+    return
+  }
+
+  // Toggle bookmark for active section
+  if (e.key === 'b') {
+    e.preventDefault()
+    const activeId = uiStore.activeSectionId
+    if (activeId) {
+      const section = findSectionById(documentStore.sections, activeId)
+      if (section) {
+        bookmarks.toggle(activeId, section.title)
+      }
+    }
+    return
+  }
+
+  // TTS play/pause (Shift+P)
+  if (e.key === 'P') {
+    e.preventDefault()
+    if (tts.speaking.value) {
+      tts.speak() // toggles pause/resume
+    } else {
+      tts.speak()
+    }
+    return
+  }
+
+  // TTS stop
+  if (e.key === 'p' && tts.speaking.value) {
+    e.preventDefault()
+    tts.stop()
+    return
+  }
+
   // Toggle sidebar
   if (e.key === 't') {
     e.preventDefault()
@@ -465,6 +606,20 @@ function handleGlobalKeydown(e: KeyboardEvent) {
     if (e.key === 'k' && current > 0) {
       e.preventDefault()
       navigateToId(sectionIds.value[current - 1])
+    }
+  }
+
+  // Page navigation in paged mode
+  if (ebookStore.readingMode.value === 'paged') {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault()
+      nextPage()
+      return
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      prevPage()
+      return
     }
   }
 }
@@ -600,5 +755,108 @@ function isInputFocused(): boolean {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Paged reading mode */
+.paged-mode {
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+/* Page navigation */
+.page-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--chrome-bg-glass);
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  z-index: 40;
+}
+
+.page-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--chrome-text);
+  transition: background 0.15s ease;
+}
+
+.page-nav-btn:hover:not(:disabled) {
+  background: var(--chrome-bg-hover);
+}
+
+.page-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.page-nav-info {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--chrome-text-dim);
+  min-width: 60px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reading ruler */
+.reading-ruler {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 2em;
+  pointer-events: none;
+  z-index: 25;
+  background: color-mix(in srgb, var(--ebook-accent) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--ebook-accent) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ebook-accent) 30%, transparent);
+  transform: translateY(-1em);
+  transition: top 0.05s ease-out;
+}
+
+/* TTS indicator */
+.tts-indicator {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--chrome-accent);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  z-index: 30;
+}
+
+.tts-btn {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+
+.tts-btn:hover {
+  opacity: 1;
+}
+
+.tts-label {
+  font-size: 0.75rem;
 }
 </style>

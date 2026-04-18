@@ -7,10 +7,11 @@ module Docbook
     class Transformer
       include Docbook::Services::ElementIdHelper
 
-      def initialize
+      def initialize(sort_glossary: false)
         @xml_id_map = {}
         @footnote_counter = 0
         @footnotes = []
+        @sort_glossary = sort_glossary
       end
 
       # Entry point: Convert DocBook document to DocbookMirror
@@ -100,6 +101,8 @@ module Docbook
             content << informal_example_node(node)
           when Docbook::Elements::Annotation
             content << annotation_node(node)
+          when Docbook::Elements::QandASet
+            content << qandaset_node(node)
           else
             dispatch_content_node(node, content)
           end
@@ -163,10 +166,15 @@ module Docbook
 
       def code_block_node(el, language: nil)
         language ||= el.language if el.respond_to?(:language)
-        text = extract_text(el)
+
+        # Check for <co> callout markers in the code block
+        co_markers = extract_co_markers(el)
+        text = extract_text_with_callouts(el, co_markers)
         return nil if text.empty?
 
         attrs = { language: language }.compact
+        attrs[:callouts] = co_markers if co_markers.any?
+
         Docbook::Mirror::Node::CodeBlock.new(
           attrs: attrs,
           content: [Docbook::Mirror::Node::Text.new(text: text)],
@@ -514,7 +522,7 @@ module Docbook
         content = []
 
         # Render refnames (e.g. "$v:as-json")
-        names = Array(nd.refname).map(&:content).compact
+        names = Array(nd.refname).filter_map(&:content)
         unless names.empty?
           content << Docbook::Mirror::Node::Paragraph.new(
             content: [Docbook::Mirror::Node::Text.new(
@@ -940,7 +948,7 @@ module Docbook
       def annotation_node(el)
         attrs = { xml_id: el.xml_id }.compact
         content = []
-        if el.respond_to?(:para) && el.para.any?
+        if el.respond_to?(:para) && el.para&.any?
           el.para.filter_map { |p| paragraph_node(p) }.each { |n| content << n }
         else
           text = extract_text(el)
@@ -949,6 +957,33 @@ module Docbook
         return nil if content.empty?
 
         Node.new(type: "annotation", attrs: attrs, content: content)
+      end
+
+      def qandaset_node(el)
+        attrs = {
+          xml_id: el.xml_id,
+          title: el.title&.content,
+        }.compact
+        entries = Array(el.qandaentry).filter_map { |e| qandaentry_node(e) }
+        return nil if entries.empty?
+
+        Node.new(type: "qandaset", attrs: attrs, content: entries)
+      end
+
+      def qandaentry_node(el)
+        attrs = { xml_id: el.xml_id }.compact
+        content = []
+        if el.question
+          q_content = extract_content(el.question)
+          content << Node.new(type: "question", attrs: {}, content: q_content) unless q_content.empty?
+        end
+        Array(el.answer).each do |a|
+          a_content = extract_content(a)
+          content << Node.new(type: "answer", attrs: {}, content: a_content) unless a_content.empty?
+        end
+        return nil if content.empty?
+
+        Node.new(type: "qandaentry", attrs: attrs, content: content)
       end
 
       # =========================================
@@ -980,8 +1015,18 @@ module Docbook
           xml_id: el.xml_id,
           title: el.title&.content,
         }.compact
-        entries = (el.glossentry if el.respond_to?(:glossentry)).to_a.filter_map { |ge| glossentry_node(ge) }
+        raw_entries = (el.glossentry if el.respond_to?(:glossentry)).to_a
+        entries = raw_entries.filter_map { |ge| glossentry_node(ge) }
+        entries = sort_glossary_entries(entries) if @sort_glossary
         Node::Glossary.new(attrs: attrs, content: entries)
+      end
+
+      def sort_glossary_entries(entries)
+        entries.sort_by do |entry|
+          term_node = entry.content&.find { |n| n.is_a?(Node::GlossTerm) }
+          term_text = term_node&.content&.filter_map { |n| n.text if n.respond_to?(:text) }&.join&.downcase || ""
+          term_text
+        end
       end
 
       def glossentry_node(ge)
@@ -1252,6 +1297,45 @@ module Docbook
       # =========================================
       # Utilities
       # =========================================
+
+      # Extract <co> callout markers from a code block element,
+      # assigning sequential numbers. Returns an array of hashes.
+      def extract_co_markers(el)
+        markers = []
+        counter = 0
+        return markers unless el.respond_to?(:each_mixed_content)
+
+        el.each_mixed_content do |node|
+          next if node.is_a?(String)
+          next unless node.is_a?(Docbook::Elements::Co)
+
+          counter += 1
+          id = node.xml_id if node.respond_to?(:xml_id)
+          label = node.respond_to?(:label) && node.label ? node.label : counter.to_s
+          markers << { number: counter, id: id, label: label }.compact
+        end
+        markers
+      end
+
+      # Extract text from a code block element, inserting callout marker labels.
+      def extract_text_with_callouts(el, co_markers)
+        return el.content.to_s unless el.respond_to?(:each_mixed_content)
+
+        marker_idx = 0
+        texts = []
+        el.each_mixed_content do |node|
+          if node.is_a?(String)
+            texts << node
+          elsif node.is_a?(Docbook::Elements::Co)
+            marker = co_markers[marker_idx]
+            texts << "(#{marker[:label]})"
+            marker_idx += 1
+          elsif node.respond_to?(:content)
+            texts << node.content.to_s
+          end
+        end
+        texts.join
+      end
 
       def extract_text(el)
         return el.content.to_s unless el.respond_to?(:each_mixed_content)

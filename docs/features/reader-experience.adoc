@@ -1,0 +1,264 @@
+---
+layout: default
+title: Reader Experience
+parent: Features
+nav_order: 9
+---
+
+# Reader Experience
+
+The interactive HTML reader produced by `docbook build` provides a rich reading experience optimized for technical documentation. This page documents the interactive features available to readers.
+
+== Navigation
+
+=== Table of Contents sidebar
+
+The sidebar provides a hierarchical table of contents with:
+
+* **Collapsible sections** -- expand/collapse any section with children
+* **Type badges** -- visual indicators for element types (Pt, Ch, App, Gl, Bib, Idx, Pref, Ref)
+* **Section numbering** -- pre-computed numbering (Roman, Arabic, Alpha) shown alongside titles
+* **Active section highlight** -- the TOC item for the currently visible section is highlighted
+* **Scroll-follow** -- the TOC auto-scrolls to keep the active section visible; manual scrolling pauses auto-follow, which can be re-enabled via the "Follow active section" button
+* **Keyboard toggle** -- press `t` to toggle the sidebar
+
+=== Breadcrumb navigation
+
+A breadcrumb bar appears at the top of the content area showing the ancestor chain of the currently active section (e.g., "Part I > Chapter 3 > Section 3.2"). This updates automatically as you scroll.
+
+=== Section prev/next arrows
+
+Previous/next navigation arrows appear at the bottom of the viewport when scrolled past the first section. These allow sequential navigation through all document sections.
+
+=== Hash-based navigation
+
+Clicking any TOC item, cross-reference, or heading anchor updates the URL hash fragment, enabling browser back/forward navigation and shareable URLs to specific sections.
+
+== Keyboard shortcuts
+
+The reader supports vim-inspired keyboard navigation:
+
+[cols="1,1,4"]
+|===
+| Key | Context | Action
+
+| `/`
+| Anywhere
+| Open search modal
+
+| `Escape`
+| Anywhere
+| Close current overlay (search, settings, keyboard help, sidebar)
+
+| `?`
+| Not in input
+| Toggle keyboard shortcut help overlay
+
+| `j`
+| Not in input
+| Navigate to next section
+
+| `k`
+| Not in input
+| Navigate to previous section
+
+| `f`
+| Not in input
+| Toggle focus/immersive mode
+
+| `s`
+| Not in input
+| Toggle settings panel
+
+| `t`
+| Not in input
+| Toggle sidebar
+
+| `r`
+| Not in input
+| Toggle reading ruler
+
+| `b`
+| Not in input
+| Bookmark the current section
+
+| `P`
+| Not in input
+| Play/pause text-to-speech
+
+| `p`
+| TTS active
+| Stop text-to-speech
+
+| `ArrowRight` / `Space`
+| Paged mode
+| Next page
+
+| `ArrowLeft`
+| Paged mode
+| Previous page
+|===
+
+The keyboard shortcut help overlay (press `?`) displays all available shortcuts.
+
+== Focus mode
+
+Focus mode provides a distraction-free reading experience:
+
+* Press `f` to enter -- the sidebar and top bar fade away
+* A small "Focus mode" indicator appears in the bottom-right corner
+* Move the mouse to the top edge to temporarily reveal the top bar
+* Click the hamburger icon to open the sidebar without exiting focus mode
+* Click the indicator or press `f` again to exit
+
+== Reading progress
+
+A thin progress bar at the top of the viewport shows how far you have scrolled through the document. It appears automatically and updates as you scroll.
+
+== Content features
+
+=== Section anchor links
+
+Every heading with an `xml:id` displays a `#` anchor link on hover. Clicking it copies the direct link to your clipboard and updates the URL hash.
+
+=== Code blocks
+
+Code blocks include:
+
+* **Language badge** -- a small label showing the programming language (when specified)
+* **Copy button** -- one-click copy of the code content to clipboard
+* **Syntax highlighting** -- monospace font with proper formatting
+
+=== Admonition icons
+
+Admonition blocks (note, warning, tip, caution, important, danger) display with:
+
+* A colored left border
+* A type-specific SVG icon (info circle, exclamation triangle, light bulb, etc.)
+* Distinct background colors per type
+
+=== Image lightbox
+
+Clicking any image opens a full-screen lightbox overlay showing the image at maximum size. Press `Escape` or click outside the image to close.
+
+=== Tables
+
+Tables with horizontal overflow automatically show horizontal scroll bars. Column alignment and cell spanning are preserved from the source DocBook.
+
+=== Footnotes
+
+Footnote markers appear inline as superscript numbers. Footnote content is collected and displayed at the end of each section.
+
+=== Reference entries
+
+`refentry` elements (man-page style reference entries) render with specialized styling:
+
+* **Badge** -- the refclass (e.g., "pi", "xsl") shown as a pill
+* **Headword** -- the refname in large bold monospace
+* **Definition** -- the refpurpose in italic
+* **Content sections** -- prose, variable lists, code blocks, and examples
+
+== Reading position persistence
+
+The reader automatically saves your scroll position to `localStorage`. When you reopen the document (without a URL hash), it scrolls to your last position.
+
+== Back to top
+
+A floating "back to top" button appears in the bottom-right corner after scrolling past 3 viewport heights. Clicking it smoothly scrolls to the top of the document.
+
+== Search
+
+Full-text search powered by FlexSearch:
+
+* Press `/` or click the search field in the sidebar to open the search modal
+* Results show matching section titles with context
+* Click a result to navigate to that section
+* Press `Escape` to close
+
+== Themes and typography
+
+See link:themes[Themes] for the complete theme system (Day, Sepia, Night, OLED) and typography controls (font size, weight, line height, serif/sans toggle).
+
+== Print
+
+The reader includes a print stylesheet that hides navigation chrome (sidebar, top bar, breadcrumbs, modals) and sends only the reading content to the printer.
+
+== Reading modes
+
+=== Scroll mode (default)
+
+The default reading mode presents the entire document as a continuous scrollable page. All sections are visible and scroll-follow keeps the TOC in sync with your reading position.
+
+=== Paginated mode
+
+Paginated mode splits the document into viewport-sized pages, similar to an ebook reader. Enable it from the settings panel or by switching the reading mode toggle.
+
+* **Page navigation** -- use `ArrowLeft`/`ArrowRight` or `Space` to turn pages
+* **Page counter** -- shows current page / total pages at the bottom of the viewport
+* **Dynamic recalculation** -- page boundaries recalculate automatically when the window is resized
+* **Scroll fallback** -- falls back to scroll mode automatically for short documents
+
+=== Reference card mode
+
+For documents containing `refentry` sections (API references, man pages), reference card mode presents each entry as a swipeable card:
+
+* **Swipe gestures** -- touch swipe left/right on mobile devices
+* **Navigation buttons** -- previous/next buttons to step through entries
+* **Entry counter** -- shows current entry number / total entries
+* Enable from the settings panel
+
+== Reading ruler
+
+The reading ruler is a horizontal highlight line that follows your mouse cursor position, helping you track your place in dense technical text:
+
+* Press `r` to toggle the ruler on/off
+* The ruler appears as a semi-transparent horizontal bar at the current mouse Y position
+* Works in any reading mode
+
+== Bookmarks
+
+Bookmark sections for quick return navigation:
+
+* Press `b` to bookmark the current section
+* Bookmarks appear in a dedicated section at the bottom of the sidebar
+* Each bookmark shows the section title and a text snippet
+* Click a bookmark to navigate directly to that section
+* Bookmarks persist in `localStorage` and are scoped per document
+
+== Text-to-speech
+
+The reader includes built-in text-to-speech using the Web Speech API:
+
+* Press `P` to start speaking the visible content
+* Press `P` again to pause/resume
+* Press `p` to stop
+* A speaking indicator appears at the top of the viewport when active
+* Browser support varies (Chrome, Safari, Edge; not available in Firefox on some platforms)
+
+== Reading statistics
+
+The reader tracks reading statistics displayed in the settings panel:
+
+* **Sections read** -- count of unique sections scrolled into view
+* **Progress** -- percentage of total sections read
+* **Estimated reading time** -- based on word count and average reading speed
+* **Active reading time** -- time spent actively scrolling or interacting with the document
+
+Statistics persist in `localStorage` and accumulate across sessions.
+
+== Cloud sync
+
+The reader provides a sync infrastructure for synchronizing reading state across devices:
+
+* **Push** -- exports bookmarks, reading position, settings, and statistics to the configured sync backend
+* **Pull** -- imports data from the sync backend and restores it to the current browser
+* The default backend uses `localStorage` (single-device sync for demonstration)
+* The `SyncBackend` interface is extensible -- custom backends (WebDAV, Google Drive, etc.) can be plugged in
+* Access sync controls from the settings panel
+
+== Accessibility
+
+* **Skip to content** link -- tab-focused link at the top of the page jumps directly to the main content
+* **ARIA landmarks** -- `role="navigation"` on the sidebar, `role="main"` on the content area
+* **Screen reader announcements** -- section changes are announced via an `aria-live` region
+* **Keyboard navigation** -- all features are accessible without a mouse

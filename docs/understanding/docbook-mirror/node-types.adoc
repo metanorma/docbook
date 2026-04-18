@@ -150,18 +150,40 @@ A block of preformatted code or verbatim text. Mapped from DocBook `<code>`,
 | `language` | String | Programming language for syntax highlighting
 | `xml_id` | String | XML identifier, for cross-reference anchoring
 | `title` | String | Title text (from `<example>` or `<figure>`)
+| `callouts` | Array | Callout markers extracted from inline `<co>` elements (see below)
 |===
 
-.Example
+.Callout markers
+
+When a `<programlisting>` contains `<co>` (callout origin) elements, the
+transformer extracts them as numbered markers. Each marker has:
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+| `number` | Integer | Sequential marker number (1-based)
+| `id` | String | The `xml:id` of the `<co>` element
+| `label` | String | Display label (from `label` attribute, or the number)
+|===
+
+The code text has markers inserted as `(1)`, `(2)`, etc. at the `<co>`
+positions. The `callouts` array in attrs provides the metadata for the frontend
+to render styled badges and link to the corresponding `calloutlist`.
+
+.Example (with callouts)
 [source,json]
 ----
 {
   "type": "code_block",
   "attrs": {
-    "language": "ruby"
+    "language": "xml",
+    "callouts": [
+      { "number": 1, "id": "co1", "label": "1" },
+      { "number": 2, "id": "co2", "label": "2" }
+    ]
   },
   "content": [
-    { "type": "text", "text": "puts 'Hello, world!'" }
+    { "type": "text", "text": "<book(1)>(2)\n  <title>Test</title>\n</book>" }
   ]
 }
 ----
@@ -851,6 +873,285 @@ node types for each kind.
 }
 ----
 
+== Annotations
+
+=== annotation
+
+`Node` (generic) +
+PM_TYPE: `"annotation"`
+
+An annotation element providing an explanatory note. Mapped from DocBook
+`<annotation>`. Annotations carry an `xml_id` for cross-referencing and contain
+inline content (typically paragraphs). The frontend renders annotations as
+interactive markers with hover/click popups.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier of the annotation
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "annotation",
+  "attrs": { "xml_id": "ann1" },
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [ { "type": "text", "text": "This term was introduced in version 2.0." } ]
+    }
+  ]
+}
+----
+
+== Callouts
+
+Callouts provide a mechanism for annotating code blocks with numbered markers
+that link to descriptions in a `calloutlist`. The `<co>` elements are extracted
+from code blocks as marker metadata (see `code_block` above), and the
+`<calloutlist>` / `<callout>` elements form a corresponding numbered list.
+
+=== calloutlist
+
+`Node::CalloutList` +
+PM_TYPE: `"calloutlist"`
+
+A numbered list of callout descriptions. Mapped from DocBook `<calloutlist>`.
+Contains `callout` children.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `title` | String | Optional title
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "calloutlist",
+  "attrs": { "title": "Line annotations" },
+  "content": [
+    {
+      "type": "callout",
+      "attrs": { "arearefs": "co1" },
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [ { "type": "text", "text": "The root element must be book or article." } ]
+        }
+      ]
+    }
+  ]
+}
+----
+
+=== callout
+
+`Node::Callout` +
+PM_TYPE: `"callout"`
+
+A single callout description referencing one or more `<co>` markers via
+`arearefs`. Mapped from DocBook `<callout>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `arearefs` | String | Space-separated IDs of the `<co>` markers this callout describes
+|===
+
+== Q&A Sets
+
+=== qandaset
+
+`Node` (generic) +
+PM_TYPE: `"qandaset"`
+
+A structured Q&A (FAQ) block. Mapped from DocBook `<qandaset>`. Contains
+`qandaentry` children.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `title` | String | Optional title
+|===
+
+.Example
+[source,json]
+----
+{
+  "type": "qandaset",
+  "attrs": { "title": "Frequently Asked Questions" },
+  "content": [
+    {
+      "type": "qandaentry",
+      "content": [
+        { "type": "question", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "What is DocBook?" } ] } ] },
+        { "type": "answer", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "A schema for technical documentation." } ] } ] }
+      ]
+    }
+  ]
+}
+----
+
+=== qandaentry
+
+`Node` (generic) +
+PM_TYPE: `"qandaentry"`
+
+A single question-answer pair. Mapped from DocBook `<qandaentry>`. Contains one
+`question` node and one or more `answer` nodes.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+|===
+
+=== question
+
+`Node` (generic) +
+PM_TYPE: `"question"`
+
+The question part of a Q&A entry. Contains block-level children (paragraphs).
+
+=== answer
+
+`Node` (generic) +
+PM_TYPE: `"answer"`
+
+The answer part of a Q&A entry. Contains block-level children (paragraphs,
+lists, code blocks, etc.).
+
+== Glossary
+
+Glossary entries use a dedicated set of node types to preserve the DocBook
+glossary structure with terms, definitions, and cross-references.
+
+=== glossary
+
+`Node::Glossary` +
+PM_TYPE: `"glossary"`
+
+A glossary section. Mapped from DocBook `<glossary>`. Contains `gloss_entry`
+children. When the `sort_glossary` option is enabled, entries are sorted
+alphabetically by term.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `title` | String | Optional glossary title
+|===
+
+=== gloss_entry
+
+`Node::GlossEntry` +
+PM_TYPE: `"gloss_entry"`
+
+A single glossary entry. Mapped from DocBook `<glossentry>`. Contains a
+`gloss_term`, a `gloss_def`, and optional `gloss_see` / `gloss_see_also`
+cross-references.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+|===
+
+=== gloss_term
+
+`Node::GlossTerm` +
+PM_TYPE: `"gloss_term"`
+
+The term being defined. Contains inline text content.
+
+.Example
+[source,json]
+----
+{
+  "type": "gloss_term",
+  "content": [ { "type": "text", "text": "XML" } ]
+}
+----
+
+=== gloss_def
+
+`Node::GlossDef` +
+PM_TYPE: `"gloss_def"`
+
+The definition of a glossary term. Contains block-level children (paragraphs,
+lists, etc.).
+
+=== gloss_see
+
+`Node::GlossSee` +
+PM_TYPE: `"gloss_see"`
+
+A "see also" cross-reference to another glossary term. Mapped from DocBook
+`<glosssee>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `otherterm` | String | The `xml:id` of the referenced term
+|===
+
+=== gloss_see_also
+
+`Node::GlossSeeAlso` +
+PM_TYPE: `"gloss_see_also"`
+
+An additional "see also" cross-reference. Mapped from DocBook `<glossseealso>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `otherterm` | String | The `xml:id` of the referenced term
+|===
+
+== Sidebar
+
+=== sidebar
+
+`Node::Sidebar` +
+PM_TYPE: `"sidebar"`
+
+A sidebar block -- supplementary content visually separated from the main text.
+Mapped from DocBook `<sidebar>`.
+
+.Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Type | Description
+| `xml_id` | String | XML identifier
+| `title` | String | Optional title
+|===
+
 == Complete node type reference
 
 [cols="1,1,1,2"]
@@ -860,7 +1161,8 @@ node types for each kind.
 | `Document` | `doc` | Root | `title`
 | `Text` | `text` | Leaf | `text`
 | `Paragraph` | `paragraph` | Block | --
-| `CodeBlock` | `code_block` | Block | `language`, `xml_id`, `title`
+| `SimPara` | `simpara` | Block | --
+| `CodeBlock` | `code_block` | Block | `language`, `xml_id`, `title`, `callouts`
 | `Blockquote` | `blockquote` | Block | --
 | `BulletList` | `bullet_list` | Block | --
 | `OrderedList` | `ordered_list` | Block | --
@@ -869,18 +1171,47 @@ node types for each kind.
 | `DefinitionTerm` | `definition_term` | Block | --
 | `DefinitionDescription` | `definition_description` | Block | --
 | `Heading` | `heading` | Block | `level`
+| `Admonition` | `admonition` | Admonition | `admonition_type`
+| `Annotation` | `annotation` | Annotation | `xml_id`
+| `CalloutList` | `calloutlist` | Callout | `xml_id`, `title`
+| `Callout` | `callout` | Callout | `xml_id`, `arearefs`
+| `Sidebar` | `sidebar` | Block | `xml_id`, `title`
 | `Chapter` | `chapter` | Structural | `title`, `xml_id`, `number`
 | `Section` | `section` | Structural | `title`, `xml_id`, `number`
 | `Part` | `part` | Structural | `title`, `xml_id`, `number`
 | `Appendix` | `appendix` | Structural | `title`, `xml_id`, `number`
+| `Preface` | `preface` | Structural | `title`, `xml_id`
 | `Reference` | `reference` | Structural | `title`, `xml_id`
 | `RefEntry` | `refentry` | Structural | `title`, `xml_id`
 | `RefSection` | `refsection` | Structural | `title`, `xml_id`
+| `Set` | `set` | Structural | `title`, `xml_id`
+| `Article` | `article` | Structural | `title`, `xml_id`
+| `Topic` | `topic` | Structural | `title`, `xml_id`
+| `Glossary` | `glossary` | Glossary | `xml_id`, `title`
+| `GlossEntry` | `gloss_entry` | Glossary | `xml_id`
+| `GlossTerm` | `gloss_term` | Glossary | --
+| `GlossDef` | `gloss_def` | Glossary | --
+| `GlossSee` | `gloss_see` | Glossary | `otherterm`
+| `GlossSeeAlso` | `gloss_see_also` | Glossary | `otherterm`
+| `Bibliography` | `bibliography` | Bibliography | `xml_id`, `title`
+| `BiblioEntry` | `biblio_entry` | Bibliography | `xml_id`, `role`
+| `IndexBlock` | `index_block` | Index | `xml_id`
+| `Procedure` | `procedure` | Block | `xml_id`, `title`
+| `Step` | `step` | Block | `xml_id`
+| `Equation` | `equation` | Block | `xml_id`, `title`
+| `QandASet` | `qandaset` | Q&A | `xml_id`, `title`
+| `QandAEntry` | `qandaentry` | Q&A | `xml_id`
+| `Question` | `question` | Q&A | --
+| `Answer` | `answer` | Q&A | --
 | `Image` | `image` | Media | `src`, `alt`, `title`, `xml_id`
+| `Figure` | `figure` | Media | `xml_id`, `title`
+| `Caption` | `caption` | Media | --
 | `Table` | `table` | Table | `xml_id`, `title`, `cols`, `frame`, `colsep`, `rowsep`
 | `TableHead` | `table_head` | Table | --
 | `TableBody` | `table_body` | Table | --
 | `TableRow` | `table_row` | Table | --
 | `TableCell` | `table_cell` | Table | `align`, `valign`, `namest`, `nameend`, `morerows`
-| `Admonition` | `admonition` | Admonition | `admonition_type`
+| `Footnotes` | `footnotes` | Footnote | --
+| `FootnoteMarker` | `footnote_marker` | Footnote | `id`, `ref_id`, `number`
+| `FootnoteEntry` | `footnote_entry` | Footnote | `id`, `number`
 |===

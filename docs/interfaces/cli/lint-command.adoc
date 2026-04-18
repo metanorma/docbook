@@ -1,0 +1,75 @@
+---
+layout: default
+title: lint
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 7
+---
+
+== lint
+
+Check a DocBook XML document for common issues such as well-formedness errors, duplicate `xml:id` values, unresolved cross-references, and missing images.
+
+=== Usage
+
+[source,bash]
+----
+docbook lint INPUT [options]
+----
+
+=== Options
+
+[cols="2,1,4"]
+|===
+| Option | Default | Description
+
+| `--strict`
+| off
+| Also check cross-references (unresolved `linkend`) and image references (missing `fileref`)
+
+| `--verbose`
+| off
+| Show detailed processing information
+
+| `--quiet`
+| off
+| Suppress all output except errors
+|===
+
+=== What it checks
+
+[cols="1,4"]
+|===
+| Check | Description
+
+| Well-formedness | XML parse errors, unclosed tags, encoding issues
+| Model parse | DocBook element structure, duplicate `xml:id` values
+| Cross-references (`--strict`) | Unresolved `xref linkend` and `link linkend` values
+| Image references (`--strict`) | `fileref` paths that do not exist on disk relative to the source
+|===
+
+=== Output
+
+Errors are printed in red, warnings in yellow. The command exits with code 0 if no issues are found, or code 1 otherwise.
+
+[source,bash]
+----
+$ docbook lint guide.xml
+  Well-formedness: OK
+  Parse: OK
+
+$ docbook lint broken.xml
+Error: Duplicate xml:id: "intro" (section#intro)
+Warning: Unresolved xref: linkend="nonexistent" (para)
+1 errors, 1 warnings
+----
+
+=== Exit codes
+
+[cols="1,4"]
+|===
+| Code | Meaning
+
+| `0` | No issues found
+| `1` | Errors or warnings detected
+|===

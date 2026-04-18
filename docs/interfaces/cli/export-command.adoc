@@ -35,13 +35,14 @@ $ docbook export INPUT [options]
 | `--output`, `-o` PATH | stdout | Output JSON file path
 | `--pretty` | `true` | Pretty-print the JSON output
 | `--xinclude` | `true` | Resolve XInclude elements before processing
+| `--sort-glossary` | `false` | Sort glossary entries alphabetically by term
 |===
 
 === Output Format
 
 The output is a JSON document following the DocbookMirror schema, which extends ProseMirror's document model with DocBook-specific node and mark types:
 
-* 27 node types: `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, and images
+* 50+ node types: `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, images, annotations, callouts, Q&A sets, glossary, bibliography, index, and more
 * 7 mark types: `emphasis`, `strong`, `italic`, `code`, `link`, `xref`, `citation`
 
 See link:../../../understanding/docbook-mirror/[DocbookMirror JSON] for the full specification.
@@ -78,6 +79,14 @@ Written to book.json
 ----
 $ docbook export article.xml -o article.json --no-xinclude
 Written to article.json
+----
+
+==== Sort glossary entries alphabetically
+
+[source,bash]
+----
+$ docbook export book.xml -o book.json --sort-glossary
+Written to book.json
 ----
 
 === See Also

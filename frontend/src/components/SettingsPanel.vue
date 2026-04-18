@@ -170,6 +170,51 @@
                 <span class="toggle-switch-thumb"></span>
               </button>
             </div>
+
+            <!-- Reading Mode -->
+            <div class="settings-row">
+              <span class="settings-sublabel">Mode</span>
+              <div class="toggle-group">
+                <button
+                  @click="ebookStore.setReadingMode('scroll')"
+                  class="toggle-btn"
+                  :class="{ 'toggle-btn--active': currentReadingMode === 'scroll' }"
+                  :aria-pressed="currentReadingMode === 'scroll'"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M2 2h12M2 6h12M2 10h12M2 14h10"/>
+                  </svg>
+                  Scroll
+                </button>
+                <button
+                  @click="ebookStore.setReadingMode('paged')"
+                  class="toggle-btn"
+                  :class="{ 'toggle-btn--active': currentReadingMode === 'paged' }"
+                  :aria-pressed="currentReadingMode === 'paged'"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="2" y="2" width="12" height="12" rx="1"/>
+                    <line x1="8" y1="2" x2="8" y2="14"/>
+                  </svg>
+                  Pages
+                </button>
+              </div>
+            </div>
+
+            <!-- Reference Card Mode -->
+            <div class="settings-row">
+              <span class="settings-sublabel">Ref Cards</span>
+              <button
+                @click="ebookStore.setRefCardMode(!currentRefCardMode)"
+                class="toggle-switch"
+                :class="{ 'toggle-switch--on': currentRefCardMode }"
+                role="switch"
+                :aria-checked="currentRefCardMode"
+                aria-label="Reference card swipe mode"
+              >
+                <span class="toggle-switch-thumb"></span>
+              </button>
+            </div>
           </section>
 
           <!-- Advanced -->
@@ -207,6 +252,52 @@
             </div>
           </section>
 
+          <!-- Reading Stats -->
+          <section v-if="readingStats" class="settings-section" style="--delay: 4">
+            <h3 class="settings-label">Reading Stats</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-value">{{ readingStats.sectionsReadCount.value }}</span>
+                <span class="stat-label">Sections read</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value">{{ readingStats.readPercentage.value }}%</span>
+                <span class="stat-label">Progress</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value">{{ readingStats.estimatedReadingTime.value }}m</span>
+                <span class="stat-label">Est. time</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value">{{ readingStats.activeReadingMinutes.value }}m</span>
+                <span class="stat-label">Active</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Sync -->
+          <section class="settings-section" style="--delay: 5">
+            <h3 class="settings-label">Sync</h3>
+            <div class="settings-row">
+              <span class="settings-sublabel">Export</span>
+              <button @click="cloudSync.push()" class="sync-btn" :disabled="cloudSync.syncing.value">
+                {{ cloudSync.syncing.value ? 'Saving...' : 'Save to cloud' }}
+              </button>
+            </div>
+            <div class="settings-row">
+              <span class="settings-sublabel">Import</span>
+              <button @click="cloudSync.pull()" class="sync-btn" :disabled="cloudSync.syncing.value">
+                {{ cloudSync.syncing.value ? 'Loading...' : 'Load from cloud' }}
+              </button>
+            </div>
+            <div v-if="cloudSync.syncError.value" class="sync-error">
+              {{ cloudSync.syncError.value }}
+            </div>
+            <div v-if="cloudSync.lastSyncAt.value" class="sync-time">
+              Last sync: {{ new Date(cloudSync.lastSyncAt.value).toLocaleTimeString() }}
+            </div>
+          </section>
+
           <!-- Reset -->
           <div class="settings-footer">
             <button @click="resetToDefaults" class="settings-reset">Reset to Defaults</button>
@@ -218,10 +309,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEbookStore, type Theme, type FontFamily, type ContentWidth, type LineHeight, type TextAlignment } from '@/composables/useEbookStore'
+import { computed, inject } from 'vue'
+import { useEbookStore, type Theme, type FontFamily, type ContentWidth, type LineHeight, type TextAlignment, type ReadingMode } from '@/composables/useEbookStore'
+import { useReadingStats } from '@/composables/useReadingStats'
+import { useCloudSync } from '@/composables/useCloudSync'
+import { useDocumentStore } from '@/stores/documentStore'
 
 const ebookStore = useEbookStore()
+const documentStore = useDocumentStore()
+const readingStats = inject<ReturnType<typeof useReadingStats>>('readingStats')
+
+// Cloud sync
+const cloudSync = useCloudSync(documentStore.title)
 
 const isSettingsOpen = computed(() => ebookStore.settingsOpen.value)
 const currentTheme = computed(() => ebookStore.theme.value)
@@ -233,6 +332,8 @@ const currentTextAlignment = computed(() => ebookStore.textAlignment.value)
 const currentHyphenation = computed(() => ebookStore.hyphenation.value)
 const currentFocusMode = computed(() => ebookStore.focusMode.value)
 const currentShowProgress = computed(() => ebookStore.showProgress.value)
+const currentReadingMode = computed(() => ebookStore.readingMode.value)
+const currentRefCardMode = computed(() => ebookStore.refCardMode.value)
 
 function close() {
   ebookStore.toggleSettings()
@@ -278,6 +379,8 @@ function resetToDefaults() {
   ebookStore.setHyphenation(false)
   ebookStore.setFocusMode(false)
   ebookStore.setShowProgress(true)
+  ebookStore.setReadingMode('scroll')
+  ebookStore.setRefCardMode(false)
 }
 </script>
 
@@ -691,5 +794,70 @@ function resetToDefaults() {
     width: 100% !important;
     max-width: 100% !important;
   }
+}
+
+/* Reading stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border-radius: 8px;
+  background: var(--chrome-bg-hover);
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--chrome-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--chrome-text-dim);
+  margin-top: 2px;
+}
+
+/* Sync */
+.sync-btn {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
+  transition: background 0.15s ease;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: var(--chrome-accent);
+  color: #fff;
+}
+
+.sync-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sync-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.sync-time {
+  font-size: 0.7rem;
+  color: var(--chrome-text-dim);
+  margin-top: 4px;
 }
 </style>

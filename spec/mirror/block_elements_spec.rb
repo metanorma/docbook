@@ -101,4 +101,124 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
       expect(code).not_to be_nil
     end
   end
+
+  describe "annotation" do
+    it "produces an annotation node with content" do
+      xml = chapter_xml('<annotation xml:id="ann1"><para>This is a note</para></annotation>')
+      result = mirror_hash(xml)
+      ann = find_node(result, "annotation")
+      expect(ann).not_to be_nil
+      expect(ann["attrs"]["xml_id"]).to eq("ann1")
+      para = find_node(ann, "paragraph")
+      expect(para).not_to be_nil
+    end
+
+    it "preserves multiple paragraphs in annotation" do
+      xml = chapter_xml('<annotation xml:id="ann2"><para>First</para><para>Second</para></annotation>')
+      result = mirror_hash(xml)
+      ann = find_node(result, "annotation")
+      expect(ann).not_to be_nil
+      paras = collect_nodes(ann, "paragraph")
+      expect(paras.length).to eq(2)
+    end
+
+    it "handles annotation without xml_id" do
+      xml = chapter_xml("<annotation><para>Simple note</para></annotation>")
+      result = mirror_hash(xml)
+      ann = find_node(result, "annotation")
+      expect(ann).not_to be_nil
+      expect(ann["attrs"]).to be_nil
+    end
+
+    it "uses fallback text when annotation has no para" do
+      xml = chapter_xml("<annotation>Plain text annotation</annotation>")
+      result = mirror_hash(xml)
+      ann = find_node(result, "annotation")
+      expect(ann).not_to be_nil
+      text = find_node(ann, "text")
+      expect(text["text"]).to eq("Plain text annotation")
+    end
+  end
+
+  describe "callout markers" do
+    it "inserts numbered callout markers in code blocks" do
+      xml = chapter_xml('<programlisting>line one<co xml:id="co1"/>line two<co xml:id="co2"/></programlisting>')
+      result = mirror_hash(xml)
+      code = find_node(result, "code_block")
+      expect(code).not_to be_nil
+      text = code["content"].first["text"]
+      expect(text).to include("(1)")
+      expect(text).to include("(2)")
+    end
+
+    it "includes callout metadata in attrs" do
+      xml = chapter_xml('<programlisting>code<co xml:id="co1"/></programlisting>')
+      result = mirror_hash(xml)
+      code = find_node(result, "code_block")
+      expect(code["attrs"]["callouts"]).not_to be_nil
+      expect(code["attrs"]["callouts"].length).to eq(1)
+      expect(code["attrs"]["callouts"][0][:id]).to eq("co1")
+      expect(code["attrs"]["callouts"][0][:number]).to eq(1)
+    end
+
+    it "renders calloutlist with items" do
+      xml = chapter_xml('<calloutlist><callout arearefs="co1"><para>Description of callout 1</para></callout></calloutlist>')
+      result = mirror_hash(xml)
+      list = find_node(result, "calloutlist")
+      expect(list).not_to be_nil
+      callouts = list["content"]
+      expect(callouts.length).to eq(1)
+      expect(callouts[0]["attrs"]["arearefs"]).to eq("co1")
+    end
+
+    it "handles multiple callouts in a calloutlist" do
+      xml = chapter_xml('<calloutlist><callout arearefs="co1"><para>First</para></callout><callout arearefs="co2"><para>Second</para></callout></calloutlist>')
+      result = mirror_hash(xml)
+      list = find_node(result, "calloutlist")
+      expect(list["content"].length).to eq(2)
+    end
+
+    it "preserves custom label on co element" do
+      xml = chapter_xml('<programlisting>code<co xml:id="coA" label="a"/></programlisting>')
+      result = mirror_hash(xml)
+      code = find_node(result, "code_block")
+      expect(code["attrs"]["callouts"][0][:label]).to eq("a")
+      text = code["content"].first["text"]
+      expect(text).to include("(a)")
+    end
+  end
+
+  describe "qandaset" do
+    it "produces a qandaset with entries" do
+      xml = chapter_xml("<qandaset><qandaentry><question><para>What is X?</para></question><answer><para>X is Y.</para></answer></qandaentry></qandaset>")
+      result = mirror_hash(xml)
+      qas = find_node(result, "qandaset")
+      expect(qas).not_to be_nil
+      entry = find_node(qas, "qandaentry")
+      expect(entry).not_to be_nil
+    end
+
+    it "produces question and answer nodes" do
+      xml = chapter_xml("<qandaset><qandaentry><question><para>What?</para></question><answer><para>This.</para></answer></qandaentry></qandaset>")
+      result = mirror_hash(xml)
+      q = find_node(result, "question")
+      a = find_node(result, "answer")
+      expect(q).not_to be_nil
+      expect(a).not_to be_nil
+    end
+
+    it "preserves qandaset title" do
+      xml = chapter_xml("<qandaset><title>FAQ</title><qandaentry><question><para>Q1</para></question><answer><para>A1</para></answer></qandaentry></qandaset>")
+      result = mirror_hash(xml)
+      qas = find_node(result, "qandaset")
+      expect(qas["attrs"]["title"]).to eq("FAQ")
+    end
+
+    it "supports multiple answers per entry" do
+      xml = chapter_xml("<qandaset><qandaentry><question><para>Q</para></question><answer><para>A1</para></answer><answer><para>A2</para></answer></qandaentry></qandaset>")
+      result = mirror_hash(xml)
+      answers = collect_nodes(result, "answer")
+      expect(answers.length).to eq(2)
+    end
+  end
 end

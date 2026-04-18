@@ -9,18 +9,21 @@ module Docbook
     class NumberingService
       include ElementIdHelper
 
+      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
       def initialize(document)
         @document = document
         @numbering = []
         @part_counter = 0
-        @chapter_counters = {}  # part_index => counter
+        @chapter_counters = {}
         @appendix_counter = 0
-        @section_counters = {}  # scope_id => [level1, level2, ...]
-        @figure_counters = {}   # scope_id => counter
-        @example_counters = {}  # scope_id => counter
-        @table_counters = {}    # scope_id => counter
+        @section_counters = {}
+        @figure_counters = {}
+        @example_counters = {}
+        @table_counters = {}
       end
 
+      # Pre-compute section numbering for the document.
+      # @return [Array<Models::SectionNumber>]
       def generate
         @numbering = []
         @part_counter = 0

@@ -200,16 +200,6 @@ function buildTocIndex(items: TocItem[]) {
   })
 }
 
-function buildIndexes() {
-  sectionTexts.clear()
-  const doc = documentStore.mirrorDocument
-  if (doc?.content) {
-    buildSectionIndex(doc.content)
-  }
-  // Also index TOC entries not captured from body (e.g. top-level chapters without xml_id in mirror)
-  buildTocIndex(documentStore.sections)
-}
-
 function getSnippet(id: string, query: string): string {
   const text = sectionTexts.get(id)
   if (!text || !query) return ''
@@ -267,10 +257,38 @@ watch(searchQuery, () => {
 watch(
   () => documentStore.mirrorDocument,
   () => {
-    buildIndexes()
+    // Phase 1: Index headings immediately (fast)
+    buildHeadingIndex()
+    // Phase 2: Background-index body text
+    buildBodyIndexLazy()
   },
   { immediate: true }
 )
+
+function buildHeadingIndex() {
+  sectionTexts.clear()
+  // Only index TOC entries for fast heading search
+  buildTocIndex(documentStore.sections)
+}
+
+function buildBodyIndexLazy() {
+  const doc = documentStore.mirrorDocument
+  if (!doc?.content) return
+
+  // Use requestIdleCallback to avoid blocking the main thread
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      buildSectionIndex(doc.content!)
+      // Also index TOC entries not captured from body
+      buildTocIndex(documentStore.sections)
+    }, { timeout: 3000 })
+  } else {
+    setTimeout(() => {
+      buildSectionIndex(doc.content!)
+      buildTocIndex(documentStore.sections)
+    }, 500)
+  }
+}
 
 onMounted(() => {
   nextTick(() => inputRef.value?.focus())

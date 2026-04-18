@@ -7,7 +7,7 @@ nav_order: 6
 
 # Element Coverage
 
-The Metanorma DocBook gem provides comprehensive support for DocBook XML elements through 157 typed element classes. All element classes are implemented as `Lutaml::Model::Serializable` subclasses, providing type-safe parsing, serialization, and traversal.
+The Metanorma DocBook gem provides comprehensive support for DocBook XML elements through 160+ typed element classes. All element classes are implemented as `Lutaml::Model::Serializable` subclasses, providing type-safe parsing, serialization, and traversal.
 
 ## Element Classes by Category
 
@@ -228,7 +228,7 @@ Bibliographic reference elements.
 
 `Bibliomixed` entries produce rich output with abbreviations, author names, citation titles, dates, and links.
 
-### Glossary (5)
+### Glossary (6)
 
 Glossary definition elements.
 
@@ -236,11 +236,12 @@ Glossary definition elements.
 |===
 | Element | HTML Block Type | Description
 
-| `Glossary` | (structural) | Glossary section
-| `GlossEntry` | `definition_list` | Glossary entry with term and definition
+| `Glossary` | `glossary` | Glossary section (supports `--sort-glossary`)
+| `GlossEntry` | `gloss_entry` | Glossary entry with term and definition
+| `GlossTerm` | (inline in `gloss_entry`) | Term being defined
 | `GlossDef` | (internal) | Definition content
-| `GlossSee` | (parsed) | "See" cross-reference
-| `GlossSeeAlso` | (parsed) | "See also" cross-reference
+| `GlossSee` | `gloss_see` | "See" cross-reference to another term
+| `GlossSeeAlso` | `gloss_see_also` | "See also" cross-reference
 |===
 
 ### Index (9)
@@ -287,15 +288,22 @@ Table of contents elements.
 | `FootnoteRef` | Reference to a footnote
 |===
 
-### Callouts (2)
+### Callouts (3)
 
 [cols="1,3"]
 |===
 | Element | Description
 
-| `Callout` | Callout description
+| `Co` | Callout origin marker (inline in code blocks)
+| `Callout` | Callout description referencing a `Co` marker
 | `CalloutList` | List of callout descriptions
 |===
+
+Callout markers (`Co`) are extracted from code blocks during transformation.
+Each `<co>` element generates a numbered marker inserted into the code text,
+and its metadata (`xml_id`, `label`, `number`) is stored in the `code_block`
+node's `callouts` attribute. `CalloutList` renders as a numbered annotation
+list with each `Callout` item linked to its marker via `arearefs`.
 
 ### Examples (3)
 
@@ -317,6 +325,18 @@ Table of contents elements.
 | `Procedure` | Ordered sequence of steps
 | `Step` | Single step in a procedure
 | `SubSteps` | Nested sub-steps
+|===
+
+### Q&A Sets (4)
+
+[cols="1,3"]
+|===
+| Element | HTML Block Type | Description
+
+| `QandASet` | `qandaset` | FAQ-style question-and-answer set
+| `QandAEntry` | `qandaentry` | Single question-answer pair
+| `Question` | `question` | The question content
+| `Answer` | `answer` | The answer content
 |===
 
 ### RefEntry (7)
@@ -352,8 +372,8 @@ Miscellaneous block elements.
 | `Msgexplan` | (parsed) | Message explanation
 | `LiteralLayout` | `code` | Preformatted text
 | `Address` | (parsed) | Postal address
-| `Annotation` | (parsed) | Annotation
-| `SideBar` | (parsed) | Sidebar content
+| `Annotation` | `annotation` | Annotation with hover/click popup
+| `SideBar` | `sidebar` | Sidebar content with optional title
 | `Remark` | (parsed) | Editorial remark
 |===
 
@@ -361,12 +381,14 @@ Miscellaneous block elements.
 
 The following elements are directly rendered as DocbookMirror node types during the output build:
 
-- **Blocks**: `Para`, `FormalPara`, `ProgramListing`, `Screen`, `LiteralLayout`, `BlockQuote`, `SimpleSect`
+- **Blocks**: `Para`, `FormalPara`, `ProgramListing`, `Screen`, `LiteralLayout`, `BlockQuote`, `SimpleSect`, `Annotation`, `SideBar`
 - **Lists**: `OrderedList`, `ItemizedList`, `VariableList`
 - **Media**: `MediaObject`, `Figure`, `InformalFigure`, `InlineMediaObject`, `TextObject`
 - **Admonitions**: `Note`, `Warning`, `Caution`, `Important`, `Tip`, `Danger`
 - **Examples**: `Example`, `InformalExample`
-- **Glossary**: `GlossEntry`
+- **Callouts**: `Co` (inline markers), `CalloutList`, `Callout`
+- **Q&A**: `QandASet`, `QandAEntry`, `Question`, `Answer`
+- **Glossary**: `Glossary`, `GlossEntry`, `GlossDef`, `GlossSee`, `GlossSeeAlso`
 - **Bibliography**: `Bibliomixed`
 - **Index**: `IndexDiv`
 - **Reference**: `RefEntry` (with all sub-elements)

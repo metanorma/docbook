@@ -66,6 +66,6 @@ link:reference/supported-elements[**Reference pages**]:: RefEntry manual pages
 
 == Getting Help
 
-**Found a bug?**:: link:https://github.com/metanorma/metanorma-docbook/issues[Report an issue on GitHub]
+**Found a bug?**:: link:https://github.com/metanorma/docbook/issues[Report an issue on GitHub]
 
 **Have a question?**:: Check link:reference/glossary[Glossary] or search this documentation

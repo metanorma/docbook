@@ -93,20 +93,43 @@
         Follow active section
       </button>
     </nav>
+
+    <!-- Bookmarks -->
+    <div v-if="bookmarks.bookmarks.value.length > 0" class="sidebar-section">
+      <div class="sidebar-section-title">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+        Bookmarks
+        <kbd class="sidebar-kbd text-xs px-1 py-0.5 rounded ml-auto">b</kbd>
+      </div>
+      <ul class="space-y-0.5">
+        <li v-for="bm in bookmarks.bookmarks.value" :key="bm.id" class="bookmark-item">
+          <a @click.prevent="navigateToId(bm.sectionId)" class="bookmark-link" :title="bm.snippet">
+            {{ bm.title }}
+          </a>
+          <button @click="bookmarks.remove(bm.sectionId)" class="bookmark-remove" title="Remove bookmark">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </li>
+      </ul>
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import { useDocumentStore } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useEbookStore, type Theme } from '@/composables/useEbookStore'
+import { useBookmarks, type Bookmark } from '@/composables/useBookmarks'
 import TocTreeItem from '@/components/TocTreeItem.vue'
 
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const ebookStore = useEbookStore()
 const sidebarEl = ref<HTMLElement | null>(null)
+
+const bookmarks = inject<ReturnType<typeof useBookmarks>>('bookmarks')!
+const navigateToId = inject<(id: string) => void>('navigateToId', () => {})
 
 const themeOrder: Theme[] = ['day', 'sepia', 'night', 'oled']
 
@@ -235,5 +258,73 @@ function followFocus() {
 }
 .follow-focus-btn:hover {
   opacity: 0.9;
+}
+
+/* Bookmarks */
+.sidebar-section {
+  padding: 12px 16px 8px;
+  border-top: 1px solid var(--chrome-border);
+}
+
+.sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chrome-text-dim);
+  margin-bottom: 8px;
+}
+
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.bookmark-item:hover {
+  background: var(--chrome-bg-hover);
+}
+
+.bookmark-link {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--chrome-text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookmark-link:hover {
+  color: var(--chrome-accent);
+}
+
+.bookmark-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--chrome-text-dim);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.bookmark-item:hover .bookmark-remove {
+  opacity: 1;
+}
+
+.bookmark-remove:hover {
+  background: var(--chrome-bg-hover);
+  color: var(--chrome-text);
 }
 </style>

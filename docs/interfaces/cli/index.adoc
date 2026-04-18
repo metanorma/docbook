@@ -8,7 +8,7 @@ has_children: true
 
 == CLI Reference
 
-The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides four commands for working with DocBook XML files.
+The `docbook` command-line interface is built on http://whatisthor.com/[Thor] and provides commands for working with DocBook XML files.
 
 === Global Behavior
 
@@ -27,7 +27,9 @@ The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry 
 
 | `build` | 0.1.0 | Build an interactive HTML reader from DocBook XML (self-contained, works offline). Use `--demo` to try the bundled sample.
 | `export` | 0.1.0 | Export DocBook XML as DocbookMirror JSON (ProseMirror-compatible)
+| `info` | 0.1.0 | Display document metadata and statistics
 | `validate` | 0.1.0 | Validate DocBook XML against RELAX NG schema
+| `lint` | 0.1.0 | Check for common DocBook issues (well-formedness, xrefs, images)
 | `format` | 0.1.0 | Reformat and prettify DocBook XML
 |===
 
@@ -58,7 +60,9 @@ Select a command for detailed usage instructions, options, and examples:
 
 * link:build-command[build] -- Build an interactive HTML reader
 * link:export-command[export] -- Export as DocbookMirror JSON
+* link:info-command[info] -- Display document metadata and statistics
 * link:validate-command[validate] -- Validate DocBook XML
+* link:lint-command[lint] -- Check for common DocBook issues
 * link:format-command[format] -- Format DocBook XML
 * link:roundtrip-command[roundtrip] -- Round-trip test (development)
 

@@ -10,6 +10,7 @@ module Docbook
       attribute :startinglinenumber, :string
       attribute :continuation, :string
       attribute :format, :string
+      attribute :co, Co, collection: true
 
       xml do
         element "programlisting"
@@ -21,6 +22,7 @@ module Docbook
         map_attribute "startinglinenumber", to: :startinglinenumber
         map_attribute "continuation", to: :continuation
         map_attribute "format", to: :format
+        map_element "co", to: :co
       end
     end
   end

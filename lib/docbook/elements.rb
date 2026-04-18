@@ -186,6 +186,7 @@ module Docbook
     # Callout elements
     autoload :Callout, "#{__dir__}/elements/callout"
     autoload :CalloutList, "#{__dir__}/elements/calloutlist"
+    autoload :Co, "#{__dir__}/elements/co"
 
     # Example / Equation elements
     autoload :Example, "#{__dir__}/elements/example"
@@ -196,6 +197,12 @@ module Docbook
     autoload :Procedure, "#{__dir__}/elements/procedure"
     autoload :Step, "#{__dir__}/elements/step"
     autoload :SubSteps, "#{__dir__}/elements/substeps"
+
+    # QandA elements
+    autoload :QandASet, "#{__dir__}/elements/qandaset"
+    autoload :QandAEntry, "#{__dir__}/elements/qandaentry"
+    autoload :Question, "#{__dir__}/elements/question"
+    autoload :Answer, "#{__dir__}/elements/answer"
 
     # Sidebar
     autoload :SideBar, "#{__dir__}/elements/sidebar"

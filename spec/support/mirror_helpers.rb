@@ -17,6 +17,14 @@ module MirrorHelpers
     transform_doc(xml_string).to_h
   end
 
+  # Like mirror_hash but accepts transformer options (e.g. sort_glossary: true)
+  def mirror_hash_with(xml_string, **options)
+    require_relative "../../lib/docbook/mirror"
+    doc = Docbook::Document.from_xml(xml_string)
+    transformer = Docbook::Mirror::Transformer.new(**options)
+    transformer.send(:from_docbook, doc).to_h
+  end
+
   # Extract the first content node matching a given type
   def find_node(hash, type)
     return hash if hash["type"] == type

@@ -10,3 +10,14 @@ has_children: true
 This section contains quick-reference material for the Metanorma
 DocBook gem: CLI options, supported elements, DocbookMirror JSON schema,
 and a glossary of key terms.
+
+== API Documentation
+
+Generated YARD documentation for the Ruby API is available by running:
+
+[source,bash]
+----
+bundle exec rake yard
+----
+
+Then open `docs/api/index.html` in a browser.

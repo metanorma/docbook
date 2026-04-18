@@ -10,6 +10,7 @@ module Docbook
       attribute :continuation, :string
       attribute :format, :string
       attribute :userinput, UserInput, collection: true
+      attribute :co, Co, collection: true
 
       xml do
         element "screen"
@@ -21,6 +22,7 @@ module Docbook
         map_attribute "continuation", to: :continuation
         map_attribute "format", to: :format
         map_element "userinput", to: :userinput
+        map_element "co", to: :co
       end
     end
   end

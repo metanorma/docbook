@@ -17,7 +17,7 @@ The `Docbook::Output::DocbookMirror` class exports a parsed DocBook document as 
 require "docbook"
 
 doc = Docbook::Document.from_xml(File.read("guide.xml"))
-mirror = Docbook::Output::DocbookMirror.new(doc)
+mirror = Docbook::Output::DocbookMirror.new(doc, sort_glossary: true)
 
 # Pretty JSON
 json = mirror.to_pretty_json
@@ -27,6 +27,18 @@ File.write("guide.json", json)
 json = mirror.to_json
 File.write("guide.json", json)
 ----
+
+=== Constructor options
+
+The `DocbookMirror` constructor accepts these keyword arguments:
+
+[cols="2,1,4"]
+|===
+| Argument | Default | Description
+
+| `document` | (required) | Parsed DocBook document from `Document.from_xml`
+| `sort_glossary` | `false` | Sort glossary entries alphabetically by term
+|===
 
 === Methods
 
@@ -45,7 +57,7 @@ File.write("guide.json", json)
 
 The output JSON follows a structure compatible with ProseMirror's document model, extended with DocBook-specific types:
 
-* **27 node types** -- `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, images
+* **50+ node types** -- `doc`, `text`, `paragraph`, `heading`, `code_block`, `blockquote`, lists, tables, structural nodes (chapter, part, section, appendix, refentry), admonitions, images, annotations, callouts, Q&A sets, glossary, bibliography, index, and more
 * **7 mark types** -- `emphasis`, `strong`, `italic`, `code`, `link`, `xref`, `citation`
 
 Example output structure:
