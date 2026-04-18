@@ -2,7 +2,9 @@
 
 module Docbook
   module Services
+    # Generates lists of figures, tables, and examples with section context.
     class ListOfGenerator
+      # Struct for a list entry with id, title, number, and section context
       Entry = Struct.new(:id, :title, :number, :section_id, :section_title, keyword_init: true)
 
       TYPES = {
@@ -11,10 +13,13 @@ module Docbook
         examples: [Elements::Example, Elements::InformalExample],
       }.freeze
 
+      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
       def initialize(document)
         @document = document
       end
 
+      # @param numbering [Hash<String, String>] id-to-number map from {NumberingService}
+      # @return [Hash{Symbol => Array<Entry>}]
       def generate(numbering: {})
         result = {}
         TYPES.each do |type_name, element_types|

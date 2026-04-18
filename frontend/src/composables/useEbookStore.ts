@@ -5,6 +5,7 @@ export type FontFamily = 'sans' | 'serif'
 export type ContentWidth = 'narrow' | 'default' | 'wide'
 export type LineHeight = 'compact' | 'comfortable' | 'relaxed' | 'spacious'
 export type TextAlignment = 'left' | 'justify'
+export type ReadingMode = 'scroll' | 'paged'
 
 interface EbookState {
   fontSize: number
@@ -19,6 +20,8 @@ interface EbookState {
   hyphenation: boolean
   focusMode: boolean
   showProgress: boolean
+  readingMode: ReadingMode
+  refCardMode: boolean
 }
 
 const STORAGE_KEY = 'docbook_ebook_preferences'
@@ -51,6 +54,8 @@ const defaultState: EbookState = {
   hyphenation: false,
   focusMode: false,
   showProgress: true,
+  readingMode: 'scroll',
+  refCardMode: false,
 }
 
 // Load from localStorage
@@ -94,6 +99,8 @@ watch(
     textAlignment: state.textAlignment,
     hyphenation: state.hyphenation,
     showProgress: state.showProgress,
+    readingMode: state.readingMode,
+    refCardMode: state.refCardMode,
   }),
   () => savePreferences(state),
   { immediate: true }
@@ -127,6 +134,8 @@ export function useEbookStore() {
   const hyphenation = computed(() => state.hyphenation)
   const focusMode = computed(() => state.focusMode)
   const showProgress = computed(() => state.showProgress)
+  const readingMode = computed(() => state.readingMode)
+  const refCardMode = computed(() => state.refCardMode)
 
   // Actions
   function setFontSize(size: number) {
@@ -174,6 +183,14 @@ export function useEbookStore() {
 
   function setShowProgress(sp: boolean) {
     state.showProgress = sp
+  }
+
+  function setReadingMode(rm: ReadingMode) {
+    state.readingMode = rm
+  }
+
+  function setRefCardMode(rcm: boolean) {
+    state.refCardMode = rcm
   }
 
   function toggleToc() {
@@ -231,6 +248,8 @@ export function useEbookStore() {
     hyphenation,
     focusMode,
     showProgress,
+    readingMode,
+    refCardMode,
 
     // Actions
     setFontSize,
@@ -245,6 +264,8 @@ export function useEbookStore() {
     setFocusMode,
     toggleFocusMode,
     setShowProgress,
+    setReadingMode,
+    setRefCardMode,
     toggleToc,
     toggleSettings,
     closeAll,

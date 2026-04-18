@@ -1,0 +1,82 @@
+---
+layout: default
+title: info
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 6
+---
+
+== info
+
+Display metadata and statistics about a DocBook XML document.
+
+=== Usage
+
+[source,bash]
+----
+docbook info INPUT [options]
+----
+
+=== Options
+
+[cols="2,1,4"]
+|===
+| Option | Default | Description
+
+| `--format=FORMAT`
+| `text`
+| Output format: `text` (human-readable) or `json` (machine-readable)
+
+| `--verbose`
+| off
+| Show detailed processing information
+
+| `--quiet`
+| off
+| Suppress all output except errors
+|===
+
+=== Output fields
+
+The `info` command reports the following metadata, when present:
+
+[cols="1,3"]
+|===
+| Field | Description
+
+| `Title` | Document title from `info/title`
+| `Author` | Author name(s)
+| `Root` | Root element type (`book`, `article`, etc.)
+| `Sections` | Count of section-level elements
+| `Images` | Count of figure/informalfigure elements
+| `Code blocks` | Count of programlisting/screen elements
+| `Tables` | Count of table/informaltable elements
+| `Index terms` | Count of indexterm elements
+| `Bibliography entries` | Count of bibliomixed elements
+|===
+
+=== Examples
+
+Human-readable output (default):
+
+[source,bash]
+----
+$ docbook info guide.xml
+Title: DocBook XSLT 2.0 Stylesheet Reference
+Author: Norman Tovey-Walsh
+Root: book
+Sections: 42
+Images: 14
+Code blocks: 67
+Tables: 5
+Index terms: 231
+Bibliography entries: 8
+----
+
+JSON output for scripting:
+
+[source,bash]
+----
+$ docbook info guide.xml --format=json | jq '.sections'
+42
+----

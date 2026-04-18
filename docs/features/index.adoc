@@ -66,6 +66,7 @@ The interactive HTML reader built by `docbook build` includes:
 | <<breadcrumb-navigation,Breadcrumb Navigation>> | Ancestor chain breadcrumb bar
 | <<image-resolution,Image Resolution>> | 3 image strategies: data_url, file_url, relative
 | <<reference-entries,Reference Entries>> | Specialized rendering for refentry (man-page style)
+| <<reader-experience,Reader Experience>> | Keyboard navigation, focus mode, lightbox, code copy, and more
 |===
 
 ## Child Pages
@@ -81,3 +82,4 @@ The interactive HTML reader built by `docbook build` includes:
 - <<breadcrumb-navigation,Breadcrumb Navigation>> -- Ancestor chain navigation bar
 - <<image-resolution,Image Resolution>> -- Image handling strategies
 - <<reference-entries,Reference Entries>> -- Reference manual page rendering
+- <<reader-experience,Reader Experience>> -- Keyboard navigation, focus mode, lightbox, and interactive features

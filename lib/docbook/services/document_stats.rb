@@ -2,11 +2,14 @@
 
 module Docbook
   module Services
+    # Collects statistics and metadata from a parsed DocBook document.
     class DocumentStats
+      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
       def initialize(document)
         @document = document
       end
 
+      # @return [Hash] statistics including title, author, section/image/table/code counts
       def generate
         counts = {
           "sections" => 0,

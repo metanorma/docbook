@@ -92,6 +92,86 @@ RSpec.describe "Mirror Transformer — Document Structure", :mirror do
       expect(gl).not_to be_nil
     end
 
+    it "sorts glossary entries alphabetically when sort_glossary is true" do
+      xml = <<~XML
+        <book #{NS}>
+          <title>Test</title>
+          <chapter><title>Ch</title><para>Body</para></chapter>
+          <glossary>
+            <glossentry>
+              <glossterm>Zebra</glossterm>
+              <glossdef><para>A striped animal</para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Apple</glossterm>
+              <glossdef><para>A fruit</para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Mango</glossterm>
+              <glossdef><para>A tropical fruit</para></glossdef>
+            </glossentry>
+          </glossary>
+        </book>
+      XML
+      result = mirror_hash_with(xml, sort_glossary: true)
+      gl = find_node(result, "glossary")
+      entries = gl["content"].select { |n| n["type"] == "gloss_entry" }
+      terms = entries.map { |e| find_node(e, "gloss_term")["content"].first["text"] }
+      expect(terms).to eq(%w[Apple Mango Zebra])
+    end
+
+    it "preserves original glossary order when sort_glossary is false" do
+      xml = <<~XML
+        <book #{NS}>
+          <title>Test</title>
+          <chapter><title>Ch</title><para>Body</para></chapter>
+          <glossary>
+            <glossentry>
+              <glossterm>Zebra</glossterm>
+              <glossdef><para>A striped animal</para></glossdef>
+            </glossentry>
+            <glossentry>
+              <glossterm>Apple</glossterm>
+              <glossdef><para>A fruit</para></glossdef>
+            </glossentry>
+          </glossary>
+        </book>
+      XML
+      result = mirror_hash(xml)
+      gl = find_node(result, "glossary")
+      entries = gl["content"].select { |n| n["type"] == "gloss_entry" }
+      terms = entries.map { |e| find_node(e, "gloss_term")["content"].first["text"] }
+      expect(terms).to eq(%w[Zebra Apple])
+    end
+
+    it "produces glossary entries with glosssee and glossseealso" do
+      xml = <<~XML
+        <book #{NS}>
+          <title>Test</title>
+          <chapter><title>Ch</title><para>Body</para></chapter>
+          <glossary>
+            <glossentry>
+              <glossterm>API</glossterm>
+              <glossdef><para>Application Programming Interface</para></glossdef>
+              <glosssee otherterm="app">See app</glosssee>
+              <glossseealso otherterm="rest">REST</glossseealso>
+            </glossentry>
+          </glossary>
+        </book>
+      XML
+      result = mirror_hash(xml)
+      entry = find_node(result, "gloss_entry")
+      expect(entry).not_to be_nil
+      term = find_node(entry, "gloss_term")
+      expect(term).not_to be_nil
+      see = find_node(entry, "gloss_see")
+      expect(see).not_to be_nil
+      expect(see["attrs"]["otherterm"]).to eq("app")
+      see_also = find_node(entry, "gloss_see_also")
+      expect(see_also).not_to be_nil
+      expect(see_also["attrs"]["otherterm"]).to eq("rest")
+    end
+
     it "produces a bibliography section" do
       xml = <<~XML
         <book #{NS}>

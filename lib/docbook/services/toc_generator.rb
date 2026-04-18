@@ -6,10 +6,13 @@ module Docbook
     class TocGenerator
       include ElementIdHelper
 
+      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
       def initialize(document)
         @document = document
       end
 
+      # Build a tree of {Models::TocNode} from the document structure.
+      # @return [Array<Models::TocNode>]
       def generate
         root_elements = get_root_elements
         root_elements.filter_map { |element| build_toc_node(element) }

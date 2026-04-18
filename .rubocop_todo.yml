@@ -79,7 +79,7 @@ Metrics/MethodLength:
 # Offense count: 2
 # Configuration parameters: CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:
-  Max: 6
+  Max: 7
 
 # Offense count: 60
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
@@ -132,7 +132,7 @@ RSpec/DescribeClass:
 # Offense count: 60
 # Configuration parameters: CountAsOne.
 RSpec/ExampleLength:
-  Max: 16
+  Max: 25
 
 # Offense count: 1
 # Configuration parameters: AssignmentOnly.
@@ -197,6 +197,11 @@ Style/ItAssignment:
 Style/OptionalBooleanParameter:
   Exclude:
     - 'lib/docbook/cli.rb'
+
+# Offense count: 1
+Gemspec/DevelopmentDependencies:
+  Exclude:
+    - 'docbook.gemspec'
 
 # Offense count: 5
 # Configuration parameters: Max.

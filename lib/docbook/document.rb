@@ -38,6 +38,10 @@ module Docbook
     }.freeze
 
     class << self
+      # Parse a DocBook XML string into the appropriate element object.
+      # @param xml_string [String] DocBook 5 XML content
+      # @return [Docbook::Elements::Book, Docbook::Elements::Article, etc.]
+      # @raise [Docbook::Error] if the root element is unsupported
       def from_xml(xml_string)
         root_name = extract_root_element(xml_string)
         raise Docbook::Error, "Empty or invalid XML document" unless root_name
@@ -51,11 +55,16 @@ module Docbook
         klass.from_xml(xml_string)
       end
 
+      # Check if a given root element name is supported.
+      # @param root_name [String] the root element name (e.g. "book", "article")
+      # @return [Boolean]
       def supports?(root_name)
         klass = ROOT_ELEMENT_MAP[root_name]
         !klass.nil?
       end
 
+      # List all supported root element names.
+      # @return [Array<String>]
       def supported_root_elements
         ROOT_ELEMENT_MAP.select { |_, v| v }.keys
       end

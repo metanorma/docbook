@@ -16,6 +16,8 @@ module Docbook
     class Linter
       attr_reader :errors, :warnings
 
+      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
+      # @param input_path [String, nil] file path for image existence checks
       def initialize(document, input_path: nil)
         @document = document
         @input_path = input_path
@@ -23,6 +25,9 @@ module Docbook
         @warnings = []
       end
 
+      # Run lint checks on the document.
+      # @param strict [Boolean] enable strict mode (broken xrefs, missing images)
+      # @return [self]
       def check(strict: false)
         check_duplicate_ids
         check_empty_elements
@@ -33,6 +38,7 @@ module Docbook
         self
       end
 
+      # @return [Boolean] true if no errors were found
       def ok?
         @errors.empty?
       end

@@ -13,7 +13,10 @@
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text mr-2 font-normal">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Chapter -->
@@ -23,7 +26,10 @@
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Appendix -->
@@ -33,7 +39,10 @@
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Part -->
@@ -43,7 +52,10 @@
           <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-2xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Reference -->
@@ -52,13 +64,19 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- RefEntry -->
       <article v-else-if="block.type === 'refentry'" :id="block.attrs?.xml_id" class="mb-6 border border-ebook-border rounded-lg p-4">
         <div v-if="block.attrs?.title" class="text-lg font-bold font-mono heading-text mb-3">{{ block.attrs.title }}</div>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </article>
 
       <!-- RefSection -->
@@ -73,7 +91,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Dedication -->
@@ -82,9 +103,12 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <div class="max-w-lg mx-auto text-center italic">
-          <MirrorRenderer :blocks="block.content || []" />
-        </div>
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <div class="max-w-lg mx-auto text-center italic">
+            <MirrorRenderer :blocks="block.content || []" />
+          </div>
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Acknowledgements -->
@@ -93,7 +117,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Colophon -->
@@ -102,7 +129,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Glossary -->
@@ -111,9 +141,12 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <dl class="glossary-list">
-          <MirrorRenderer :blocks="block.content || []" />
-        </dl>
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <dl class="glossary-list">
+            <MirrorRenderer :blocks="block.content || []" />
+          </dl>
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- GlossEntry -->
@@ -149,7 +182,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- BiblioEntry -->
@@ -165,7 +201,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Index Div -->
@@ -187,9 +226,12 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <ol class="procedure-list">
-          <MirrorRenderer :blocks="block.content || []" />
-        </ol>
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <ol class="procedure-list">
+            <MirrorRenderer :blocks="block.content || []" />
+          </ol>
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Step -->
@@ -229,6 +271,35 @@
         <MirrorRenderer :blocks="block.content || []" />
       </li>
 
+      <!-- QandA Set -->
+      <section v-else-if="block.type === 'qandaset'" :id="block.attrs?.xml_id" class="qandaset-block mb-6">
+        <h3 v-if="block.attrs?.title" class="text-lg font-semibold heading-text mb-3">{{ block.attrs.title }}</h3>
+        <div class="qandaset-entries">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </section>
+
+      <!-- QandA Entry -->
+      <div v-else-if="block.type === 'qandaentry'" :id="block.attrs?.xml_id" class="qanda-entry mb-4">
+        <MirrorRenderer :blocks="block.content || []" />
+      </div>
+
+      <!-- Question -->
+      <div v-else-if="block.type === 'question'" class="question-block">
+        <div class="question-label">Q:</div>
+        <div class="question-content">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </div>
+
+      <!-- Answer -->
+      <div v-else-if="block.type === 'answer'" class="answer-block">
+        <div class="answer-label">A:</div>
+        <div class="answer-content">
+          <MirrorRenderer :blocks="block.content || []" />
+        </div>
+      </div>
+
       <!-- Sidebar -->
       <aside v-else-if="block.type === 'sidebar'" :id="block.attrs?.xml_id" class="sidebar-block my-4">
         <div v-if="block.attrs?.title" class="sidebar-title">{{ block.attrs.title }}</div>
@@ -241,7 +312,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Article -->
@@ -250,7 +324,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h1>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </article>
 
       <!-- Topic -->
@@ -259,7 +336,10 @@
           <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
           {{ block.attrs.title }}
         </h2>
-        <MirrorRenderer :blocks="block.content || []" />
+        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
+          <MirrorRenderer :blocks="block.content || []" />
+        </template>
+        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
       </section>
 
       <!-- Synopsis -->
@@ -296,7 +376,7 @@
         </div>
         <div class="code-block-wrapper relative group">
           <span v-if="block.attrs?.language" class="code-language-badge">{{ block.attrs.language }}</span>
-          <pre class="code-block overflow-x-auto text-sm font-mono" :class="block.attrs?.language ? 'language-' + block.attrs.language : ''"><code v-html="highlightCode(getTextContent(block), block.attrs?.language)"></code></pre>
+          <pre class="code-block overflow-x-auto text-sm font-mono" :class="[block.attrs?.language ? 'language-' + block.attrs.language : '', block.attrs?.callouts ? 'has-callouts' : '']"><code v-html="highlightWithCallouts(getTextContent(block), block.attrs?.language, block.attrs?.callouts)"></code></pre>
           <button
             class="copy-btn"
             :class="{ 'copy-btn-done': copiedBlockId === getBlockId(block) }"
@@ -413,10 +493,24 @@
       <!-- Soft break -->
       <br v-else-if="block.type === 'soft_break'" />
 
-      <!-- Annotation -->
-      <div v-else-if="block.type === 'annotation'" class="annotation-block">
-        <div class="annotation-label">Annotation</div>
-        <MirrorRenderer :blocks="block.content || []" />
+      <!-- Annotation with popup -->
+      <div v-else-if="block.type === 'annotation'" class="annotation-inline">
+        <span
+          class="annotation-marker"
+          @mouseenter="showAnnotation(index, $event)"
+          @mouseleave="scheduleHideAnnotation(index)"
+          @click="toggleAnnotation(index, $event)"
+        >
+          <svg class="annotation-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </span>
+        <AnnotationPopup
+          :visible="activeAnnotation === index"
+          :targetRect="annotationTargetRect"
+          @mouseenter="cancelHideAnnotation"
+          @mouseleave="scheduleHideAnnotation(index)"
+        >
+          <MirrorRenderer :blocks="block.content || []" />
+        </AnnotationPopup>
       </div>
 
       <!-- Fallback: render as paragraph if text exists -->
@@ -428,8 +522,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject } from 'vue'
+import { ref, inject, type Ref } from 'vue'
 import TextRenderer from './TextRenderer.vue'
+import AnnotationPopup from './AnnotationPopup.vue'
 import type { MirrorBlockNode } from '@/stores/documentStore'
 import { useDocumentStore } from '@/stores/documentStore'
 import { highlightCode } from '@/utils/highlight'
@@ -439,7 +534,46 @@ defineProps<{
 }>()
 
 const documentStore = useDocumentStore()
+
+// Lazy section rendering support (provided by App.vue)
+const lazyVisible = inject<(id: string) => boolean>('lazySectionVisible', () => true)
+const lazyObserve = inject<(id: string) => void>('lazyObserveSection', () => {})
+const lazyReady = inject<Ref<boolean>>('lazyInitialized', ref(true))
+
 const copiedBlockId = ref<string | null>(null)
+const activeAnnotation = ref<number | null>(null)
+const annotationTargetRect = ref<DOMRect | null>(null)
+let annotationHideTimer: ReturnType<typeof setTimeout> | null = null
+
+function showAnnotation(index: number, event: MouseEvent) {
+  const target = event.currentTarget as HTMLElement
+  annotationTargetRect.value = target.getBoundingClientRect()
+  activeAnnotation.value = index
+  cancelHideAnnotation()
+}
+
+function scheduleHideAnnotation(index: number) {
+  annotationHideTimer = setTimeout(() => {
+    if (activeAnnotation.value === index) {
+      activeAnnotation.value = null
+    }
+  }, 200)
+}
+
+function cancelHideAnnotation() {
+  if (annotationHideTimer) {
+    clearTimeout(annotationHideTimer)
+    annotationHideTimer = null
+  }
+}
+
+function toggleAnnotation(index: number, event: MouseEvent) {
+  if (activeAnnotation.value === index) {
+    activeAnnotation.value = null
+  } else {
+    showAnnotation(index, event)
+  }
+}
 
 type LightboxOpener = (src: string, alt?: string, title?: string) => void
 const lightboxOpen = inject<LightboxOpener>('lightbox', () => {})
@@ -497,12 +631,54 @@ function getNumbering(id: string | undefined): string {
   return documentStore.getNumbering(id)
 }
 
+// Section-like types that get lazy rendering
+const LAZY_SECTION_TYPES = new Set([
+  'chapter', 'section', 'appendix', 'part', 'preface',
+  'dedication', 'acknowledgements', 'colophon', 'glossary',
+  'bibliography', 'reference', 'refentry', 'procedure',
+  'article', 'topic', 'set', 'index_block',
+])
+
+function shouldLazyRender(block: MirrorBlockNode): boolean {
+  return !!(block.attrs?.xml_id && LAZY_SECTION_TYPES.has(block.type))
+}
+
+function isSectionVisible(block: MirrorBlockNode): boolean {
+  if (!lazyReady.value) return true
+  const id = block.attrs?.xml_id
+  if (!id) return true
+  // Register for observation
+  lazyObserve(id)
+  return lazyVisible(id)
+}
+
 function getTextContent(node: MirrorBlockNode): string {
   if (!node.content) return ''
   return node.content
     .filter((n): n is { type: 'text'; text: string } => n.type === 'text')
     .map(n => n.text)
     .join('')
+}
+
+interface CalloutMarker {
+  number: number
+  id?: string
+  label: string
+}
+
+function highlightWithCallouts(code: string, language: string | undefined, callouts?: CalloutMarker[]): string {
+  let html = highlightCode(code, language)
+  // Replace callout markers like (1), (2) with styled spans
+  if (callouts && callouts.length > 0) {
+    for (const co of callouts) {
+      const label = co.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const pattern = `\\(${label}\\)`
+      const regex = new RegExp(pattern)
+      const id = co.id ? ` id="${co.id}"` : ''
+      html = html.replace(regex, `<span class="callout-badge"${id}>${co.label}</span>`)
+    }
+  }
+  return html
 }
 
 function getColSpan(attrs: Record<string, string | undefined> | undefined): number | undefined {
@@ -792,22 +968,33 @@ function getAdmonitionTitle(type: string | undefined): string {
   text-decoration: underline;
 }
 
-.annotation-block {
-  margin: 1rem 0;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid var(--ebook-link-color);
-  background: color-mix(in srgb, var(--ebook-link-color) 6%, var(--ebook-bg));
-  border-radius: 0 6px 6px 0;
-  font-size: 0.9em;
+/* Annotation inline marker */
+.annotation-inline {
+  display: inline;
 }
 
-.annotation-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.annotation-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ebook-link-color) 12%, var(--ebook-bg));
   color: var(--ebook-link-color);
-  margin-bottom: 0.25rem;
+  cursor: pointer;
+  vertical-align: super;
+  margin: 0 2px;
+  transition: background 0.15s ease;
+}
+
+.annotation-marker:hover {
+  background: color-mix(in srgb, var(--ebook-link-color) 25%, var(--ebook-bg));
+}
+
+.annotation-icon {
+  width: 12px;
+  height: 12px;
 }
 
 /* Table horizontal scroll */
@@ -890,6 +1077,29 @@ function getAdmonitionTitle(type: string | undefined): string {
   font-size: 0.95em;
 }
 
+/* Callout badges in code blocks */
+.callout-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  font-size: 0.75em;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: var(--ebook-link-color);
+  border-radius: 50%;
+  vertical-align: baseline;
+  padding: 0 0.2em;
+  margin: 0 1px;
+}
+
+.has-callouts :deep(.callout-badge) {
+  cursor: default;
+}
+
 /* Sidebar */
 .sidebar-block {
   padding: 1rem 1.25rem;
@@ -919,11 +1129,75 @@ function getAdmonitionTitle(type: string | undefined): string {
   font-size: 1.1em;
 }
 
+/* QandA */
+.qandaset-block {
+  border-left: 3px solid var(--ebook-accent);
+  padding-left: 1rem;
+}
+
+.qandaset-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.qanda-entry {
+  padding: 0.75rem 1rem;
+  background: var(--ebook-bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--ebook-border);
+}
+
+.question-block,
+.answer-block {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.question-label {
+  font-weight: 700;
+  color: var(--ebook-accent);
+  flex-shrink: 0;
+  font-size: 0.95em;
+}
+
+.answer-label {
+  font-weight: 700;
+  color: var(--ebook-text-muted);
+  flex-shrink: 0;
+  font-size: 0.95em;
+}
+
+.question-content,
+.answer-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.answer-block {
+  margin-top: 0.25rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--ebook-border);
+}
+
 /* Link color utility */
 .ebook-link-color {
   color: var(--ebook-link-color);
 }
 .ebook-link-color:hover {
   text-decoration: underline;
+}
+
+/* Lazy placeholder for deferred section rendering */
+.lazy-placeholder {
+  min-height: 100px;
+  background: linear-gradient(
+    180deg,
+    var(--ebook-bg-secondary) 0%,
+    transparent 100%
+  );
+  border-radius: 8px;
+  opacity: 0.4;
 }
 </style>

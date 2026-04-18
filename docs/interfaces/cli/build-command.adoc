@@ -39,6 +39,7 @@ $ docbook build --demo [options]
 | `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
 | `--image-strategy` STRATEGY | `data_url` | Image handling: `data_url`, `file_url`, or `relative`
 | `--title` TITLE | Derived from document | Page title shown in the browser tab
+| `--sort-glossary` | `false` | Sort glossary entries alphabetically by term
 |===
 
 === Demo mode

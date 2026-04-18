@@ -35,6 +35,8 @@ module Docbook
                               desc: "Directories to search for images"
     option :image_strategy, default: "data_url",
                             desc: "Image resolution: data_url, file_url, or relative"
+    option :sort_glossary, type: :boolean, default: false,
+                           desc: "Sort glossary entries alphabetically"
     option :title, desc: "Page title (default: derived from document)"
     def build(input = nil)
       xml_path, output_path, search_dirs, title = if options[:demo]
@@ -58,6 +60,7 @@ module Docbook
         output_path: output_path,
         image_search_dirs: search_dirs,
         image_strategy: options[:image_strategy].to_sym,
+        sort_glossary: options[:sort_glossary],
         title: title,
       )
 
@@ -77,6 +80,8 @@ module Docbook
     desc "export INPUT", "Export DocBook XML as DocbookMirror JSON"
     option :output, aliases: "-o", desc: "Output file (default: stdout)"
     option :pretty, type: :boolean, default: true, desc: "Pretty print JSON"
+    option :sort_glossary, type: :boolean, default: false,
+                           desc: "Sort glossary entries alphabetically"
     option :xinclude, type: :boolean, default: true,
                       desc: "Resolve XIncludes before processing"
     def export(input)
@@ -84,7 +89,7 @@ module Docbook
       require_relative "output/docbook_mirror"
       xml_string = read_input(input, options[:xinclude])
       parsed = parse_input(xml_string)
-      mirror_output = Docbook::Output::DocbookMirror.new(parsed)
+      mirror_output = Docbook::Output::DocbookMirror.new(parsed, sort_glossary: options[:sort_glossary])
       output = if options[:pretty]
                  mirror_output.to_pretty_json
                else

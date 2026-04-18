@@ -269,7 +269,7 @@ After building, `docbook build` automatically includes the compiled assets.
                    │
                    ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                Docbook Gem (metanorma-docbook)                          │
+│                Docbook Gem (metanorma/docbook)                         │
 │                                                                         │
 │  ┌──────────────────────────────────────────────────────────────────┐   │
 │  │  Docbook::Elements::*   (~100+ classes)                          │   │
@@ -398,7 +398,7 @@ SinglePage::     Bundles the Vue SPA build artifacts inline into a single HTML
 == Contributing
 
 Bug reports and pull requests are welcome at
-https://github.com/metanorma/metanorma-docbook.
+https://github.com/metanorma/docbook.
 
 == License
 

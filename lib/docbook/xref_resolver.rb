@@ -3,19 +3,30 @@
 module Docbook
   # Resolves xrefs in a DocBook document by building an O(1) xml:id lookup hash
   # and resolving all xref/linkend references to their target titles.
+  # Resolves xrefs in a DocBook document by building an O(1) xml:id lookup hash
+  # and resolving all xref/linkend references to their target titles.
+  #
+  # @example
+  #   resolver = Docbook::XrefResolver.new(parsed_doc)
+  #   resolver.resolve!
+  #   resolver.title_for("intro")  # => "Introduction"
   class XrefResolver
+    # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
     def initialize(document)
       @document = document
       @xml_id_map = {}
     end
 
-    # Build the xml:id -> element hash
+    # Build the xml:id to element lookup hash.
+    # @return [self]
     def resolve!
       @xml_id_map = build_xml_id_map(@document)
       self
     end
 
-    # Get the resolved title text for a linkend ID
+    # Get the resolved title text for a linkend ID.
+    # @param linkend [String] the xml:id to look up
+    # @return [String, nil]
     def title_for(linkend)
       target = @xml_id_map[linkend.to_s]
       return nil unless target
@@ -23,7 +34,9 @@ module Docbook
       best_title(target)
     end
 
-    # Get element by xml:id
+    # Get element by xml:id.
+    # @param xml_id [String]
+    # @return [Docbook::Elements::*, nil]
     def [](xml_id)
       @xml_id_map[xml_id.to_s]
     end

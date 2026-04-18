@@ -29,6 +29,9 @@ module Docbook
       attribute :programlisting, ProgramListing, collection: true
       attribute :screen, Screen, collection: true
       attribute :indexterm, IndexTerm, collection: true
+      attribute :annotation, Annotation, collection: true
+      attribute :calloutlist, CalloutList, collection: true
+      attribute :qandaset, QandASet, collection: true
 
       xml do
         element "chapter"
@@ -57,6 +60,9 @@ module Docbook
         map_element "programlisting", to: :programlisting
         map_element "screen", to: :screen
         map_element "indexterm", to: :indexterm
+        map_element "annotation", to: :annotation
+        map_element "calloutlist", to: :calloutlist
+        map_element "qandaset", to: :qandaset
       end
     end
   end

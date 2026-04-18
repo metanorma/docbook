@@ -31,14 +31,17 @@ module Docbook
       # @param image_search_dirs [Array<String>] directories to search for images
       # @param image_strategy [Symbol] :file_url, :data_url, or :relative
       # @param title [String] page title for the HTML
+      # @param sort_glossary [Boolean] sort glossary entries alphabetically
       def initialize(xml_path:, output_path:, dist_dir: nil, image_search_dirs: [],
-                     image_strategy: :data_url, title: "DocBook Library")
+                     image_strategy: :data_url, title: "DocBook Library",
+                     sort_glossary: false)
         @xml_path = xml_path
         @dist_dir = dist_dir || FRONTEND_DIST
         @output_path = output_path
         @image_search_dirs = Array(image_search_dirs)
         @image_strategy = image_strategy
         @title = title
+        @sort_glossary = sort_glossary
       end
 
       # Run the full pipeline and write the HTML file.
@@ -69,7 +72,7 @@ module Docbook
         # 5. Transform to DocbookMirror JSON
         require_relative "../mirror"
         require_relative "docbook_mirror"
-        mirror_output = Docbook::Output::DocbookMirror.new(parsed)
+        mirror_output = Docbook::Output::DocbookMirror.new(parsed, sort_glossary: @sort_glossary)
         guide = JSON.parse(mirror_output.to_pretty_json)
 
         # 6. Attach TOC, numbering, index, and metadata
