@@ -18,10 +18,10 @@ module MirrorHelpers
   end
 
   # Like mirror_hash but accepts transformer options (e.g. sort_glossary: true)
-  def mirror_hash_with(xml_string, **options)
+  def mirror_hash_with(xml_string, **)
     require_relative "../../lib/docbook/mirror"
     doc = Docbook::Document.from_xml(xml_string)
-    transformer = Docbook::Mirror::Transformer.new(**options)
+    transformer = Docbook::Mirror::Transformer.new(**)
     transformer.send(:from_docbook, doc).to_h
   end
 
