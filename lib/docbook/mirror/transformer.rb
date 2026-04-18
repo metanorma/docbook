@@ -103,6 +103,12 @@ module Docbook
             content << annotation_node(node)
           when Docbook::Elements::QandASet
             content << qandaset_node(node)
+          when Docbook::Elements::Procedure
+            content << procedure_node(node)
+          when Docbook::Elements::SideBar
+            content << sidebar_node(node)
+          when Docbook::Elements::Footnote
+            content << footnote_node(node)
           else
             dispatch_content_node(node, content)
           end

@@ -221,4 +221,55 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
       expect(answers.length).to eq(2)
     end
   end
+
+  describe "sidebar" do
+    it "produces a sidebar node with title and content" do
+      xml = chapter_xml("<sidebar><title>Aside</title><para>Extra info</para></sidebar>")
+      result = mirror_hash(xml)
+      sb = find_node(result, "sidebar")
+      expect(sb).not_to be_nil
+      expect(sb["attrs"]["title"]).to eq("Aside")
+      para = find_node(sb, "paragraph")
+      expect(para).not_to be_nil
+    end
+
+    it "produces a sidebar without title" do
+      xml = chapter_xml("<sidebar><para>Just content</para></sidebar>")
+      result = mirror_hash(xml)
+      sb = find_node(result, "sidebar")
+      expect(sb).not_to be_nil
+      expect(sb["attrs"]).to be_nil
+    end
+  end
+
+  describe "procedure and steps" do
+    it "produces a procedure with steps" do
+      xml = chapter_xml("<procedure><title>Setup</title><step><para>Download</para></step><step><para>Install</para></step></procedure>")
+      result = mirror_hash(xml)
+      proc = find_node(result, "procedure")
+      expect(proc).not_to be_nil
+      expect(proc["attrs"]["title"]).to eq("Setup")
+      steps = collect_nodes(proc, "step")
+      expect(steps.length).to eq(2)
+    end
+
+    it "produces substeps within a step" do
+      xml = chapter_xml("<procedure><step><para>Main step</para><substeps><step><para>Sub 1</para></step></substeps></step></procedure>")
+      result = mirror_hash(xml)
+      proc = find_node(result, "procedure")
+      expect(proc).not_to be_nil
+      substeps = find_node(proc, "substeps")
+      expect(substeps).not_to be_nil
+    end
+  end
+
+  describe "footnotes" do
+    it "produces footnote markers and entries" do
+      xml = chapter_xml("<para>Text with a note<footnote><para>This is the note</para></footnote>.</para>")
+      result = mirror_hash(xml)
+      marker = find_node(result, "footnote_marker")
+      expect(marker).not_to be_nil
+      expect(marker["attrs"]["number"]).to eq(1)
+    end
+  end
 end

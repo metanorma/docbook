@@ -35,6 +35,9 @@ module Docbook
       attribute :annotation, Annotation, collection: true
       attribute :qandaset, QandASet, collection: true
       attribute :calloutlist, CalloutList, collection: true
+      attribute :sidebar, SideBar, collection: true
+      attribute :procedure, Procedure, collection: true
+      attribute :footnote, Footnote, collection: true
 
       xml do
         element "section"
@@ -69,6 +72,9 @@ module Docbook
         map_element "annotation", to: :annotation
         map_element "qandaset", to: :qandaset
         map_element "calloutlist", to: :calloutlist
+        map_element "sidebar", to: :sidebar
+        map_element "procedure", to: :procedure
+        map_element "footnote", to: :footnote
       end
     end
   end

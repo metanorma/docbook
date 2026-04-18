@@ -22,7 +22,7 @@ to that class's `from_xml` method.
 
 === Docbook::Elements
 
-Contains 157 element classes, one per supported DocBook XML element.
+Contains 160+ element classes, one per supported DocBook XML element.
 Each class inherits from `Lutaml::Model::Serializable` and declares
 typed attributes and XML mappings using the lutaml-model DSL. Classes
 are autoloaded on demand from `lib/docbook/elements/`.
@@ -144,3 +144,65 @@ Every DocBook element is represented by a Ruby class that inherits from
 The `each_mixed_content` method yields child nodes (both `String` and
 element objects) in document order, which is essential for correct
 inline content rendering.
+
+== Frontend architecture
+
+The Vue 3 SPA in `frontend/` follows a composable-based architecture
+with clear separation of concerns.
+
+=== Composables
+
+Each composable (`frontend/src/composables/`) encapsulates a single
+feature with its own state, lifecycle, and cleanup. Composables use
+Vue's `provide`/`inject` pattern to share state down the component tree
+without prop drilling.
+
+[cols="2,4"]
+|===
+| Composable | Responsibility
+
+| `useLazySections` | IntersectionObserver-based deferred section rendering
+| `usePaginatedMode` | Viewport-sized page calculation and navigation
+| `useReadingRuler` | Mouse-following horizontal ruler
+| `useBookmarks` | Bookmark CRUD with localStorage persistence
+| `useTts` | Web Speech API text-to-speech with chunked playback
+| `useReadingStats` | Reading progress tracking and word count metrics
+| `useCloudSync` | Extensible sync via `SyncBackend` interface
+| `useEbookStore` | Theme, font, and reader settings management
+|===
+
+=== Component hierarchy
+
+[source]
+----
+App.vue
+├── EbookContainer.vue       (layout shell)
+│   ├── AppSidebar.vue       (TOC, bookmarks, navigation)
+│   ├── EbookTopBar.vue      (breadcrumb, progress bar)
+│   └── MirrorRenderer.vue   (content rendering)
+│       ├── TextRenderer.vue (inline text + marks)
+│       ├── AnnotationPopup  (hover popup)
+│       └── RefCardSwiper    (card swipe for refentry)
+├── SearchModal.vue          (full-text search)
+├── SettingsPanel.vue        (theme, font, reading mode)
+└── AnnotationPopup.vue      (Teleported popup overlay)
+----
+
+=== Rendering pipeline
+
+. `documentStore.loadFromWindow()` reads embedded JSON into `shallowRef`
+. `useLazySections` creates an IntersectionObserver with 2000px root margin
+. `MirrorRenderer` recursively walks the DocbookMirror node tree
+. Non-visible sections render as lightweight placeholders
+. Sections become visible as they approach the viewport
+
+=== Open/Closed Principle
+
+The frontend follows OCP in several places:
+
+* **SyncBackend interface** -- new cloud backends (WebDAV, Google Drive)
+  implement the `SyncBackend` interface without modifying `useCloudSync`
+* **MirrorRenderer node dispatch** -- adding a new node type requires
+  only adding a `v-else-if` block in the template; no existing code changes
+* **Transformer container mapping** -- new element types map to handler
+  methods via a dispatch hash; adding a type doesn't modify existing handlers

@@ -26,6 +26,13 @@ The transformer produces a tree of node types including:
 * `Mirror::Node::Block` -- Typed block nodes (paragraph, heading, code_block,
   blockquote, image, list, table, admonition, footnote, etc.)
 * `Mirror::Node::Text` -- Text content with optional marks
+* `Node::CalloutList` / `Node::Callout` -- Callout annotation lists for code
+* `Node::Glossary` / `Node::GlossEntry` / `Node::GlossTerm` / `Node::GlossDef` --
+  Glossary entries with optional alphabetical sorting
+* `Node::GlossSee` / `Node::GlossSeeAlso` -- Glossary cross-references
+* `Node::Sidebar` -- Sidebar blocks with optional title
+* Annotation, Q&A (qandaset/qandaentry/question/answer) nodes for
+  interactive content
 
 === Mirror::Mark types
 

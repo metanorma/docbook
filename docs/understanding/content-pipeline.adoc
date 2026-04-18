@@ -74,6 +74,24 @@ mapped to a corresponding mirror node type: paragraphs become `paragraph`
 nodes, code listings become `code_block` nodes, and so on. Inline
 elements produce text nodes with marks (emphasis, code, link, xref).
 
+During code block processing, the transformer extracts `<co>` (callout
+origin) elements as numbered marker metadata. The markers are inserted
+into the code text as `(1)`, `(2)`, etc., and their metadata (id, label,
+number) is stored in the `callouts` attribute for the frontend to render
+as styled badges.
+
+Annotations (`<annotation>`) are preserved as `annotation` nodes with
+their `xml_id` and inline content, enabling the frontend to render
+interactive hover/click popups.
+
+Glossary entries support alphabetical sorting when the `sort_glossary`
+option is enabled, and preserve `glosssee`/`glossseealso` cross-references
+as dedicated node types.
+
+Q&A sets (`<qandaset>`) are decomposed into `qandaset`, `qandaentry`,
+`question`, and `answer` nodes, supporting FAQ-style rendering with
+multiple answers per entry.
+
 == Step 8: Index collection and generation
 
 The `IndexCollector` traverses the element tree looking for
