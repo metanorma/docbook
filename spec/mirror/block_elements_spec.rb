@@ -224,7 +224,7 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
 
   describe "sidebar" do
     it "produces a sidebar node with title and content" do
-      xml = chapter_xml('<sidebar><title>Aside</title><para>Extra info</para></sidebar>')
+      xml = chapter_xml("<sidebar><title>Aside</title><para>Extra info</para></sidebar>")
       result = mirror_hash(xml)
       sb = find_node(result, "sidebar")
       expect(sb).not_to be_nil
@@ -234,7 +234,7 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
     end
 
     it "produces a sidebar without title" do
-      xml = chapter_xml('<sidebar><para>Just content</para></sidebar>')
+      xml = chapter_xml("<sidebar><para>Just content</para></sidebar>")
       result = mirror_hash(xml)
       sb = find_node(result, "sidebar")
       expect(sb).not_to be_nil
@@ -244,7 +244,7 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
 
   describe "procedure and steps" do
     it "produces a procedure with steps" do
-      xml = chapter_xml('<procedure><title>Setup</title><step><para>Download</para></step><step><para>Install</para></step></procedure>')
+      xml = chapter_xml("<procedure><title>Setup</title><step><para>Download</para></step><step><para>Install</para></step></procedure>")
       result = mirror_hash(xml)
       proc = find_node(result, "procedure")
       expect(proc).not_to be_nil
@@ -254,7 +254,7 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
     end
 
     it "produces substeps within a step" do
-      xml = chapter_xml('<procedure><step><para>Main step</para><substeps><step><para>Sub 1</para></step></substeps></step></procedure>')
+      xml = chapter_xml("<procedure><step><para>Main step</para><substeps><step><para>Sub 1</para></step></substeps></step></procedure>")
       result = mirror_hash(xml)
       proc = find_node(result, "procedure")
       expect(proc).not_to be_nil
@@ -265,7 +265,7 @@ RSpec.describe "Mirror Transformer — Block Elements", :mirror do
 
   describe "footnotes" do
     it "produces footnote markers and entries" do
-      xml = chapter_xml('<para>Text with a note<footnote><para>This is the note</para></footnote>.</para>')
+      xml = chapter_xml("<para>Text with a note<footnote><para>This is the note</para></footnote>.</para>")
       result = mirror_hash(xml)
       marker = find_node(result, "footnote_marker")
       expect(marker).not_to be_nil
