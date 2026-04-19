@@ -1,44 +1,9 @@
 <template>
   <div class="list-of-sections mt-12 space-y-10" v-if="hasAny">
-    <!-- List of Figures -->
-    <section v-if="listOf.figures?.length" class="list-of-group">
-      <h2 class="list-of-heading">List of Figures</h2>
+    <section v-for="group in listGroups" :key="group.key" v-if="group.items?.length" class="list-of-group">
+      <h2 class="list-of-heading">{{ group.heading }}</h2>
       <ul class="list-of-entries">
-        <li v-for="entry in listOf.figures" :key="entry.id || entry.title">
-          <a v-if="entry.id" :href="`#${entry.id}`" class="list-of-link">
-            <span v-if="entry.number" class="list-of-number">{{ entry.number }}</span>
-            {{ entry.title }}
-          </a>
-          <span v-else>
-            <span v-if="entry.number" class="list-of-number">{{ entry.number }}</span>
-            {{ entry.title }}
-          </span>
-        </li>
-      </ul>
-    </section>
-
-    <!-- List of Tables -->
-    <section v-if="listOf.tables?.length" class="list-of-group">
-      <h2 class="list-of-heading">List of Tables</h2>
-      <ul class="list-of-entries">
-        <li v-for="entry in listOf.tables" :key="entry.id || entry.title">
-          <a v-if="entry.id" :href="`#${entry.id}`" class="list-of-link">
-            <span v-if="entry.number" class="list-of-number">{{ entry.number }}</span>
-            {{ entry.title }}
-          </a>
-          <span v-else>
-            <span v-if="entry.number" class="list-of-number">{{ entry.number }}</span>
-            {{ entry.title }}
-          </span>
-        </li>
-      </ul>
-    </section>
-
-    <!-- List of Examples -->
-    <section v-if="listOf.examples?.length" class="list-of-group">
-      <h2 class="list-of-heading">List of Examples</h2>
-      <ul class="list-of-entries">
-        <li v-for="entry in listOf.examples" :key="entry.id || entry.title">
+        <li v-for="entry in group.items" :key="entry.id || entry.title">
           <a v-if="entry.id" :href="`#${entry.id}`" class="list-of-link">
             <span v-if="entry.number" class="list-of-number">{{ entry.number }}</span>
             {{ entry.title }}
@@ -60,6 +25,12 @@ import type { ListOfData } from '@/stores/documentStore'
 const props = defineProps<{
   listOf: ListOfData
 }>()
+
+const listGroups = [
+  { key: 'figures', heading: 'List of Figures', items: computed(() => props.listOf.figures) },
+  { key: 'tables', heading: 'List of Tables', items: computed(() => props.listOf.tables) },
+  { key: 'examples', heading: 'List of Examples', items: computed(() => props.listOf.examples) },
+]
 
 const hasAny = computed(() =>
   (props.listOf.figures?.length ?? 0) +

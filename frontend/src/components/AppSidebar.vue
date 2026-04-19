@@ -119,7 +119,7 @@
 import { computed, ref, inject } from 'vue'
 import { useDocumentStore } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useEbookStore, type Theme } from '@/composables/useEbookStore'
+import { useEbookStore } from '@/composables/useEbookStore'
 import { useBookmarks, type Bookmark } from '@/composables/useBookmarks'
 import TocTreeItem from '@/components/TocTreeItem.vue'
 
@@ -131,8 +131,6 @@ const sidebarEl = ref<HTMLElement | null>(null)
 const bookmarks = inject<ReturnType<typeof useBookmarks>>('bookmarks')!
 const navigateToId = inject<(id: string) => void>('navigateToId', () => {})
 
-const themeOrder: Theme[] = ['day', 'sepia', 'night', 'oled']
-
 const themeLabel = computed(() => {
   switch (ebookStore.theme.value) {
     case 'day': return 'Day'
@@ -142,11 +140,7 @@ const themeLabel = computed(() => {
   }
 })
 
-function cycleTheme() {
-  const currentIndex = themeOrder.indexOf(ebookStore.theme.value)
-  const nextIndex = (currentIndex + 1) % themeOrder.length
-  ebookStore.setTheme(themeOrder[nextIndex])
-}
+function cycleTheme() { ebookStore.cycleTheme() }
 
 function setFontFamily(font: 'sans' | 'serif') {
   ebookStore.setFontFamily(font as any)

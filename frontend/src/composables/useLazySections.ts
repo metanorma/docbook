@@ -23,14 +23,11 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
         for (const entry of entries) {
           const id = entry.target.id
           if (!id) continue
+          // Grow-only: once visible, always visible.
+          // Never un-render content that has already been shown.
           if (entry.isIntersecting) {
             if (!updated.has(id)) {
               updated.add(id)
-              changed = true
-            }
-          } else {
-            if (updated.has(id)) {
-              updated.delete(id)
               changed = true
             }
           }
@@ -63,6 +60,14 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
           visibleIds.value = new Set([...visibleIds.value, id])
         }
       }
+    }
+  }
+
+  // Force a section to be visible immediately (used by navigation)
+  function markVisible(id: string) {
+    if (!id) return
+    if (!visibleIds.value.has(id)) {
+      visibleIds.value = new Set([...visibleIds.value, id])
     }
   }
 
@@ -99,6 +104,7 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
     visibleIds,
     isVisible,
     observeSection,
+    markVisible,
     initialized,
   }
 }

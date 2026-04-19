@@ -1,153 +1,20 @@
 <template>
   <div class="content-blocks">
     <template v-for="(block, index) in blocks" :key="index">
+
       <!-- Document node - recurse into content -->
       <template v-if="block.type === 'doc'">
         <MirrorRenderer :blocks="block.content || []" />
       </template>
 
-      <!-- Section -->
-      <section v-else-if="block.type === 'section'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text mr-2 font-normal">{{ getNumbering(block.attrs?.xml_id) }}</span>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Chapter -->
-      <section v-else-if="block.type === 'chapter'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Appendix -->
-      <section v-else-if="block.type === 'appendix'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Part -->
-      <section v-else-if="block.type === 'part'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-3xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          <span v-if="getNumbering(block.attrs?.xml_id)" class="muted-text text-2xl font-normal mr-3">{{ getNumbering(block.attrs?.xml_id) }}</span>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Reference -->
-      <section v-else-if="block.type === 'reference'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- RefEntry -->
-      <article v-else-if="block.type === 'refentry'" :id="block.attrs?.xml_id" class="mb-6 border border-ebook-border rounded-lg p-4">
-        <div v-if="block.attrs?.title" class="text-lg font-bold font-mono heading-text mb-3">{{ block.attrs.title }}</div>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </article>
+      <!-- All section-like types (17 types) handled by SectionBlock -->
+      <SectionBlock v-else-if="isSectionType(block.type)" :block="block" />
 
       <!-- RefSection -->
       <div v-else-if="block.type === 'refsection'" class="mb-4">
         <h3 v-if="block.attrs?.title" class="text-base font-semibold heading-text mb-2">{{ block.attrs.title }}</h3>
         <MirrorRenderer :blocks="block.content || []" />
       </div>
-
-      <!-- Preface -->
-      <section v-else-if="block.type === 'preface'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Dedication -->
-      <section v-else-if="block.type === 'dedication'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3 text-center">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <div class="max-w-lg mx-auto text-center italic">
-            <MirrorRenderer :blocks="block.content || []" />
-          </div>
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Acknowledgements -->
-      <section v-else-if="block.type === 'acknowledgements'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Colophon -->
-      <section v-else-if="block.type === 'colophon'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Glossary -->
-      <section v-else-if="block.type === 'glossary'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <dl class="glossary-list">
-            <MirrorRenderer :blocks="block.content || []" />
-          </dl>
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
 
       <!-- GlossEntry -->
       <template v-else-if="block.type === 'gloss_entry'">
@@ -166,27 +33,15 @@
 
       <!-- GlossSee -->
       <dd v-else-if="block.type === 'gloss_see'" class="ml-4 mb-1 text-sm muted-text italic">
-        See: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ getTextContent(block) }}</a>
-        <template v-else>{{ getTextContent(block) }}</template>
+        See: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ extractText(block) }}</a>
+        <template v-else>{{ extractText(block) }}</template>
       </dd>
 
       <!-- GlossSeeAlso -->
       <dd v-else-if="block.type === 'gloss_see_also'" class="ml-4 mb-1 text-sm muted-text italic">
-        See also: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ getTextContent(block) }}</a>
-        <template v-else>{{ getTextContent(block) }}</template>
+        See also: <a v-if="block.attrs?.otherterm" :href="`#${block.attrs.otherterm}`" class="ebook-link-color">{{ extractText(block) }}</a>
+        <template v-else>{{ extractText(block) }}</template>
       </dd>
-
-      <!-- Bibliography -->
-      <section v-else-if="block.type === 'bibliography'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
 
       <!-- BiblioEntry -->
       <div v-else-if="block.type === 'biblio_entry'" :id="block.attrs?.xml_id" class="biblio-entry mb-3 pl-6 -indent-6">
@@ -194,18 +49,6 @@
           <TextRenderer v-if="child.type === 'text'" :node="child" />
         </template>
       </div>
-
-      <!-- Index Block -->
-      <section v-else-if="block.type === 'index_block'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
 
       <!-- Index Div -->
       <div v-else-if="block.type === 'index_div'" class="mb-3">
@@ -219,20 +62,6 @@
           <TextRenderer v-if="child.type === 'text'" :node="child" />
         </template>
       </div>
-
-      <!-- Procedure -->
-      <section v-else-if="block.type === 'procedure'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-lg font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <ol class="procedure-list">
-            <MirrorRenderer :blocks="block.content || []" />
-          </ol>
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
 
       <!-- Step -->
       <li v-else-if="block.type === 'step'" :id="block.attrs?.xml_id" class="step-item mb-3">
@@ -306,42 +135,6 @@
         <MirrorRenderer :blocks="block.content || []" />
       </aside>
 
-      <!-- Set -->
-      <section v-else-if="block.type === 'set'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-3xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
-      <!-- Article -->
-      <article v-else-if="block.type === 'article'" :id="block.attrs?.xml_id" class="mb-6">
-        <h1 v-if="block.attrs?.title" class="heading-with-anchor text-2xl font-bold heading-text mb-4">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h1>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </article>
-
-      <!-- Topic -->
-      <section v-else-if="block.type === 'topic'" :id="block.attrs?.xml_id" class="mb-6">
-        <h2 v-if="block.attrs?.title" class="heading-with-anchor text-xl font-semibold heading-text mb-3">
-          <a v-if="block.attrs?.xml_id" :href="`#${block.attrs.xml_id}`" class="anchor-link" @click.prevent="copyAnchor(block.attrs.xml_id)">#</a>
-          {{ block.attrs.title }}
-        </h2>
-        <template v-if="!shouldLazyRender(block) || isSectionVisible(block)">
-          <MirrorRenderer :blocks="block.content || []" />
-        </template>
-        <div v-else class="lazy-placeholder" :data-section-id="block.attrs?.xml_id"></div>
-      </section>
-
       <!-- Synopsis -->
       <div v-else-if="block.type === 'synopsis'" class="mb-4 p-3 bg-ebook-bg-secondary rounded text-sm font-mono">
         <MirrorRenderer :blocks="block.content || []" />
@@ -366,7 +159,7 @@
         </template>
       </p>
 
-      <!-- Code block with syntax highlighting (also used for examples/figures with code) -->
+      <!-- Code block with syntax highlighting -->
       <div v-else-if="block.type === 'code_block'" :id="block.attrs?.xml_id" class="mb-4">
         <div v-if="block.attrs?.title" class="text-sm font-semibold muted-text mb-1">
           <span v-if="getNumbering(block.attrs?.xml_id)" class="mr-1">Example {{ getNumbering(block.attrs?.xml_id) }}: </span>{{ block.attrs.title }}
@@ -376,7 +169,7 @@
         </div>
         <div class="code-block-wrapper relative group">
           <span v-if="block.attrs?.language" class="code-language-badge">{{ block.attrs.language }}</span>
-          <pre class="code-block overflow-x-auto text-sm font-mono" :class="[block.attrs?.language ? 'language-' + block.attrs.language : '', block.attrs?.callouts ? 'has-callouts' : '']"><code v-html="highlightWithCallouts(getTextContent(block), block.attrs?.language, block.attrs?.callouts)"></code></pre>
+          <pre class="code-block overflow-x-auto text-sm font-mono" :class="[block.attrs?.language ? 'language-' + block.attrs.language : '', block.attrs?.callouts ? 'has-callouts' : '']"><code v-html="highlightWithCallouts(extractText(block), block.attrs?.language, block.attrs?.callouts)"></code></pre>
           <button
             class="copy-btn"
             :class="{ 'copy-btn-done': copiedBlockId === getBlockId(block) }"
@@ -514,31 +307,30 @@
       </div>
 
       <!-- Fallback: render as paragraph if text exists -->
-      <p v-else-if="getTextContent(block)" class="mb-3 ebook-text">
-        {{ getTextContent(block) }}
+      <p v-else-if="extractText(block)" class="mb-3 ebook-text">
+        {{ extractText(block) }}
       </p>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, inject, type Ref } from 'vue'
+import { ref, inject } from 'vue'
 import TextRenderer from './TextRenderer.vue'
 import AnnotationPopup from './AnnotationPopup.vue'
+import SectionBlock from './blocks/SectionBlock.vue'
 import type { MirrorBlockNode } from '@/stores/documentStore'
 import { useDocumentStore } from '@/stores/documentStore'
 import { highlightCode } from '@/utils/highlight'
+import { copyToClipboard } from '@/utils/clipboard'
+import { extractText } from '@/utils/nodeExtract'
+import { isSectionType } from '@/utils/typeMetadata'
 
 defineProps<{
   blocks: MirrorBlockNode[]
 }>()
 
 const documentStore = useDocumentStore()
-
-// Lazy section rendering support (provided by App.vue)
-const lazyVisible = inject<(id: string) => boolean>('lazySectionVisible', () => true)
-const lazyObserve = inject<(id: string) => void>('lazyObserveSection', () => {})
-const lazyReady = inject<Ref<boolean>>('lazyInitialized', ref(true))
 
 const copiedBlockId = ref<string | null>(null)
 const activeAnnotation = ref<number | null>(null)
@@ -579,28 +371,17 @@ type LightboxOpener = (src: string, alt?: string, title?: string) => void
 const lightboxOpen = inject<LightboxOpener>('lightbox', () => {})
 
 function getBlockId(block: MirrorBlockNode): string {
-  return `${block.type}-${getTextContent(block).slice(0, 40)}`
+  return `${block.type}-${extractText(block).slice(0, 40)}`
 }
 
 function copyCode(block: MirrorBlockNode, event: Event) {
   const btn = event.currentTarget as HTMLElement
   const wrapper = btn.closest('.code-block-wrapper')
   const codeEl = wrapper?.querySelector('code')
-  const text = codeEl?.textContent || getTextContent(block)
+  const text = codeEl?.textContent || extractText(block)
 
   const id = getBlockId(block)
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text)
-  } else {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-  }
+  copyToClipboard(text)
 
   copiedBlockId.value = id
   setTimeout(() => {
@@ -610,54 +391,9 @@ function copyCode(block: MirrorBlockNode, event: Event) {
   }, 2000)
 }
 
-function copyAnchor(id: string) {
-  const url = `${window.location.origin}${window.location.pathname}#${id}`
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(url)
-  } else {
-    const textarea = document.createElement('textarea')
-    textarea.value = url
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-  }
-}
-
 function getNumbering(id: string | undefined): string {
   if (!id) return ''
   return documentStore.getNumbering(id)
-}
-
-// Section-like types that get lazy rendering
-const LAZY_SECTION_TYPES = new Set([
-  'chapter', 'section', 'appendix', 'part', 'preface',
-  'dedication', 'acknowledgements', 'colophon', 'glossary',
-  'bibliography', 'reference', 'refentry', 'procedure',
-  'article', 'topic', 'set', 'index_block',
-])
-
-function shouldLazyRender(block: MirrorBlockNode): boolean {
-  return !!(block.attrs?.xml_id && LAZY_SECTION_TYPES.has(block.type))
-}
-
-function isSectionVisible(block: MirrorBlockNode): boolean {
-  if (!lazyReady.value) return true
-  const id = block.attrs?.xml_id
-  if (!id) return true
-  // Register for observation
-  lazyObserve(id)
-  return lazyVisible(id)
-}
-
-function getTextContent(node: MirrorBlockNode): string {
-  if (!node.content) return ''
-  return node.content
-    .filter((n): n is { type: 'text'; text: string } => n.type === 'text')
-    .map(n => n.text)
-    .join('')
 }
 
 interface CalloutMarker {
@@ -668,7 +404,6 @@ interface CalloutMarker {
 
 function highlightWithCallouts(code: string, language: string | undefined, callouts?: CalloutMarker[]): string {
   let html = highlightCode(code, language)
-  // Replace callout markers like (1), (2) with styled spans
   if (callouts && callouts.length > 0) {
     for (const co of callouts) {
       const label = co.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -691,20 +426,13 @@ function getColSpan(attrs: Record<string, string | undefined> | undefined): numb
 
 function getAdmonitionClass(type: string | undefined): string {
   switch (type) {
-    case 'note':
-      return 'admonition-note'
-    case 'warning':
-      return 'admonition-warning'
-    case 'danger':
-      return 'admonition-danger'
-    case 'caution':
-      return 'admonition-caution'
-    case 'important':
-      return 'admonition-important'
-    case 'tip':
-      return 'admonition-tip'
-    default:
-      return 'admonition-note'
+    case 'note': return 'admonition-note'
+    case 'warning': return 'admonition-warning'
+    case 'danger': return 'admonition-danger'
+    case 'caution': return 'admonition-caution'
+    case 'important': return 'admonition-important'
+    case 'tip': return 'admonition-tip'
+    default: return 'admonition-note'
   }
 }
 
@@ -742,25 +470,11 @@ function getAdmonitionTitle(type: string | undefined): string {
 </script>
 
 <style scoped>
-.ebook-text {
-  color: var(--ebook-text);
-}
-
-.heading-text {
-  color: var(--ebook-text-heading);
-}
-
-.muted-text {
-  color: var(--ebook-text-muted);
-}
-
-.bg-ebook-bg-secondary {
-  background: var(--ebook-bg-secondary);
-}
-
-.border-ebook-border {
-  border-color: var(--ebook-border);
-}
+.ebook-text { color: var(--ebook-text); }
+.heading-text { color: var(--ebook-text-heading); }
+.muted-text { color: var(--ebook-text-muted); }
+.bg-ebook-bg-secondary { background: var(--ebook-bg-secondary); }
+.border-ebook-border { border-color: var(--ebook-border); }
 
 /* Admonition layout */
 .admonition {
@@ -770,434 +484,118 @@ function getAdmonitionTitle(type: string | undefined): string {
   border-radius: 8px;
   margin: 16px 0;
 }
-
-.admonition-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  margin-top: 1px;
-}
-
-.admonition-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.admonition-title {
-  font-weight: 700;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  font-size: 0.75em;
-  letter-spacing: 0.04em;
-}
-
-.admonition-content {
-  flex: 1;
-  min-width: 0;
-}
+.admonition-icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+.admonition-icon :deep(svg) { width: 20px; height: 20px; }
+.admonition-title { font-weight: 700; margin-bottom: 4px; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.04em; }
+.admonition-content { flex: 1; min-width: 0; }
 
 /* Admonition colors */
-.admonition-note {
-  background: color-mix(in srgb, #3b82f6 10%, var(--ebook-bg));
-  color: #1d4ed8;
-  border-left: 3px solid #3b82f6;
-}
+.admonition-note { background: color-mix(in srgb, #3b82f6 10%, var(--ebook-bg)); color: #1d4ed8; border-left: 3px solid #3b82f6; }
+.admonition-warning { background: color-mix(in srgb, #eab308 10%, var(--ebook-bg)); color: #a16207; border-left: 3px solid #eab308; }
+.admonition-danger { background: color-mix(in srgb, #ef4444 10%, var(--ebook-bg)); color: #b91c1c; border-left: 3px solid #ef4444; }
+.admonition-caution { background: color-mix(in srgb, #f97316 10%, var(--ebook-bg)); color: #c2410c; border-left: 3px solid #f97316; }
+.admonition-important { background: color-mix(in srgb, #a855f7 10%, var(--ebook-bg)); color: #7e22ce; border-left: 3px solid #a855f7; }
+.admonition-tip { background: color-mix(in srgb, #22c55e 10%, var(--ebook-bg)); color: #15803d; border-left: 3px solid #22c55e; }
 
-.admonition-warning {
-  background: color-mix(in srgb, #eab308 10%, var(--ebook-bg));
-  color: #a16207;
-  border-left: 3px solid #eab308;
-}
-
-.admonition-danger {
-  background: color-mix(in srgb, #ef4444 10%, var(--ebook-bg));
-  color: #b91c1c;
-  border-left: 3px solid #ef4444;
-}
-
-.admonition-caution {
-  background: color-mix(in srgb, #f97316 10%, var(--ebook-bg));
-  color: #c2410c;
-  border-left: 3px solid #f97316;
-}
-
-.admonition-important {
-  background: color-mix(in srgb, #a855f7 10%, var(--ebook-bg));
-  color: #7e22ce;
-  border-left: 3px solid #a855f7;
-}
-
-.admonition-tip {
-  background: color-mix(in srgb, #22c55e 10%, var(--ebook-bg));
-  color: #15803d;
-  border-left: 3px solid #22c55e;
-}
-
-.code-block-wrapper {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
+/* Code block */
+.code-block-wrapper { position: relative; border-radius: 8px; overflow: hidden; }
 .code-block {
-  background: var(--ebook-code-bg);
-  color: var(--ebook-code-text);
+  background: var(--ebook-code-bg); color: var(--ebook-code-text);
   border-left: 3px solid var(--ebook-accent);
-  padding: 16px 16px 16px 19px;
-  overflow-x: auto;
+  padding: 16px 16px 16px 19px; overflow-x: auto;
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Menlo', 'Consolas', monospace;
   line-height: 1.5;
 }
-
-.code-block code {
-  font-family: inherit;
-  background: none;
-  padding: 0;
-}
-
+.code-block code { font-family: inherit; background: none; padding: 0; }
 .code-language-badge {
-  position: absolute;
-  top: 6px;
-  right: 44px;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  position: absolute; top: 6px; right: 44px;
+  font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
   font-family: system-ui, -apple-system, sans-serif;
-  color: var(--chrome-text-dim);
-  background: var(--chrome-bg);
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--chrome-border);
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  color: var(--chrome-text-dim); background: var(--chrome-bg);
+  padding: 2px 8px; border-radius: 4px; border: 1px solid var(--chrome-border);
+  z-index: 1; opacity: 0; transition: opacity 0.15s ease;
 }
-
-.code-block-wrapper:hover .code-language-badge {
-  opacity: 1;
-}
-
+.code-block-wrapper:hover .code-language-badge { opacity: 1; }
 .copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 4px;
-  border-radius: 6px;
-  background: var(--chrome-bg);
-  color: var(--chrome-text-dim);
+  position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 4px; border-radius: 6px;
+  background: var(--chrome-bg); color: var(--chrome-text-dim);
   border: 1px solid var(--chrome-border);
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
-  cursor: pointer;
+  opacity: 0; transition: opacity 0.15s ease, background 0.15s ease; cursor: pointer;
 }
+.code-block-wrapper:hover .copy-btn, .copy-btn:focus, .copy-btn-done { opacity: 1; }
+.copy-btn:hover { background: var(--chrome-bg-hover); color: var(--chrome-text); }
+.copy-btn-done { background: color-mix(in srgb, #22c55e 15%, var(--chrome-bg)); color: #22c55e; border-color: #22c55e; }
+.refclass-badge { background: var(--chrome-bg-hover); color: var(--chrome-text-dim); }
 
-.code-block-wrapper:hover .copy-btn,
-.copy-btn:focus,
-.copy-btn-done {
-  opacity: 1;
-}
+/* Footnotes */
+.footnote-marker { font-size: 0.75em; vertical-align: super; line-height: 0; }
+.footnote-marker a { color: var(--ebook-link-color); text-decoration: none; cursor: pointer; }
+.footnote-marker a:hover { text-decoration: underline; }
+.footnote-backref { color: var(--ebook-link-color); text-decoration: none; font-size: 0.8em; }
+.footnote-backref:hover { text-decoration: underline; }
 
-.refclass-badge {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text-dim);
-}
-
-.copy-btn:hover {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text);
-}
-
-.copy-btn-done {
-  background: color-mix(in srgb, #22c55e 15%, var(--chrome-bg));
-  color: #22c55e;
-  border-color: #22c55e;
-}
-
-.heading-with-anchor {
-  position: relative;
-  scroll-margin-top: 70px;
-}
-
-.anchor-link {
-  position: absolute;
-  left: -1.2em;
-  color: var(--ebook-text-muted);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  text-decoration: none;
-  font-weight: 400;
-  font-size: 0.7em;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.heading-with-anchor:hover .anchor-link,
-.anchor-link:focus {
-  opacity: 1;
-}
-
-.footnote-marker {
-  font-size: 0.75em;
-  vertical-align: super;
-  line-height: 0;
-}
-
-.footnote-marker a {
-  color: var(--ebook-link-color);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.footnote-marker a:hover {
-  text-decoration: underline;
-}
-
-.footnote-backref {
-  color: var(--ebook-link-color);
-  text-decoration: none;
-  font-size: 0.8em;
-}
-
-.footnote-backref:hover {
-  text-decoration: underline;
-}
-
-/* Annotation inline marker */
-.annotation-inline {
-  display: inline;
-}
-
+/* Annotation */
+.annotation-inline { display: inline; }
 .annotation-marker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
   background: color-mix(in srgb, var(--ebook-link-color) 12%, var(--ebook-bg));
-  color: var(--ebook-link-color);
-  cursor: pointer;
-  vertical-align: super;
-  margin: 0 2px;
-  transition: background 0.15s ease;
+  color: var(--ebook-link-color); cursor: pointer; vertical-align: super;
+  margin: 0 2px; transition: background 0.15s ease;
 }
+.annotation-marker:hover { background: color-mix(in srgb, var(--ebook-link-color) 25%, var(--ebook-bg)); }
+.annotation-icon { width: 12px; height: 12px; }
 
-.annotation-marker:hover {
-  background: color-mix(in srgb, var(--ebook-link-color) 25%, var(--ebook-bg));
-}
-
-.annotation-icon {
-  width: 12px;
-  height: 12px;
-}
-
-/* Table horizontal scroll */
-.table-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 6px;
-  border: 1px solid var(--ebook-border);
-}
-
-.table-scroll-wrapper table {
-  min-width: 400px;
-}
-
-.table-scroll-wrapper thead th {
-  position: sticky;
-  top: 0;
-  background: var(--ebook-bg-secondary);
-  z-index: 1;
-}
-
-.table-row:nth-child(even) {
-  background: color-mix(in srgb, var(--ebook-text) 3%, var(--ebook-bg));
-}
-
-/* Glossary */
-.glossary-list {
-  margin-left: 0;
-}
-
-.glossary-list dt {
-  font-weight: 700;
-  margin-top: 1rem;
-  color: var(--ebook-text-heading);
-}
-
-.glossary-list dd {
-  margin-left: 1rem;
-  margin-bottom: 0.5rem;
-  color: var(--ebook-text);
-}
-
-/* Bibliography entries - hanging indent */
-.biblio-entry {
-  hanging-punctuation: first;
-}
+/* Table */
+.table-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 6px; border: 1px solid var(--ebook-border); }
+.table-scroll-wrapper table { min-width: 400px; }
+.table-scroll-wrapper thead th { position: sticky; top: 0; background: var(--ebook-bg-secondary); z-index: 1; }
+.table-row:nth-child(even) { background: color-mix(in srgb, var(--ebook-text) 3%, var(--ebook-bg)); }
 
 /* Procedure */
-.procedure-list {
-  list-style: decimal;
-  padding-left: 1.5rem;
-  counter-reset: procedure-counter;
-}
+.procedure-list { list-style: decimal; padding-left: 1.5rem; counter-reset: procedure-counter; }
+.step-item { margin-bottom: 0.75rem; padding-left: 0.5rem; }
+.step-content { margin-top: 0.25rem; }
+.substeps-item { list-style: none; }
+.substeps-item .procedure-list { margin-top: 0.5rem; }
 
-.step-item {
-  margin-bottom: 0.75rem;
-  padding-left: 0.5rem;
-}
-
-.step-content {
-  margin-top: 0.25rem;
-}
-
-.substeps-item {
-  list-style: none;
-}
-
-.substeps-item .procedure-list {
-  margin-top: 0.5rem;
-}
-
-/* Callout list */
-.callout-list {
-  list-style: decimal;
-  padding-left: 1.5rem;
-}
-
-.callout-item {
-  margin-bottom: 0.5rem;
-  font-size: 0.95em;
-}
-
-/* Callout badges in code blocks */
+/* Callout */
+.callout-list { list-style: decimal; padding-left: 1.5rem; }
+.callout-item { margin-bottom: 0.5rem; font-size: 0.95em; }
 .callout-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.4em;
-  height: 1.4em;
-  font-size: 0.75em;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.4em; height: 1.4em; font-size: 0.75em;
   font-family: system-ui, -apple-system, sans-serif;
-  font-weight: 600;
-  line-height: 1;
-  color: #fff;
-  background: var(--ebook-link-color);
-  border-radius: 50%;
-  vertical-align: baseline;
-  padding: 0 0.2em;
-  margin: 0 1px;
+  font-weight: 600; line-height: 1; color: #fff;
+  background: var(--ebook-link-color); border-radius: 50%;
+  vertical-align: baseline; padding: 0 0.2em; margin: 0 1px;
 }
-
-.has-callouts :deep(.callout-badge) {
-  cursor: default;
-}
+.has-callouts :deep(.callout-badge) { cursor: default; }
 
 /* Sidebar */
-.sidebar-block {
-  padding: 1rem 1.25rem;
-  border-left: 3px solid var(--ebook-accent);
-  background: color-mix(in srgb, var(--ebook-accent) 5%, var(--ebook-bg));
-  border-radius: 0 8px 8px 0;
-}
-
-.sidebar-title {
-  font-weight: 600;
-  font-size: 0.9em;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ebook-accent);
-  margin-bottom: 0.5rem;
-}
+.sidebar-block { padding: 1rem 1.25rem; border-left: 3px solid var(--ebook-accent); background: color-mix(in srgb, var(--ebook-accent) 5%, var(--ebook-bg)); border-radius: 0 8px 8px 0; }
+.sidebar-title { font-weight: 600; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ebook-accent); margin-bottom: 0.5rem; }
 
 /* Equation */
-.equation-block {
-  padding: 1rem;
-  background: var(--ebook-bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--ebook-border);
-}
-
-.equation-content {
-  font-size: 1.1em;
-}
+.equation-block { padding: 1rem; background: var(--ebook-bg-secondary); border-radius: 8px; border: 1px solid var(--ebook-border); }
+.equation-content { font-size: 1.1em; }
 
 /* QandA */
-.qandaset-block {
-  border-left: 3px solid var(--ebook-accent);
-  padding-left: 1rem;
-}
+.qandaset-block { border-left: 3px solid var(--ebook-accent); padding-left: 1rem; }
+.qandaset-entries { display: flex; flex-direction: column; gap: 0.75rem; }
+.qanda-entry { padding: 0.75rem 1rem; background: var(--ebook-bg-secondary); border-radius: 8px; border: 1px solid var(--ebook-border); }
+.question-block, .answer-block { display: flex; gap: 0.5rem; align-items: flex-start; }
+.question-label { font-weight: 700; color: var(--ebook-accent); flex-shrink: 0; font-size: 0.95em; }
+.answer-label { font-weight: 700; color: var(--ebook-text-muted); flex-shrink: 0; font-size: 0.95em; }
+.question-content, .answer-content { flex: 1; min-width: 0; }
+.answer-block { margin-top: 0.25rem; padding-left: 0.5rem; border-left: 2px solid var(--ebook-border); }
 
-.qandaset-entries {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+/* Link color */
+.ebook-link-color { color: var(--ebook-link-color); }
+.ebook-link-color:hover { text-decoration: underline; }
 
-.qanda-entry {
-  padding: 0.75rem 1rem;
-  background: var(--ebook-bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--ebook-border);
-}
-
-.question-block,
-.answer-block {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.question-label {
-  font-weight: 700;
-  color: var(--ebook-accent);
-  flex-shrink: 0;
-  font-size: 0.95em;
-}
-
-.answer-label {
-  font-weight: 700;
-  color: var(--ebook-text-muted);
-  flex-shrink: 0;
-  font-size: 0.95em;
-}
-
-.question-content,
-.answer-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.answer-block {
-  margin-top: 0.25rem;
-  padding-left: 0.5rem;
-  border-left: 2px solid var(--ebook-border);
-}
-
-/* Link color utility */
-.ebook-link-color {
-  color: var(--ebook-link-color);
-}
-.ebook-link-color:hover {
-  text-decoration: underline;
-}
-
-/* Lazy placeholder for deferred section rendering */
-.lazy-placeholder {
-  min-height: 100px;
-  background: linear-gradient(
-    180deg,
-    var(--ebook-bg-secondary) 0%,
-    transparent 100%
-  );
-  border-radius: 8px;
-  opacity: 0.4;
-}
+/* Bibliography */
+.biblio-entry { hanging-punctuation: first; }
 </style>

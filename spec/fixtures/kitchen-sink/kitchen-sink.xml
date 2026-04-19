@@ -206,6 +206,15 @@ total 42</screen>
           </imageobject>
         </mediaobject>
       </informalfigure>
+
+      <annotation xml:id="ann-test">
+        <para>This is an annotation that provides additional context
+        about the block containers in this chapter.</para>
+      </annotation>
+
+      <annotation xml:id="ann-brief">
+        <para>A brief note for testing.</para>
+      </annotation>
     </chapter>
   </part>
 
@@ -304,7 +313,7 @@ end</programlisting>
     <chapter xml:id="ch-footnotes">
       <title>Footnotes</title>
 
-      <para>This paragraph has a footnote.<footnote>
+      <para>This paragraph has a footnote.<footnote xml:id="fn-first">
         <para>This is the footnote content explaining something in detail.</para>
       </footnote> The footnote appears at the bottom.</para>
 
@@ -336,6 +345,23 @@ end</programlisting>
       </indexterm>See-also references.</para>
     </chapter>
   </part>
+
+    <chapter xml:id="ch-qandaset">
+      <title>Questions and Answers</title>
+
+      <qandaset>
+        <title>Frequently Asked Questions</title>
+        <qandaentry>
+          <question><para>What is DocBook?</para></question>
+          <answer><para>DocBook is a semantic markup language for technical documentation.</para></answer>
+        </qandaentry>
+        <qandaentry>
+          <question><para>How do I install it?</para></question>
+          <answer><para>Use your package manager or download directly.</para></answer>
+          <answer><para>Alternatively, build from source.</para></answer>
+        </qandaentry>
+      </qandaset>
+    </chapter>
 
   <!-- Backmatter -->
   <glossary xml:id="glossary">

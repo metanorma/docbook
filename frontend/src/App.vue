@@ -54,7 +54,7 @@
       !ebookStore.focusMode.value ? 'pt-14' : 'pt-0',
       uiStore.sidebarOpen ? 'lg:pl-[280px]' : '',
       ebookStore.readingMode.value === 'paged' ? 'paged-mode' : ''
-    ]" @scroll="handleScroll">
+    ]" @scroll="onScroll">
       <!-- Active section breadcrumb -->
       <BreadcrumbBar v-if="ancestorChain.length > 0 && !ebookStore.focusMode.value" :ancestor-chain="ancestorChain" />
 
@@ -157,6 +157,8 @@ import { useReadingRuler } from '@/composables/useReadingRuler'
 import { useBookmarks } from '@/composables/useBookmarks'
 import { useReadingStats } from '@/composables/useReadingStats'
 import { useTts } from '@/composables/useTts'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useScrollTracker } from '@/composables/useScrollTracker'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
@@ -179,7 +181,7 @@ const ebookStore = useEbookStore()
 const mainContent = ref<HTMLElement | null>(null)
 
 // Lazy section rendering
-const { isVisible, observeSection, initialized: lazyInitialized } = useLazySections(mainContent)
+const { isVisible, observeSection, markVisible, initialized: lazyInitialized } = useLazySections(mainContent)
 provide('lazySectionVisible', isVisible)
 provide('lazyObserveSection', observeSection)
 provide('lazyInitialized', lazyInitialized)
@@ -202,26 +204,17 @@ const { enabled: rulerEnabled, rulerY, toggle: toggleRuler } = useReadingRuler()
 const bookmarks = useBookmarks(documentStore.title)
 provide('bookmarks', bookmarks)
 
-// Compute content style directly from store state (bypasses CSS variable cascade issues)
+// Compute content style directly from store state
 const contentStyle = computed(() => {
   const vars = ebookStore.getCssVariables()
-  return {
-    maxWidth: vars['--ebook-max-width'],
-    margin: '0 auto',
-  }
+  return { maxWidth: vars['--ebook-max-width'], margin: '0 auto' }
 })
-
-// Reading progress
-const readingProgress = ref(0)
 
 // Keyboard help overlay
 const showKeyboardHelp = ref(false)
 
 // Focus mode: reveal topbar on mouse proximity to top
 const focusRevealTopbar = ref(false)
-
-// Back to top button
-const showBackToTop = ref(false)
 
 // Image lightbox state
 const lightbox = reactive({ visible: false, src: '', alt: '', title: '' })
@@ -237,17 +230,9 @@ provide('lightbox', {
 
 provide('navigateToId', navigateToId)
 
-function toggleToc() {
-  uiStore.toggleSidebar()
-}
-
-function exitFocusMode() {
-  ebookStore.setFocusMode(false)
-}
-
-function handleOverlayClick() {
-  uiStore.closeSidebar()
-}
+function toggleToc() { uiStore.toggleSidebar() }
+function exitFocusMode() { ebookStore.setFocusMode(false) }
+function handleOverlayClick() { uiStore.closeSidebar() }
 
 // Lists of figures/tables/examples
 const hasLists = computed(() => {
@@ -260,12 +245,9 @@ const ancestorChain = computed(() => {
   if (!uiStore.activeSectionId) return []
   const chain = findAncestorChain(documentStore.sections, uiStore.activeSectionId)
   return chain.map((item, i) => ({
-    id: item.id,
-    title: item.title,
-    type: item.type,
+    id: item.id, title: item.title, type: item.type,
     number: documentStore.getNumbering(item.id),
-    isRoot: i === 0,
-    isLeaf: i === chain.length - 1
+    isRoot: i === 0, isLeaf: i === chain.length - 1
   }))
 })
 
@@ -278,70 +260,6 @@ function findSectionById(sections: TocItem[], id: string): TocItem | null {
     }
   }
   return null
-}
-
-let scrollTimeout: ReturnType<typeof setTimeout> | null = null
-
-function handleScroll() {
-  if (ebookStore.readingMode.value === 'paged') {
-    handlePagedScroll()
-  }
-  if (scrollTimeout) clearTimeout(scrollTimeout)
-  scrollTimeout = setTimeout(() => {
-    updateActiveSection()
-  }, 50)
-  // Update reading progress
-  const container = mainContent.value
-  if (container) {
-    const scrollable = container.scrollHeight - container.clientHeight
-    readingProgress.value = scrollable > 0 ? Math.min(100, Math.max(0, (container.scrollTop / scrollable) * 100)) : 0
-    showBackToTop.value = container.scrollTop > container.clientHeight * 3
-  }
-}
-
-function updateActiveSection() {
-  if (!mainContent.value) return
-
-  const container = mainContent.value
-  const containerRect = container.getBoundingClientRect()
-  const scrollTop = container.scrollTop
-  const sections = documentStore.sections
-
-  let foundSection: TocItem | null = null
-
-  function checkSection(section: TocItem) {
-    const element = document.getElementById(section.id)
-    if (!element) return
-
-    const rect = element.getBoundingClientRect()
-    // Convert viewport-relative position to scroll offset within the container
-    const elementScrollTop = rect.top - containerRect.top + scrollTop
-
-    if (elementScrollTop <= scrollTop + 200) {
-      foundSection = section
-    }
-  }
-
-  function walkSections(sects: TocItem[]) {
-    for (const sect of sects) {
-      checkSection(sect)
-      if (sect.children) {
-        walkSections(sect.children)
-      }
-    }
-  }
-
-  walkSections(sections)
-
-  if (foundSection && foundSection.id !== uiStore.activeSectionId) {
-    uiStore.setActiveSection(foundSection.id)
-    readingStats.markSectionRead(foundSection.id)
-    readingStats.recordActivity()
-    history.replaceState(null, '', `#${foundSection.id}`)
-    try {
-      localStorage.setItem('docbook-position-' + documentStore.title, foundSection.id)
-    } catch {}
-  }
 }
 
 // Flatten section IDs in document order for keyboard navigation
@@ -363,26 +281,41 @@ const activeSectionIndex = computed(() =>
 )
 
 // Reading statistics
-const readingStats = useReadingStats(
-  documentStore.title,
-  sectionIds.value.length,
-  sectionIds.value
-)
+const readingStats = useReadingStats(documentStore.title, sectionIds.value.length, sectionIds.value)
 provide('readingStats', readingStats)
 
 // Text-to-speech
 const tts = useTts()
 
-// Refentry card swiper: extract refentries from document
+// Scroll tracking (reading progress, back-to-top, active section)
+const { readingProgress, showBackToTop, handleScroll, updateActiveSection } = useScrollTracker({
+  mainContent, documentStore, uiStore, readingStats,
+})
+
+// Keyboard shortcuts
+const { handleGlobalKeydown } = useKeyboardShortcuts({
+  showKeyboardHelp, ebookStore, uiStore, documentStore,
+  sectionIds, navigateToId, toggleRuler,
+  toggleBookmark: () => {
+    const activeId = uiStore.activeSectionId
+    if (activeId) {
+      const section = findSectionById(documentStore.sections, activeId)
+      if (section) bookmarks.toggle(activeId, section.title)
+    }
+  },
+  ttsPlay: () => tts.speak(),
+  ttsStop: () => { if (tts.speaking.value) tts.stop() },
+  nextPage, prevPage,
+})
+
+// Refentry card swiper
 const refEntries = computed(() => {
   const doc = documentStore.mirrorDocument
   if (!doc?.content) return []
   const entries: any[] = []
   function collect(nodes: any[]) {
     for (const node of nodes) {
-      if (node.type === 'refentry') {
-        entries.push(node)
-      }
+      if (node.type === 'refentry') entries.push(node)
       if (node.content) collect(node.content)
     }
   }
@@ -390,12 +323,10 @@ const refEntries = computed(() => {
   return entries
 })
 
-// Show section nav when scrolled past first section and not in focus mode
 const showSectionNav = computed(() =>
   !ebookStore.focusMode.value && activeSectionIndex.value >= 0
 )
 
-// Screen reader announcement for section changes
 const sectionAnnouncement = computed(() => {
   const id = uiStore.activeSectionId
   if (!id) return ''
@@ -406,226 +337,46 @@ const sectionAnnouncement = computed(() => {
 // Navigate to an element by ID, scrolling within the main container
 function navigateToId(id: string) {
   if (!mainContent.value) return
+  markVisible(id)
+  const chain = findAncestorChain(documentStore.sections, id)
+  for (const ancestor of chain) markVisible(ancestor.id)
 
-  const element = document.getElementById(id)
-  if (!element) return
-
-  const container = mainContent.value
-  const containerRect = container.getBoundingClientRect()
-  const elementRect = element.getBoundingClientRect()
-
-  // Calculate scroll offset: element position relative to container + current scroll - offset for top bar
-  const scrollTarget = elementRect.top - containerRect.top + container.scrollTop - 70
-  container.scrollTo({ top: scrollTarget, behavior: 'smooth' })
-
-  // Update URL hash without triggering another scroll
-  history.replaceState(null, '', `#${id}`)
+  nextTick(() => {
+    const element = document.getElementById(id)
+    if (!element) return
+    const container = mainContent.value!
+    const containerRect = container.getBoundingClientRect()
+    const elementRect = element.getBoundingClientRect()
+    const scrollTarget = elementRect.top - containerRect.top + container.scrollTop - 70
+    container.scrollTo({ top: scrollTarget, behavior: 'smooth' })
+    history.replaceState(null, '', `#${id}`)
+  })
 }
 
-// Intercept all clicks on hash links (xref, TOC, etc.)
+// Intercept all clicks on hash links
 function handleDocumentClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   const link = target.closest('a[href^="#"]') as HTMLAnchorElement | null
   if (!link) return
-
   e.preventDefault()
   const id = link.getAttribute('href')!.slice(1)
-  if (id) {
-    navigateToId(id)
-  }
+  if (id) navigateToId(id)
 }
-
-onMounted(() => {
-  documentStore.loadFromWindow()
-
-  // Clean up DOCBOOK_DATA from DOM to keep DOM small
-  delete (window as any).DOCBOOK_DATA
-
-  ebookStore.applyTheme()
-
-  // Force close settings panel on mount
-  if (ebookStore.settingsOpen.value) {
-    ebookStore.toggleSettings()
-  }
-
-  // Open sidebar by default on desktop
-  if (window.innerWidth >= 1024) {
-    uiStore.openSidebar()
-  }
-
-  // Catch all hash-link clicks (xrefs, TOC items)
-  document.addEventListener('click', handleDocumentClick)
-
-  // Handle initial hash and browser back/forward
-  window.addEventListener('hashchange', handleHashChange)
-
-  // Global keyboard shortcuts
-  document.addEventListener('keydown', handleGlobalKeydown)
-
-  // Focus mode: reveal topbar on mouse near top
-  document.addEventListener('mousemove', handleMouseMove)
-
-  // Initial active section + handle hash from URL
-  setTimeout(() => {
-    updateActiveSection()
-    handleHashChange()
-    // Calculate pages for paged mode after content renders
-    calculatePages()
-    // Restore saved reading position if no URL hash was provided
-    if (!window.location.hash) {
-      try {
-        const saved = localStorage.getItem('docbook-position-' + documentStore.title)
-        if (saved) {
-          const el = document.getElementById(saved)
-          if (el) navigateToId(saved)
-        }
-      } catch {}
-    }
-  }, 200)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleDocumentClick)
-  window.removeEventListener('hashchange', handleHashChange)
-  document.removeEventListener('keydown', handleGlobalKeydown)
-  document.removeEventListener('mousemove', handleMouseMove)
-})
 
 function handleHashChange() {
   const hash = window.location.hash
   if (!hash) return
   const id = hash.slice(1)
-  if (id) {
-    // Small delay to ensure Vue has rendered the content
-    setTimeout(() => navigateToId(id), 100)
-  }
-}
-
-function handleGlobalKeydown(e: KeyboardEvent) {
-  const inputFocused = isInputFocused()
-
-  if (e.key === '/' && !inputFocused) {
-    e.preventDefault()
-    uiStore.openSearch()
-  }
-
-  if (e.key === 'Escape') {
-    if (showKeyboardHelp.value) {
-      showKeyboardHelp.value = false
-      return
-    }
-    if (ebookStore.settingsOpen.value) {
-      ebookStore.toggleSettings()
-      return
-    }
-    if (uiStore.searchOpen) {
-      uiStore.closeSearch()
-      return
-    }
-    if (uiStore.sidebarOpen) {
-      uiStore.closeSidebar()
-      return
-    }
-  }
-
-  if (inputFocused) return
-
-  // Toggle keyboard help
-  if (e.key === '?') {
-    e.preventDefault()
-    showKeyboardHelp.value = !showKeyboardHelp.value
-    return
-  }
-
-  // Toggle settings
-  if (e.key === 's') {
-    e.preventDefault()
-    ebookStore.toggleSettings()
-    return
-  }
-
-  // Toggle focus mode
-  if (e.key === 'f') {
-    e.preventDefault()
-    ebookStore.toggleFocusMode()
-    return
-  }
-
-  // Toggle reading ruler
-  if (e.key === 'r') {
-    e.preventDefault()
-    toggleRuler()
-    return
-  }
-
-  // Toggle bookmark for active section
-  if (e.key === 'b') {
-    e.preventDefault()
-    const activeId = uiStore.activeSectionId
-    if (activeId) {
-      const section = findSectionById(documentStore.sections, activeId)
-      if (section) {
-        bookmarks.toggle(activeId, section.title)
-      }
-    }
-    return
-  }
-
-  // TTS play/pause (Shift+P)
-  if (e.key === 'P') {
-    e.preventDefault()
-    if (tts.speaking.value) {
-      tts.speak() // toggles pause/resume
-    } else {
-      tts.speak()
-    }
-    return
-  }
-
-  // TTS stop
-  if (e.key === 'p' && tts.speaking.value) {
-    e.preventDefault()
-    tts.stop()
-    return
-  }
-
-  // Toggle sidebar
-  if (e.key === 't') {
-    e.preventDefault()
-    uiStore.toggleSidebar()
-    return
-  }
-
-  // j/k navigation between sections
-  if (sectionIds.value.length > 0) {
-    const current = sectionIds.value.indexOf(uiStore.activeSectionId || '')
-    if (e.key === 'j' && current < sectionIds.value.length - 1) {
-      e.preventDefault()
-      navigateToId(sectionIds.value[current + 1])
-    }
-    if (e.key === 'k' && current > 0) {
-      e.preventDefault()
-      navigateToId(sectionIds.value[current - 1])
-    }
-  }
-
-  // Page navigation in paged mode
-  if (ebookStore.readingMode.value === 'paged') {
-    if (e.key === 'ArrowRight' || e.key === ' ') {
-      e.preventDefault()
-      nextPage()
-      return
-    }
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      prevPage()
-      return
-    }
-  }
+  if (id) setTimeout(() => navigateToId(id), 100)
 }
 
 function handleMouseMove(e: MouseEvent) {
   focusRevealTopbar.value = ebookStore.focusMode.value && e.clientY < 48
+}
+
+function onScroll() {
+  if (ebookStore.readingMode.value === 'paged') handlePagedScroll()
+  handleScroll()
 }
 
 function scrollToTop() {
@@ -637,10 +388,37 @@ function skipToContent() {
   mainContent.value?.scrollTo({ top: 0 })
 }
 
-function isInputFocused(): boolean {
-  const active = document.activeElement
-  return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
-}
+onMounted(() => {
+  documentStore.loadFromWindow()
+  delete (window as any).DOCBOOK_DATA
+  ebookStore.applyTheme()
+  if (ebookStore.settingsOpen.value) ebookStore.toggleSettings()
+  if (window.innerWidth >= 1024) uiStore.openSidebar()
+
+  document.addEventListener('click', handleDocumentClick)
+  window.addEventListener('hashchange', handleHashChange)
+  document.addEventListener('keydown', handleGlobalKeydown)
+  document.addEventListener('mousemove', handleMouseMove)
+
+  setTimeout(() => {
+    updateActiveSection()
+    handleHashChange()
+    calculatePages()
+    if (!window.location.hash) {
+      try {
+        const saved = localStorage.getItem('docbook-position-' + documentStore.title)
+        if (saved && document.getElementById(saved)) navigateToId(saved)
+      } catch {}
+    }
+  }, 200)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  window.removeEventListener('hashchange', handleHashChange)
+  document.removeEventListener('keydown', handleGlobalKeydown)
+  document.removeEventListener('mousemove', handleMouseMove)
+})
 </script>
 
 <style scoped>
