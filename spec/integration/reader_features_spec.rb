@@ -408,6 +408,7 @@ RSpec.describe "Reader Features", type: :feature do
       20.times do
         scroll_pos = page.evaluate_script("document.getElementById('main-content').scrollTop")
         break if scroll_pos == 0
+
         sleep 0.25
       end
       expect(scroll_pos).to eq(0)
