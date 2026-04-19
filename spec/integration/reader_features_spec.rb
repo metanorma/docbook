@@ -165,9 +165,9 @@ RSpec.describe "Reader Features", type: :feature do
       visit_reader
       open_settings
       find(".theme-card[aria-label='Sepia theme']").click
-      expect(page.evaluate_script("document.documentElement.classList.contains('theme-sepia')")).to be true
+      expect(page).to have_css("html.theme-sepia", wait: 5)
       page.execute_script("document.querySelector('.settings-reset')?.click()")
-      expect(page.evaluate_script("document.documentElement.classList.contains('theme-day')")).to be true
+      expect(page).to have_css("html.theme-day", wait: 5)
       close_settings
     end
   end
