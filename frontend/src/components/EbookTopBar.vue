@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEbookStore, type Theme } from '@/composables/useEbookStore'
+import { useEbookStore } from '@/composables/useEbookStore'
 
 defineProps<{
   title?: string
@@ -73,13 +73,7 @@ defineEmits<{
 const ebookStore = useEbookStore()
 const currentTheme = computed(() => ebookStore.theme.value)
 
-const themeOrder: Theme[] = ['day', 'sepia', 'night', 'oled']
-
-function cycleTheme() {
-  const currentIndex = themeOrder.indexOf(ebookStore.theme.value)
-  const nextIndex = (currentIndex + 1) % themeOrder.length
-  ebookStore.setTheme(themeOrder[nextIndex])
-}
+function cycleTheme() { ebookStore.cycleTheme() }
 </script>
 
 <style scoped>

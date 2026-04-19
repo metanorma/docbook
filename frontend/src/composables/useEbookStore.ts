@@ -157,6 +157,14 @@ export function useEbookStore() {
     applyTheme()
   }
 
+  const THEME_ORDER: Theme[] = ['day', 'sepia', 'night', 'oled']
+
+  function cycleTheme() {
+    const currentIndex = THEME_ORDER.indexOf(state.theme)
+    const nextIndex = (currentIndex + 1) % THEME_ORDER.length
+    setTheme(THEME_ORDER[nextIndex])
+  }
+
   function setUiVisible(visible: boolean) {
     state.uiVisible = visible
   }
@@ -256,6 +264,7 @@ export function useEbookStore() {
     setFontFamily,
     setContentWidth,
     setTheme,
+    cycleTheme,
     applyTheme,
     setUiVisible,
     setLineHeight,

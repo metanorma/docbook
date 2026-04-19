@@ -30,42 +30,5 @@ function walk(nodes: TocItem[], targetId: string, path: TocItem[]): TocItem[] | 
   return null
 }
 
-export function getTypeLabel(type: string): string {
-  switch (type) {
-    case 'part': return 'Pt'
-    case 'chapter': return 'Ch'
-    case 'appendix': return 'App'
-    case 'glossary': return 'Gl'
-    case 'bibliography': return 'Bib'
-    case 'index': return 'Idx'
-    case 'preface': return 'Pref'
-    case 'reference': return 'Ref'
-    case 'refentry': return 'p'
-    default: return ''
-  }
-}
-
-export function getTypeBadgeClass(type: string): string {
-  switch (type) {
-    case 'part':
-      return 'badge-purple'
-    case 'chapter':
-      return 'badge-blue'
-    case 'appendix':
-      return 'badge-green'
-    case 'glossary':
-      return 'badge-yellow'
-    case 'bibliography':
-      return 'badge-red'
-    case 'index':
-      return 'badge-indigo'
-    case 'preface':
-      return 'badge-orange'
-    case 'reference':
-      return 'badge-cyan'
-    case 'refentry':
-      return 'badge-refentry'
-    default:
-      return 'badge-default'
-  }
-}
+// Re-export type metadata from the canonical source
+export { getTypeLabel, getTypeBadgeClass } from '@/utils/typeMetadata'

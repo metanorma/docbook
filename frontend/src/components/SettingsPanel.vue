@@ -159,16 +159,11 @@
             <!-- Focus Mode -->
             <div class="settings-row">
               <span class="settings-sublabel">Focus</span>
-              <button
-                @click="ebookStore.toggleFocusMode()"
-                class="toggle-switch"
-                :class="{ 'toggle-switch--on': currentFocusMode }"
-                role="switch"
-                :aria-checked="currentFocusMode"
-                aria-label="Focus mode"
-              >
-                <span class="toggle-switch-thumb"></span>
-              </button>
+              <ToggleSwitch
+                :model-value="currentFocusMode"
+                @update:model-value="ebookStore.setFocusMode($event)"
+                label="Focus mode"
+              />
             </div>
 
             <!-- Reading Mode -->
@@ -204,16 +199,11 @@
             <!-- Reference Card Mode -->
             <div class="settings-row">
               <span class="settings-sublabel">Ref Cards</span>
-              <button
-                @click="ebookStore.setRefCardMode(!currentRefCardMode)"
-                class="toggle-switch"
-                :class="{ 'toggle-switch--on': currentRefCardMode }"
-                role="switch"
-                :aria-checked="currentRefCardMode"
-                aria-label="Reference card swipe mode"
-              >
-                <span class="toggle-switch-thumb"></span>
-              </button>
+              <ToggleSwitch
+                :model-value="currentRefCardMode"
+                @update:model-value="ebookStore.setRefCardMode($event)"
+                label="Reference card swipe mode"
+              />
             </div>
           </section>
 
@@ -224,31 +214,21 @@
             <!-- Hyphenation -->
             <div class="settings-row">
               <span class="settings-sublabel">Hyphens</span>
-              <button
-                @click="ebookStore.setHyphenation(!currentHyphenation)"
-                class="toggle-switch"
-                :class="{ 'toggle-switch--on': currentHyphenation }"
-                role="switch"
-                :aria-checked="currentHyphenation"
-                aria-label="Hyphenation"
-              >
-                <span class="toggle-switch-thumb"></span>
-              </button>
+              <ToggleSwitch
+                :model-value="currentHyphenation"
+                @update:model-value="ebookStore.setHyphenation($event)"
+                label="Hyphenation"
+              />
             </div>
 
             <!-- Progress Bar -->
             <div class="settings-row">
               <span class="settings-sublabel">Progress</span>
-              <button
-                @click="ebookStore.setShowProgress(!currentShowProgress)"
-                class="toggle-switch"
-                :class="{ 'toggle-switch--on': currentShowProgress }"
-                role="switch"
-                :aria-checked="currentShowProgress"
-                aria-label="Progress bar"
-              >
-                <span class="toggle-switch-thumb"></span>
-              </button>
+              <ToggleSwitch
+                :model-value="currentShowProgress"
+                @update:model-value="ebookStore.setShowProgress($event)"
+                label="Progress bar"
+              />
             </div>
           </section>
 
@@ -314,6 +294,7 @@ import { useEbookStore, type Theme, type FontFamily, type ContentWidth, type Lin
 import { useReadingStats } from '@/composables/useReadingStats'
 import { useCloudSync } from '@/composables/useCloudSync'
 import { useDocumentStore } from '@/stores/documentStore'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 
 const ebookStore = useEbookStore()
 const documentStore = useDocumentStore()
@@ -731,41 +712,6 @@ function resetToDefaults() {
 }
 .width-card--active .width-label {
   color: var(--chrome-accent);
-}
-
-/* Toggle switch */
-.toggle-switch {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  background: var(--chrome-bg-hover);
-  border: 1px solid var(--chrome-border);
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.toggle-switch--on {
-  background: var(--chrome-accent);
-  border-color: var(--chrome-accent);
-}
-
-.toggle-switch-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--chrome-text);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.toggle-switch--on .toggle-switch-thumb {
-  transform: translateX(18px);
-  background: #ffffff;
 }
 
 /* Footer */

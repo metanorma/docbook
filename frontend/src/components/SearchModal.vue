@@ -81,6 +81,7 @@
 import { ref, watch, onMounted, nextTick, inject } from 'vue'
 import { useDocumentStore, type TocItem, type MirrorBlockNode, type MirrorTextNode } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
+import { SECTION_TYPES } from '@/utils/typeMetadata'
 import FlexSearch from 'flexsearch'
 
 const documentStore = useDocumentStore()
@@ -114,8 +115,6 @@ const index = new (FlexSearch as any).Document({
 
 // Map from section id to its body text for snippet extraction
 const sectionTexts = new Map<string, string>()
-
-const SECTION_TYPES = new Set(['chapter', 'section', 'appendix', 'part', 'preface', 'dedication', 'acknowledgements', 'colophon', 'glossary', 'bibliography', 'reference', 'refentry', 'refsection'])
 
 function extractTextFromNode(node: any): string {
   if (!node) return ''

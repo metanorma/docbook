@@ -58,6 +58,7 @@
 import { ref, computed, watch } from 'vue'
 import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
+import { getTypeLabel, getTypeBadgeClass } from '@/utils/typeMetadata'
 
 interface Props {
   item: TocItem
@@ -90,46 +91,8 @@ function hasDescendant(item: TocItem, id: string): boolean {
   return false
 }
 
-const typeLabel = computed(() => {
-  switch (props.item.type) {
-    case 'part': return 'Pt'
-    case 'chapter': return 'Ch'
-    case 'appendix': return 'App'
-    case 'section': return ''
-    case 'glossary': return 'Gl'
-    case 'bibliography': return 'Bib'
-    case 'index': return 'Idx'
-    case 'preface': return 'Pref'
-    case 'dedication': return 'Ded'
-    case 'acknowledgements': return 'Ack'
-    case 'colophon': return 'Col'
-    case 'reference': return 'Ref'
-    case 'refentry': return 'p'
-    case 'set': return 'Set'
-    case 'article': return 'Art'
-    case 'topic': return 'Top'
-    default: return ''
-  }
-})
-
-const typeBadgeClass = computed(() => {
-  switch (props.item.type) {
-    case 'part': return 'toc-badge-purple'
-    case 'chapter': return 'toc-badge-blue'
-    case 'appendix': return 'toc-badge-green'
-    case 'section': return 'toc-badge-neutral'
-    case 'glossary': return 'toc-badge-yellow'
-    case 'bibliography': return 'toc-badge-red'
-    case 'index': return 'toc-badge-indigo'
-    case 'preface': return 'toc-badge-orange'
-    case 'dedication': return 'toc-badge-muted'
-    case 'acknowledgements': return 'toc-badge-muted'
-    case 'colophon': return 'toc-badge-muted'
-    case 'reference': return 'toc-badge-cyan'
-    case 'refentry': return 'toc-badge-neutral toc-badge-mono'
-    default: return 'toc-badge-neutral'
-  }
-})
+const typeLabel = computed(() => getTypeLabel(props.item.type))
+const typeBadgeClass = computed(() => getTypeBadgeClass(props.item.type))
 
 const buttonClass = computed(() => {
   if (props.item.type === 'part') {
@@ -216,49 +179,49 @@ function getNumber(id: string): string {
 .toc-badge {
   font-weight: 500;
 }
-.toc-badge-purple {
+.badge-purple {
   background: color-mix(in srgb, #8b5cf6 20%, var(--chrome-bg-hover));
   color: #8b5cf6;
 }
-.toc-badge-blue {
+.badge-blue {
   background: color-mix(in srgb, #3b82f6 20%, var(--chrome-bg-hover));
   color: #3b82f6;
 }
-.toc-badge-green {
+.badge-green {
   background: color-mix(in srgb, #22c55e 20%, var(--chrome-bg-hover));
   color: #22c55e;
 }
-.toc-badge-yellow {
+.badge-yellow {
   background: color-mix(in srgb, #eab308 20%, var(--chrome-bg-hover));
   color: #eab308;
 }
-.toc-badge-red {
+.badge-red {
   background: color-mix(in srgb, #ef4444 20%, var(--chrome-bg-hover));
   color: #ef4444;
 }
-.toc-badge-indigo {
+.badge-indigo {
   background: color-mix(in srgb, #6366f1 20%, var(--chrome-bg-hover));
   color: #6366f1;
 }
-.toc-badge-orange {
+.badge-orange {
   background: color-mix(in srgb, #f97316 20%, var(--chrome-bg-hover));
   color: #f97316;
 }
-.toc-badge-cyan {
+.badge-cyan {
   background: color-mix(in srgb, #06b6d4 20%, var(--chrome-bg-hover));
   color: #06b6d4;
 }
-.toc-badge-neutral {
+.badge-neutral {
   background: var(--chrome-bg-hover);
   color: var(--chrome-text-dim);
 }
 
-.toc-badge-muted {
+.badge-muted {
   background: transparent;
   color: var(--chrome-text-dim);
   opacity: 0.7;
 }
-.toc-badge-mono {
+.badge-mono {
   font-family: ui-monospace, monospace;
   font-size: 0.75rem;
 }
