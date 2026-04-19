@@ -402,6 +402,8 @@ RSpec.describe "Reader Features", type: :feature do
       page.execute_script("document.getElementById('main-content').scrollTo(0, 99999)")
       expect(page).to have_css(".back-to-top", wait: 10)
       find(".back-to-top").click
+      # Wait for smooth scroll to complete
+      sleep 0.5
       scroll_pos = page.evaluate_script("document.getElementById('main-content').scrollTop")
       expect(scroll_pos).to eq(0)
     end
