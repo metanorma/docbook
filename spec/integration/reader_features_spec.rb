@@ -398,10 +398,10 @@ RSpec.describe "Reader Features", type: :feature do
     end
 
     it "scrolls to top when clicked" do
+      skip "Smooth scrolling does not animate in headless Chrome CI" if ENV["CI"]
       visit_reader
       page.execute_script("document.getElementById('main-content').scrollTo(0, 99999)")
       expect(page).to have_css(".back-to-top", wait: 10)
-      pending "Smooth scrolling does not animate in headless Chrome CI" if ENV["CI"]
       find(".back-to-top").click
       # Poll until smooth scroll completes
       scroll_pos = nil
