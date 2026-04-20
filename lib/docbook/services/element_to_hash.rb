@@ -36,7 +36,7 @@ module Docbook
         when Elements::BlockQuote
           blockquote_to_h
         when Elements::Title
-          { type: "title", text: @element.content }
+          { type: "title", text: @element.content.join }
         else
           generic_to_h
         end
@@ -55,16 +55,16 @@ module Docbook
 
         # Extract refmeta info
         if @element.refmeta
-          result[:refentrytitle] = @element.refmeta.refentrytitle&.content
-          result[:refmiscinfo] = @element.refmeta.refmiscinfo&.map(&:content)
+          result[:refentrytitle] = @element.refmeta.refentrytitle&.content&.join
+          result[:refmiscinfo] = @element.refmeta.refmiscinfo&.map { |i| i.content.join }
         end
 
         # Extract refnamediv info
         if @element.refnamediv
           result[:refname] =
-            @element.refnamediv.refname&.map(&:content)&.join(" ")
-          result[:refpurpose] = @element.refnamediv.refpurpose&.content
-          result[:refclass] = @element.refnamediv.refclass&.content
+            @element.refnamediv.refname&.map { |r| r.content.join }&.join(" ")
+          result[:refpurpose] = @element.refnamediv.refpurpose&.content&.join
+          result[:refclass] = @element.refnamediv.refclass&.content&.join
         end
 
         # Convert refsection content
@@ -176,7 +176,7 @@ module Docbook
           if obj.respond_to?(:imageobject) && obj.imageobject&.first
             imagedata = obj.imageobject.first.imagedata
             result[:src] = imagedata&.fileref
-            result[:alt] = obj.imageobject.first.textobject&.phrase&.content
+            result[:alt] = obj.imageobject.first.textobject&.phrase&.content&.join
           end
         end
 
@@ -193,7 +193,7 @@ module Docbook
       end
 
       def admonition_to_h
-        title = @element.respond_to?(:title) ? @element.title&.content : nil
+        title = @element.respond_to?(:title) ? @element.title&.content&.join : nil
         if @element.elements
           content = @element.elements.map do |e|
             ElementToHash.new(e).to_h
@@ -208,7 +208,7 @@ module Docbook
       end
 
       def blockquote_to_h
-        attribution = @element.attribution&.content if @element.attribution
+        attribution = @element.attribution&.content&.join if @element.attribution
         if @element.elements
           content = @element.elements.map do |e|
             ElementToHash.new(e).to_h
@@ -270,17 +270,17 @@ module Docbook
           {
             type: "xref",
             linkend: item.linkend,
-            content: item.content || item.linkend,
+            content: item.content&.join || item.linkend,
           }
         when Elements::Literal, Elements::Code
-          { type: "codetext", value: item.content }
+          { type: "codetext", value: item.content.join }
         when Elements::Tag
-          { type: "tag", value: "<#{item.content}>" }
+          { type: "tag", value: "<#{item.content.join}>" }
         when Elements::Quote
-          { type: "quote", value: item.content }
+          { type: "quote", value: item.content.join }
         else
           if item.respond_to?(:content)
-            { type: "text", value: item.content.to_s }
+            { type: "text", value: item.content.join }
           else
             { type: "text", value: item.to_s }
           end

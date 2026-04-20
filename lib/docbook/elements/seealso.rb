@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class SeeAlso < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :endterm, :string
 
       xml do

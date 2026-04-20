@@ -52,11 +52,11 @@ module Docbook
       def get_element_title(element)
         case element
         when Elements::RefEntry
-          element.refnamediv&.refname&.map(&:content)&.join(" ") ||
-            element.refmeta&.refentrytitle&.content
+          element.refnamediv&.refname&.map { |r| r.content.join }&.join(" ") ||
+            element.refmeta&.refentrytitle&.content&.join
         else
-          (element.respond_to?(:title) && element.title&.content) ||
-            (element.respond_to?(:info) && element.info&.title&.content)
+          (element.respond_to?(:title) && element.title&.content&.join) ||
+            (element.respond_to?(:info) && element.info&.title&.content&.join)
         end
       end
 
@@ -98,10 +98,10 @@ module Docbook
         )
 
         # Extract secondary terms
-        entry.secondary = Array(index_term.secondary).filter_map(&:content) if index_term.respond_to?(:secondary)
+        entry.secondary = Array(index_term.secondary).filter_map { |s| s.content.join } if index_term.respond_to?(:secondary)
 
         # Extract see-also
-        entry.see_also = Array(index_term.see_also).filter_map(&:content) if index_term.respond_to?(:see_also)
+        entry.see_also = Array(index_term.see_also).filter_map { |s| s.content.join } if index_term.respond_to?(:see_also)
 
         entry
       end
@@ -109,7 +109,7 @@ module Docbook
       def extract_primary(index_term)
         # Primary is typically in the content or primary attribute
         if index_term.respond_to?(:primary) && index_term.primary
-          Array(index_term.primary).map(&:content).join(" ")
+          Array(index_term.primary).map { |p| p.content.join }.join(" ")
         elsif index_term.respond_to?(:content)
           content = index_term.content
           content.is_a?(Array) ? content.join(" ") : content.to_s

@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class RefMeta < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :manvolnum, :string
       attribute :subtitle, Subtitle
       attribute :productname, ProductName

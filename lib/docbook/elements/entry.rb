@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Entry < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :valign, :string
       attribute :align, :string
       attribute :namest, :string

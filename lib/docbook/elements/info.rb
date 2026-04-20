@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Info < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :title, Title
       attribute :subtitle, Subtitle
       attribute :doc_date, Docbook::Elements::Date

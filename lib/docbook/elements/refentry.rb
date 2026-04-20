@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class RefEntry < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :refmeta, RefMeta
       attribute :refnamediv, RefNamediv

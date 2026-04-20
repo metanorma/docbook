@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Alt < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
 
       xml do
         element "alt"

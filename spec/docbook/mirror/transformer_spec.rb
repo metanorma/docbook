@@ -139,7 +139,7 @@ RSpec.describe Docbook::Mirror::Transformer do
 
       # The literal content should be preserved
       literal = doc2.para.first.literal.first
-      expect(literal.content).to eq("notAllowed")
+      expect(literal.content).to eq(["notAllowed"])
     end
   end
 end

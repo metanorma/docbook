@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class GlossSeeAlso < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :otherterm, :string
 
       xml do

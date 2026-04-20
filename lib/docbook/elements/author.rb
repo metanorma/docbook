@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Author < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :personname, PersonName
 
       xml do

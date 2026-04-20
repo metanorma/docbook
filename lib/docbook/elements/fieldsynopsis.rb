@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class FieldSynopsis < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :type, Type
       attribute :varname, Varname
       attribute :initializer, Initializer

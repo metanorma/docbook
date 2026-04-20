@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class GlossDef < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :para, Para, collection: true
 
       xml do

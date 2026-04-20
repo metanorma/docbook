@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class ForeignPhrase < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :role, :string
 
       xml do

@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Att < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
 
       xml do
         element "att"

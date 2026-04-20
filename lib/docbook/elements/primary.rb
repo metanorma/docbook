@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Primary < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
 
       xml do
         element "primary"
