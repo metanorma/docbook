@@ -252,17 +252,15 @@ watch(searchQuery, () => {
   debounceTimer = setTimeout(search, 150)
 })
 
-// Watch for document data changes to rebuild indexes
-watch(
-  () => documentStore.mirrorDocument,
-  () => {
-    // Phase 1: Index headings immediately (fast)
-    buildHeadingIndex()
-    // Phase 2: Background-index body text
-    buildBodyIndexLazy()
-  },
-  { immediate: true }
-)
+let bodyIndexBuilt = false
+
+// Build heading index when document data is available
+function rebuildIndexes() {
+  buildHeadingIndex()
+  if (!bodyIndexBuilt) {
+    buildBodyIndex()
+  }
+}
 
 function buildHeadingIndex() {
   sectionTexts.clear()
@@ -270,26 +268,29 @@ function buildHeadingIndex() {
   buildTocIndex(documentStore.sections)
 }
 
-function buildBodyIndexLazy() {
+function buildBodyIndex() {
   const doc = documentStore.mirrorDocument
   if (!doc?.content) return
 
-  // Use requestIdleCallback to avoid blocking the main thread
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => {
-      buildSectionIndex(doc.content!)
-      // Also index TOC entries not captured from body
-      buildTocIndex(documentStore.sections)
-    }, { timeout: 3000 })
-  } else {
-    setTimeout(() => {
-      buildSectionIndex(doc.content!)
-      buildTocIndex(documentStore.sections)
-    }, 500)
+  try {
+    buildSectionIndex(doc.content)
+    buildTocIndex(documentStore.sections)
+  } catch (e) {
+    console.error('Search index build failed:', e)
   }
+  bodyIndexBuilt = true
+  document.body.dataset.searchIndexReady = 'true'
 }
 
 onMounted(() => {
+  // Build indexes once document data is available (after App.vue onMounted loads data)
+  nextTick(() => {
+    try {
+      rebuildIndexes()
+    } catch (e) {
+      console.error('Search index build failed:', e)
+    }
+  })
   nextTick(() => inputRef.value?.focus())
 })
 
