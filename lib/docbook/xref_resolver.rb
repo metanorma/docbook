@@ -63,31 +63,31 @@ module Docbook
     def best_title(el)
       case el
       when Docbook::Elements::Article, Docbook::Elements::Book
-        el.info&.title&.content
+        el.info&.title&.content&.join
       when Docbook::Elements::Section, Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Preface, Docbook::Elements::Part, Docbook::Elements::Reference
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::Figure, Docbook::Elements::InformalFigure
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::Example, Docbook::Elements::InformalExample
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::Table, Docbook::Elements::InformalTable
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::Procedure
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::Equation
-        el.title&.content
+        el.title&.content&.join
       when Docbook::Elements::GlossEntry
-        el.glossterm&.content if el.respond_to?(:glossterm)
+        el.glossterm&.content&.join if el.respond_to?(:glossterm)
       when Docbook::Elements::Bibliomixed
-        el.abbrev&.content ||
-          el.citetitle&.first&.content ||
+        el.abbrev&.content&.join ||
+          el.citetitle&.first&.content&.join ||
           format_bibliomixed_id(el.xml_id)
       when Docbook::Elements::RefEntry
         resolve_refentry_title(el)
       else
         begin
-          el.title&.content
+          el.title&.content&.join
         rescue StandardError
           nil
         end

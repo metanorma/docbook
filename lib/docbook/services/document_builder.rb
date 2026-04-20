@@ -25,8 +25,8 @@ module Docbook
       private
 
       def extract_title
-        (@document.respond_to?(:title) && @document.title&.content) ||
-          (@document.respond_to?(:info) && @document.info&.title&.content) ||
+        (@document.respond_to?(:title) && @document.title&.content&.join) ||
+          (@document.respond_to?(:info) && @document.info&.title&.content&.join) ||
           "Untitled Document"
       end
 
@@ -36,11 +36,11 @@ module Docbook
         if @document.respond_to?(:info)
           info = @document.info
           metadata.author = extract_author(info)
-          metadata.title = info.title&.content if info.respond_to?(:title)
-          metadata.subtitle = info.subtitle&.content if info.respond_to?(:subtitle)
-          metadata.productname = info.productname&.content if info.respond_to?(:productname)
+          metadata.title = info.title&.content&.join if info.respond_to?(:title)
+          metadata.subtitle = info.subtitle&.content&.join if info.respond_to?(:subtitle)
+          metadata.productname = info.productname&.content&.join if info.respond_to?(:productname)
           if info.respond_to?(:date) || info.respond_to?(:pubdate)
-            metadata.pubdate = info.date&.content || info.pubdate&.content
+            metadata.pubdate = info.date&.content&.join || info.pubdate&.content&.join
           end
         end
 
@@ -54,13 +54,13 @@ module Docbook
         return nil unless author
 
         if author.respond_to?(:personname)
-          author.personname&.content ||
-            [author.personname&.firstname&.content,
-             author.personname&.surname&.content].compact.join(" ")
+          author.personname&.content&.join ||
+            [author.personname&.firstname&.content&.join,
+             author.personname&.surname&.content&.join].compact.join(" ")
         elsif author.respond_to?(:orgname)
-          author.orgname&.content
+          author.orgname&.content&.join
         else
-          author.content
+          author.content.join
         end
       end
 
@@ -124,8 +124,8 @@ module Docbook
 
         # For refentry, extract refname
         if element.is_a?(Elements::RefEntry)
-          section.refname = element.refnamediv&.refname&.map(&:content)&.join(" ") ||
-            element.refmeta&.refentrytitle&.content
+          section.refname = element.refnamediv&.refname&.map { |r| r.content.join }&.join(" ") ||
+            element.refmeta&.refentrytitle&.content&.join
         end
 
         section
@@ -148,14 +148,14 @@ module Docbook
       def extract_element_title(element)
         case element
         when Elements::RefEntry
-          element.refnamediv&.refname&.map(&:content)&.join(" ") ||
-            element.refmeta&.refentrytitle&.content ||
+          element.refnamediv&.refname&.map { |r| r.content.join }&.join(" ") ||
+            element.refmeta&.refentrytitle&.content&.join ||
             "Untitled"
         when Elements::Reference
-          element.info&.title&.content || element.title&.content || "Reference"
+          element.info&.title&.content&.join || element.title&.content&.join || "Reference"
         else
-          element.info&.title&.content ||
-            element.title&.content ||
+          element.info&.title&.content&.join ||
+            element.title&.content&.join ||
             "Untitled"
         end
       end

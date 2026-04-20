@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class MediaObject < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :imageobject, ImageObject, collection: true
       attribute :textobject, TextObject, collection: true

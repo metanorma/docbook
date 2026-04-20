@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Article < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :version, :string
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :lang, Lutaml::Xml::W3c::XmlLangType

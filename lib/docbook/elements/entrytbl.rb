@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class EntryTbl < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :cols, :string
       attribute :colname, :string
       attribute :spanname, :string

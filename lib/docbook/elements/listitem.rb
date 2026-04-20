@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class ListItem < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :para, Para, collection: true
       attribute :simplesect, Simplesect, collection: true

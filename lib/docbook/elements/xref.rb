@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Xref < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :linkend, :string
 
       xml do

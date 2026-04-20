@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Para < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :role, :string
       attribute :productname, ProductName, collection: true
       attribute :link, Link, collection: true

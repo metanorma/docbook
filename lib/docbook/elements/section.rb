@@ -5,7 +5,7 @@ module Docbook
     class Section < Lutaml::Model::Serializable
       include HasNumber
 
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :version, :string
       attribute :info, Info

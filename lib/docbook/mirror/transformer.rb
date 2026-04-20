@@ -30,9 +30,9 @@ module Docbook
 
       def document_node(docbook_doc)
         title = if docbook_doc.respond_to?(:info) && docbook_doc.info.respond_to?(:title)
-                  docbook_doc.info.title&.content
+                  docbook_doc.info.title&.content&.join
                 elsif docbook_doc.respond_to?(:title)
-                  docbook_doc.title&.content
+                  docbook_doc.title&.content&.join
                 end
 
         attrs = { title: title }.compact
@@ -253,7 +253,7 @@ module Docbook
       end
 
       def figure_node(el)
-        title_text = el.title&.content if el.respond_to?(:title)
+        title_text = el.title&.content&.join if el.respond_to?(:title)
         xml_id = el.xml_id
 
         # Check for programlisting/screen content first (code figures)
@@ -305,7 +305,7 @@ module Docbook
         attrs[:xml_id] = el.xml_id if el.respond_to?(:xml_id) && el.xml_id
         if el.respond_to?(:title) && el.title
           attrs[:title] =
-            el.title.content.to_s
+            el.title.content.join
         end
         attrs[:frame] = el.frame if el.respond_to?(:frame) && el.frame
         attrs[:colsep] = el.colsep if el.respond_to?(:colsep) && el.colsep
@@ -336,7 +336,7 @@ module Docbook
         rows.map do |row|
           cells = row.entry.map do |entry|
             cell_content = []
-            text = entry.content.to_s.strip
+            text = entry.content.join.strip
             cell_content << Docbook::Mirror::Node::Text.new(text: text) unless text.empty?
             cell_attrs = {}
             cell_attrs[:align] = entry.align if entry.align
@@ -352,7 +352,7 @@ module Docbook
       end
 
       def example_node(el)
-        title_text = el.title&.content if el.respond_to?(:title)
+        title_text = el.title&.content&.join if el.respond_to?(:title)
         xml_id = el.xml_id
         attrs = { xml_id: xml_id, title: title_text }.compact
 
@@ -392,7 +392,7 @@ module Docbook
 
       def simplesect_node(el)
         content = extract_content(el)
-        title = el.title&.content if el.respond_to?(:title)
+        title = el.title&.content&.join if el.respond_to?(:title)
 
         attrs = { title: title }.compact
         Docbook::Mirror::Node::Section.new(attrs: attrs, content: content)
@@ -401,7 +401,7 @@ module Docbook
       def section_node(section)
         attrs = {
           number: section.number,
-          title: section.title&.content,
+          title: section.title&.content&.join,
           xml_id: section.xml_id || "elem-#{section.object_id}",
         }.compact
 
@@ -414,7 +414,7 @@ module Docbook
       def chapter_node(chapter)
         attrs = {
           number: chapter.number,
-          title: chapter.title&.content,
+          title: chapter.title&.content&.join,
           xml_id: chapter.xml_id || "elem-#{chapter.object_id}",
         }.compact
 
@@ -427,7 +427,7 @@ module Docbook
       def appendix_node(appendix)
         attrs = {
           number: appendix.number,
-          title: appendix.title&.content,
+          title: appendix.title&.content&.join,
           xml_id: appendix.xml_id || "elem-#{appendix.object_id}",
         }.compact
 
@@ -441,7 +441,7 @@ module Docbook
         id = part.xml_id || "elem-#{part.object_id}"
         attrs = {
           number: part.number,
-          title: part.title&.content,
+          title: part.title&.content&.join,
           xml_id: id,
         }.compact
 
@@ -454,7 +454,7 @@ module Docbook
       def reference_node(ref)
         attrs = {
           xml_id: ref.xml_id || "elem-#{ref.object_id}",
-          title: ref.title&.content || ref.info&.title&.content,
+          title: ref.title&.content&.join || ref.info&.title&.content&.join,
         }.compact
 
         content = extract_content(ref)
@@ -477,21 +477,21 @@ module Docbook
           if ref.refmeta.fieldsynopsis && !ref.refmeta.fieldsynopsis.empty?
             fs = ref.refmeta.fieldsynopsis.first
             parts = []
-            if fs.type && !fs.type.content.to_s.empty?
+            if fs.type && !fs.type.content.join.empty?
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.type.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "type")],
+                text: fs.type.content.join, marks: [Docbook::Mirror::Mark::Code.new(role: "type")],
               )
             end
             parts << Docbook::Mirror::Node::Text.new(text: " ")
-            if fs.varname && !fs.varname.content.to_s.empty?
+            if fs.varname && !fs.varname.content.join.empty?
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.varname.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "varname")],
+                text: fs.varname.content.join, marks: [Docbook::Mirror::Mark::Code.new(role: "varname")],
               )
             end
-            if fs.initializer && !fs.initializer.content.to_s.empty?
+            if fs.initializer && !fs.initializer.content.join.empty?
               parts << Docbook::Mirror::Node::Text.new(text: " = ")
               parts << Docbook::Mirror::Node::Text.new(
-                text: fs.initializer.content.to_s, marks: [Docbook::Mirror::Mark::Code.new(role: "literal")],
+                text: fs.initializer.content.join, marks: [Docbook::Mirror::Mark::Code.new(role: "literal")],
               )
             end
             unless parts.empty?
@@ -502,12 +502,12 @@ module Docbook
             end
           elsif ref.refmeta.refentrytitle
             synopsis_parts = []
-            reftitle = ref.refmeta.refentrytitle.content
+            reftitle = ref.refmeta.refentrytitle.content.join
             manvol = ref.refmeta.manvolnum
             synopsis_parts << "#{reftitle}(#{manvol})" if reftitle && manvol
             synopsis_parts << reftitle.to_s if reftitle && !manvol
             Array(ref.refmeta.refmiscinfo).each do |info|
-              synopsis_parts << info.content.to_s if info.content
+              synopsis_parts << info.content.join if info.content.any?
             end
             unless synopsis_parts.empty?
               content << Docbook::Mirror::Node::Paragraph.new(
@@ -528,7 +528,7 @@ module Docbook
         content = []
 
         # Render refnames (e.g. "$v:as-json")
-        names = Array(nd.refname).filter_map(&:content)
+        names = Array(nd.refname).filter_map { |r| r.content.join }
         unless names.empty?
           content << Docbook::Mirror::Node::Paragraph.new(
             content: [Docbook::Mirror::Node::Text.new(
@@ -539,19 +539,19 @@ module Docbook
         end
 
         # Render refpurpose
-        if nd.refpurpose&.content
+        if nd.refpurpose&.content&.any?
           content << Docbook::Mirror::Node::Paragraph.new(
             attrs: { class: "refpurpose" },
-            content: [Docbook::Mirror::Node::Text.new(text: nd.refpurpose.content)],
+            content: [Docbook::Mirror::Node::Text.new(text: nd.refpurpose.content.join)],
           )
         end
 
         # Render refclass as a badge
-        if nd.refclass&.content
+        if nd.refclass&.content&.any?
           content << Docbook::Mirror::Node::Paragraph.new(
             attrs: { class: "refclass" },
             content: [Docbook::Mirror::Node::Text.new(
-              text: nd.refclass.content,
+              text: nd.refclass.content.join,
               marks: [Docbook::Mirror::Mark::Code.new(role: "refclass")],
             )],
           )
@@ -561,7 +561,7 @@ module Docbook
       end
 
       def refsection_node(rs)
-        title = rs.title&.content
+        title = rs.title&.content&.join
         id = rs.xml_id || "elem-#{rs.object_id}"
         attrs = { xml_id: id, title: title }.compact
 
@@ -642,8 +642,8 @@ module Docbook
             children << footnoteref_node(node)
           else
             # Catch-all: try to extract text content from any unhandled inline element
-            if node.respond_to?(:content) && node.content
-              children << Docbook::Mirror::Node::Text.new(text: node.content.to_s)
+            if node.respond_to?(:content) && node.content.any?
+              children << Docbook::Mirror::Node::Text.new(text: node.content.join)
             elsif node.respond_to?(:text) && node.text
               children << Docbook::Mirror::Node::Text.new(text: node.text.to_s)
             end
@@ -665,7 +665,7 @@ module Docbook
                else
                  Docbook::Mirror::Mark::Emphasis.new
                end
-        text = el.content.to_s
+        text = el.content.join
         text_node(text, marks: [mark])
       end
 
@@ -707,7 +707,7 @@ module Docbook
         href = el.xlink_href&.to_s || (el.linkend ? "##{el.linkend}" : "#")
 
         # Handle self-closing links with no content
-        if el.content.to_s.empty? && !has_inline_children(el)
+        if el.content.join.empty? && !has_inline_children(el)
           # For linkend references, resolve the title from xml_id_map
           if el.linkend
             text = @xml_id_map[el.linkend.to_s] || el.linkend.to_s
@@ -792,14 +792,14 @@ module Docbook
       end
 
       def tag_node(el)
-        tag_name = el.content.to_s
+        tag_name = el.content.join
         text = "<#{tag_name}>"
         text_node(text, marks: [Docbook::Mirror::Mark::Code.new(role: "tag")])
       end
 
       def biblioref_node(el)
         linkend = el.linkend.to_s
-        text = el.content.to_s.empty? ? linkend : el.content.to_s
+        text = el.content.join.empty? ? linkend : el.content.join
         text_node(text,
                   marks: [Docbook::Mirror::Mark::Citation.new(bibref: linkend)])
       end
@@ -810,7 +810,7 @@ module Docbook
       end
 
       def citetitle_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text,
                   marks: [Docbook::Mirror::Mark::Citation.new(bibref: el.href)])
       end
@@ -821,7 +821,7 @@ module Docbook
       end
 
       def productname_node(el)
-        text = el.content.to_s
+        text = el.content.join
         suffix = case el.class_name
                  when "trade" then "\u2122"
                  when "registered" then "\u00AE"
@@ -839,7 +839,7 @@ module Docbook
       end
 
       def trademark_node(el)
-        text = el.content.to_s
+        text = el.content.join
         suffix = case el.class_name
                  when "trade" then "\u2122"
                  when "registered" then "\u00AE"
@@ -851,40 +851,40 @@ module Docbook
       end
 
       def email_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text,
                   marks: [Docbook::Mirror::Mark::Link.new(href: "mailto:#{text}")])
       end
 
       def uri_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text, marks: [Docbook::Mirror::Mark::Link.new(href: text)])
       end
 
       def subscript_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text, marks: [Docbook::Mirror::Mark.new(type: "subscript")])
       end
 
       def superscript_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text, marks: [Docbook::Mirror::Mark.new(type: "superscript")])
       end
 
       def keycap_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text,
                   marks: [Docbook::Mirror::Mark::Code.new(role: "keycap")])
       end
 
       def plain_text_node(el)
-        text = el.content.to_s
+        text = el.content.join
         text_node(text)
       end
 
       def citerefentry_node(el)
-        title = el.refentrytitle&.content.to_s
-        manvol = el.manvolnum&.content.to_s
+        title = el.refentrytitle&.content.join
+        manvol = el.manvolnum&.content.join
         text = manvol.empty? ? title : "#{title}(#{manvol})"
         text_node(text)
       end
@@ -968,7 +968,7 @@ module Docbook
       def qandaset_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         entries = Array(el.qandaentry).filter_map { |e| qandaentry_node(e) }
         return nil if entries.empty?
@@ -999,7 +999,7 @@ module Docbook
       def preface_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         fn = flush_footnotes
@@ -1010,7 +1010,7 @@ module Docbook
       def titled_section_node(el, node_class)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         node_class.new(attrs: attrs, content: content)
@@ -1019,7 +1019,7 @@ module Docbook
       def glossary_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         raw_entries = (el.glossentry if el.respond_to?(:glossentry)).to_a
         entries = raw_entries.filter_map { |ge| glossentry_node(ge) }
@@ -1040,7 +1040,7 @@ module Docbook
         content = []
 
         if ge.respond_to?(:glossterm) && ge.glossterm
-          term_text = ge.glossterm.content.to_s
+          term_text = ge.glossterm.content.join
           content << Node::GlossTerm.new(content: [text_node(term_text)])
         end
 
@@ -1051,7 +1051,7 @@ module Docbook
 
         if ge.respond_to?(:glosssee) && ge.glosssee
           Array(ge.glosssee).each do |gs|
-            text = gs.content.to_s
+            text = gs.content.join
             attrs_see = { otherterm: gs.otherterm }.compact
             content << Node::GlossSee.new(attrs: attrs_see, content: [text_node(text)])
           end
@@ -1059,7 +1059,7 @@ module Docbook
 
         if ge.respond_to?(:glossseealso) && ge.glossseealso
           Array(ge.glossseealso).each do |gsa|
-            text = gsa.content.to_s
+            text = gsa.content.join
             attrs_see = { otherterm: gsa.otherterm }.compact
             content << Node::GlossSeeAlso.new(attrs: attrs_see, content: [text_node(text)])
           end
@@ -1073,7 +1073,7 @@ module Docbook
       def bibliography_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         entries = (el.bibliomixed if el.respond_to?(:bibliomixed)).to_a.filter_map { |bm| biblio_entry_node(bm) }
         Node::Bibliography.new(attrs: attrs, content: entries)
@@ -1087,13 +1087,13 @@ module Docbook
 
         parts = []
         if bm.respond_to?(:abbrev) && bm.abbrev
-          parts << text_node(bm.abbrev.content.to_s, marks: [Docbook::Mirror::Mark::Strong.new])
+          parts << text_node(bm.abbrev.content.join, marks: [Docbook::Mirror::Mark::Strong.new])
         end
         if bm.respond_to?(:citetitle) && bm.citetitle&.any?
           bm.citetitle.each { |ct| parts << citetitle_node(ct) }
         end
         if bm.respond_to?(:author) && bm.author&.any?
-          authors = bm.author.filter_map { |a| a.personname&.content }.join(", ")
+          authors = bm.author.filter_map { |a| a.personname&.content&.join }.join(", ")
           parts << text_node(authors) unless authors.empty?
         end
         if bm.respond_to?(:publishername) && bm.publishername&.any?
@@ -1120,7 +1120,7 @@ module Docbook
       def index_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = []
 
@@ -1138,7 +1138,7 @@ module Docbook
       def indexdiv_node(div)
         attrs = {
           xml_id: div.xml_id,
-          title: div.title&.content,
+          title: div.title&.content&.join,
         }.compact
         entries = (div.indexentry if div.respond_to?(:indexentry)).to_a.filter_map { |ie| indexentry_node(ie) }
         Node::IndexDiv.new(attrs: attrs, content: entries)
@@ -1161,7 +1161,7 @@ module Docbook
       def bibliolist_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         entries = (el.bibliomixed if el.respond_to?(:bibliomixed)).to_a.filter_map { |bm| biblio_entry_node(bm) }
         Node::Bibliography.new(attrs: attrs, content: entries)
@@ -1174,7 +1174,7 @@ module Docbook
       def equation_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         return nil if content.empty? && !el.xml_id
@@ -1191,7 +1191,7 @@ module Docbook
       def procedure_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         steps = (el.step if el.respond_to?(:step)).to_a.filter_map { |s| step_node(s) }
         Node::Procedure.new(attrs: attrs, content: steps)
@@ -1216,7 +1216,7 @@ module Docbook
       def calloutlist_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         callouts = (el.callout if el.respond_to?(:callout)).to_a.filter_map { |c| callout_node(c) }
         Node::CalloutList.new(attrs: attrs, content: callouts)
@@ -1236,7 +1236,7 @@ module Docbook
       def sidebar_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         return nil if content.empty?
@@ -1258,7 +1258,7 @@ module Docbook
       def legalnotice_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         return nil if content.empty?
@@ -1271,7 +1271,7 @@ module Docbook
       # =========================================
 
       def set_node(el)
-        title = el.title&.content || (el.info&.title&.content if el.respond_to?(:info))
+        title = el.title&.content&.join || (el.info&.title&.content&.join if el.respond_to?(:info))
         attrs = {
           xml_id: el.xml_id,
           title: title,
@@ -1283,7 +1283,7 @@ module Docbook
       def topic_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         Node::Topic.new(attrs: attrs, content: content)
@@ -1292,7 +1292,7 @@ module Docbook
       def sect_node(el)
         attrs = {
           xml_id: el.xml_id,
-          title: el.title&.content,
+          title: el.title&.content&.join,
         }.compact
         content = extract_content(el)
         fn = flush_footnotes
@@ -1325,7 +1325,7 @@ module Docbook
 
       # Extract text from a code block element, inserting callout marker labels.
       def extract_text_with_callouts(el, co_markers)
-        return el.content.to_s unless el.respond_to?(:each_mixed_content)
+        return el.content.join unless el.respond_to?(:each_mixed_content)
 
         marker_idx = 0
         texts = []
@@ -1337,21 +1337,21 @@ module Docbook
             texts << "(#{marker[:label]})"
             marker_idx += 1
           elsif node.respond_to?(:content)
-            texts << node.content.to_s
+            texts << node.content.join
           end
         end
         texts.join
       end
 
       def extract_text(el)
-        return el.content.to_s unless el.respond_to?(:each_mixed_content)
+        return el.content.join unless el.respond_to?(:each_mixed_content)
 
         texts = []
         el.each_mixed_content do |node|
           if node.is_a?(String)
             texts << node
           elsif node.respond_to?(:content)
-            texts << node.content.to_s
+            texts << node.content.join
           end
         end
         texts.join
@@ -1377,10 +1377,10 @@ module Docbook
                 when Docbook::Elements::RefEntry
                   resolve_refentry_title(node)
                 when Docbook::Elements::Bibliomixed
-                  node.abbrev&.content || node.citetitle&.first&.content
+                  node.abbrev&.content&.join || node.citetitle&.first&.content&.join
                 else
-                  t = node.title&.content if node.respond_to?(:title)
-                  t || (node.info&.title&.content if node.respond_to?(:info))
+                  t = node.title&.content&.join if node.respond_to?(:title)
+                  t || (node.info&.title&.content&.join if node.respond_to?(:info))
                 end
         flatten_title(title)
       end
@@ -1452,7 +1452,7 @@ module Docbook
         info = Docbook::Elements::Info.new
         if title
           title_el = Docbook::Elements::Title.new
-          title_el.content = title
+          title_el.content = [title]
           info.title = title_el
         end
         doc.info = info
@@ -1502,7 +1502,7 @@ module Docbook
         end
 
         # Set content as joined text
-        para.content = text_parts.join
+        para.content = [text_parts.join]
 
         # Process inline elements into their collections
         inline_elements.each do |item|
@@ -1564,44 +1564,44 @@ module Docbook
         case mark.type
         when "emphasis"
           el = Docbook::Elements::Emphasis.new
-          el.content = text
+          el.content = [text]
           el
         when "strong"
           el = Docbook::Elements::Emphasis.new
           el.role = "bold"
-          el.content = text
+          el.content = [text]
           el
         when "italic"
           el = Docbook::Elements::Emphasis.new
           el.role = "italic"
-          el.content = text
+          el.content = [text]
           el
         when "code"
           role = (mark.attrs && (mark.attrs[:role] || mark.attrs["role"])) || "literal"
           el = role_to_class(role).new
-          el.content = text
+          el.content = [text]
           el
         when "link"
           href = mark.attrs && (mark.attrs[:href] || mark.attrs["href"])
           el = Docbook::Elements::Link.new
           el.xlink_href = href
-          el.content = text
+          el.content = [text]
           el
         when "xref"
           linkend = mark.attrs && (mark.attrs[:linkend] || mark.attrs["linkend"])
           el = Docbook::Elements::Xref.new
           el.linkend = linkend
-          el.content = text
+          el.content = [text]
           el
         when "citation"
           bibref = mark.attrs && (mark.attrs[:bibref] || mark.attrs["bibref"])
           el = Docbook::Elements::Biblioref.new
           el.linkend = bibref
-          el.content = text
+          el.content = [text]
           el
         when "tag"
           el = Docbook::Elements::Tag.new
-          el.content = text.gsub(/^<(.+)>$/, '\1')
+          el.content = [text.gsub(/^<(.+)>$/, '\1')]
           el
         end
       end
@@ -1620,7 +1620,7 @@ module Docbook
              end
 
         text = extract_text_from_content(mirror_node.content)
-        el.content = text
+        el.content = [text]
 
         el
       end
@@ -1741,7 +1741,7 @@ module Docbook
         chapter.number = attrs[:number] || attrs["number"]
         if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs["title"]
+          title.content = [attrs[:title] || attrs["title"]]
           chapter.title = title
         end
         if mirror_node.content
@@ -1759,7 +1759,7 @@ module Docbook
         section.number = attrs[:number] || attrs["number"]
         if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs["title"]
+          title.content = [attrs[:title] || attrs["title"]]
           section.title = title
         end
         if mirror_node.content
@@ -1776,7 +1776,7 @@ module Docbook
         part.number = attrs[:number] || attrs["number"]
         if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs["title"]
+          title.content = [attrs[:title] || attrs["title"]]
           part.title = title
         end
         if mirror_node.content
@@ -1794,7 +1794,7 @@ module Docbook
         appendix.number = attrs[:number] || attrs["number"]
         if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs["title"]
+          title.content = [attrs[:title] || attrs["title"]]
           appendix.title = title
         end
         if mirror_node.content
@@ -1823,7 +1823,7 @@ module Docbook
         figure.xml_id = attrs[:xml_id] || attrs["xml_id"]
         if attrs[:title] || attrs["title"]
           title = Docbook::Elements::Title.new
-          title.content = attrs[:title] || attrs["title"]
+          title.content = [attrs[:title] || attrs["title"]]
           figure.title = title
         end
         imageobject = Docbook::Elements::ImageObject.new
@@ -1874,12 +1874,12 @@ module Docbook
         when "strong"
           el = Docbook::Elements::Emphasis.new
           el.role = "bold"
-          el.content = text
+          el.content = [text]
           el
         when "italic"
           el = Docbook::Elements::Emphasis.new
           el.role = "italic"
-          el.content = text
+          el.content = [text]
           el
         when "code"
           role = (mark.attrs && (mark.attrs[:role] || mark.attrs["role"])) || "literal"
@@ -1895,7 +1895,7 @@ module Docbook
           wrap_in_biblioref(text, bibref)
         when "tag"
           tag = Docbook::Elements::Tag.new
-          tag.content = text.gsub(/^<(.+)>$/, '\1')
+          tag.content = [text.gsub(/^<(.+)>$/, '\1')]
           tag
         else
           text
@@ -1904,7 +1904,7 @@ module Docbook
 
       def wrap_in_element(text, klass)
         el = klass.new
-        el.content = text
+        el.content = [text]
         el
       end
 
@@ -1926,21 +1926,21 @@ module Docbook
       def wrap_in_link(text, href)
         link = Docbook::Elements::Link.new
         link.xlink_href = href
-        link.content = text
+        link.content = [text]
         link
       end
 
       def wrap_in_xref(text, linkend)
         xref = Docbook::Elements::Xref.new
         xref.linkend = linkend
-        xref.content = text
+        xref.content = [text]
         xref
       end
 
       def wrap_in_biblioref(text, bibref)
         biblioref = Docbook::Elements::Biblioref.new
         biblioref.linkend = bibref
-        biblioref.content = text
+        biblioref.content = [text]
         biblioref
       end
 

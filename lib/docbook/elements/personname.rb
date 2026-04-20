@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class PersonName < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :firstname, FirstName
       attribute :surname, Surname
       attribute :honorific, Honorific

@@ -76,7 +76,7 @@ module Docbook
           info[:id] = element.xml_id
           info[:title] = element_title(element)
         elsif element.respond_to?(:title) && element.title
-          info[:title] = element.title.content.to_s
+          info[:title] = element.title.content.join
         end
         info
       end
@@ -200,21 +200,21 @@ module Docbook
       def process_indexterm(indexterm, section_info)
         # Skip if no primary (required for meaningful index entry)
         primaries = Array(indexterm.primary).filter_map do |p|
-          p.content.to_s.strip
+          p.content.join.strip
         end
         return if primaries.empty?
 
         primary_text = primaries.first
         secondaries = Array(indexterm.secondary).filter_map do |s|
-          s.content.to_s.strip
+          s.content.join.strip
         end
         tertiaries = Array(indexterm.tertiary).filter_map do |t|
-          t.content.to_s.strip
+          t.content.join.strip
         end
 
-        sees = Array(indexterm.see).filter_map { |s| s.content.to_s.strip }
+        sees = Array(indexterm.see).filter_map { |s| s.content.join.strip }
         see_alsos = Array(indexterm.see_also).filter_map do |sa|
-          sa.content.to_s.strip
+          sa.content.join.strip
         end
 
         term_info = {
@@ -239,14 +239,14 @@ module Docbook
       def element_title(element)
         case element
         when Elements::Book, Elements::Article
-          element.info&.title&.content
+          element.info&.title&.content&.join
         when Elements::Chapter, Elements::Appendix, Elements::Section,
              Elements::Part, Elements::Preface
-          element.info&.title&.content || element.title&.content
+          element.info&.title&.content&.join || element.title&.content&.join
         when Elements::RefEntry
-          element.refnamediv&.refname&.first&.content
+          element.refnamediv&.refname&.first&.content&.join
         else
-          element.title&.content
+          element.title&.content&.join
         end
       end
 

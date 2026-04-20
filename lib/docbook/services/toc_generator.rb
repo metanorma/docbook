@@ -82,8 +82,8 @@ module Docbook
         when Elements::RefEntry
           resolve_refentry_title(element) || "Untitled"
         when Elements::Reference
-          element.info&.title&.content ||
-            element.title&.content ||
+          element.info&.title&.content&.join ||
+            element.title&.content&.join ||
             "Reference"
         when Elements::Book, Elements::Article, Elements::Chapter, Elements::Appendix,
              Elements::Preface, Elements::Part, Elements::Section,
@@ -92,8 +92,8 @@ module Docbook
              Elements::Set, Elements::Topic,
              Elements::Sect1, Elements::Sect2, Elements::Sect3, Elements::Sect4, Elements::Sect5,
              Elements::RefSection, Elements::RefSect1, Elements::RefSect2, Elements::RefSect3
-          info_title = element.info&.title&.content if element.respond_to?(:info)
-          info_title || element.title&.content || "Untitled"
+          info_title = element.info&.title&.content&.join if element.respond_to?(:info)
+          info_title || element.title&.content&.join || "Untitled"
         else
           "Untitled"
         end

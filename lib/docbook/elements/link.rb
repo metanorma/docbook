@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Link < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :linkend, :string
       attribute :xlink_href, Lutaml::Xml::W3c::XlinkHrefType
       attribute :xlink_type, Lutaml::Xml::W3c::XlinkTypeAttrType

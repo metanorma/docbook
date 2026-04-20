@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class SideBar < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title
       attribute :para, Para, collection: true

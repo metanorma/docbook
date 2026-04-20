@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Glossterm < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :baseform, :string
 
       xml do

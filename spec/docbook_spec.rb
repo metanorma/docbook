@@ -14,7 +14,7 @@ RSpec.describe Docbook::Elements::Article do
   it "parses a minimal article" do
     article = described_class.from_xml(sample_xml)
     expect(article.version).to eq("5.1")
-    expect(article.info.title.content).to eq("Sample Document")
+    expect(article.info.title.content).to eq(["Sample Document"])
   end
 
   it "round-trips to XML" do
@@ -22,6 +22,6 @@ RSpec.describe Docbook::Elements::Article do
     xml = article.to_xml
     reparsed = described_class.from_xml(xml)
     expect(reparsed.version).to eq("5.1")
-    expect(reparsed.info.title.content).to eq("Sample Document")
+    expect(reparsed.info.title.content).to eq(["Sample Document"])
   end
 end

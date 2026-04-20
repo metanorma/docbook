@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Toc < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title
       attribute :tocdiv, TocDiv, collection: true

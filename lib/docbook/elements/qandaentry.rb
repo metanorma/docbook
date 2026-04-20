@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class QandAEntry < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :question, Question
       attribute :answer, Answer, collection: true

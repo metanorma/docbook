@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class Term < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :code, Code, collection: true
       attribute :literal, Literal, collection: true
       attribute :emphasis, Emphasis, collection: true

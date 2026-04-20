@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class SubSteps < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :step, Step, collection: true
 
       xml do

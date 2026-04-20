@@ -3,7 +3,7 @@
 module Docbook
   module Elements
     class ProductName < Lutaml::Model::Serializable
-      attribute :content, :string
+      attribute :content, :string, collection: true
       attribute :class_name, :string
       attribute :href, :string
 

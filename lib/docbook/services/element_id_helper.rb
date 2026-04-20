@@ -28,7 +28,7 @@ module Docbook
           fs = ref.refmeta.fieldsynopsis if ref.refmeta.respond_to?(:fieldsynopsis)
           if fs && !fs.empty?
             varname = fs.first.varname
-            return "p_#{varname.content}" if varname && !varname.content.to_s.empty?
+            return "p_#{varname.content.join}" if varname && !varname.content.join.empty?
           end
         end
 
@@ -42,17 +42,17 @@ module Docbook
           meta = ref.refmeta
           if meta.respond_to?(:refentrytitle) && meta.refentrytitle
             title = meta.refentrytitle
-            return title.content.to_s if title.respond_to?(:content) && title.content
+            return title.content.join if title.respond_to?(:content) && title.content.any?
           end
           if meta.respond_to?(:fieldsynopsis) && meta.fieldsynopsis && !meta.fieldsynopsis.empty?
             vn = meta.fieldsynopsis.first.varname
-            return vn.content.to_s if vn.respond_to?(:content) && vn.content
+            return vn.content.join if vn.respond_to?(:content) && vn.content.any?
           end
         end
 
         if ref.respond_to?(:refnamediv) && ref.refnamediv.respond_to?(:refname)
           names = ref.refnamediv.refname
-          return names.map(&:content).join(", ") if names && !names.empty?
+          return names.map { |n| n.content.join }.join(", ") if names && !names.empty?
         end
 
         nil
