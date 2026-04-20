@@ -104,15 +104,14 @@ RSpec.describe "DocBook Reader", type: :feature do
     end
 
     it "can type and find search results" do
-      if ENV["CI"]
-        skip "FlexSearch indexing is unreliable in CI headless Chrome"
-      end
       visit_reader
-      # Allow FlexSearch index to build
-      expect(page).to have_css("#docbook-app .toc-link", wait: 10)
+      expect(page).to have_css("body[data-search-index-ready='true']", wait: 10)
       find("body").send_keys("/")
       within("[role='dialog'][aria-label='Search']") do
-        find(".search-input").set("paragraph")
+        input = find(".search-input")
+        # Use native value setting to avoid global keyboard handler intercepting
+        # keystrokes (p, r, etc.) before the input is focused
+        page.execute_script("arguments[0].value = 'paragraph'; arguments[0].dispatchEvent(new Event('input', { bubbles: true }))", input.native)
       end
       expect(page).to have_css(".search-result", wait: 15)
     end
