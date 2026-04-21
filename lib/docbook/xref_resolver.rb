@@ -63,7 +63,8 @@ module Docbook
     def best_title(el)
       case el
       when Docbook::Elements::Article, Docbook::Elements::Book
-        el.info&.title&.content&.join
+        info_title = el.info&.title
+        info_title&.content&.join
       when Docbook::Elements::Section, Docbook::Elements::Chapter, Docbook::Elements::Appendix,
            Docbook::Elements::Preface, Docbook::Elements::Part, Docbook::Elements::Reference
         el.title&.content&.join
@@ -81,7 +82,10 @@ module Docbook
         el.glossterm&.content&.join if el.respond_to?(:glossterm)
       when Docbook::Elements::Bibliomixed
         el.abbrev&.content&.join ||
-          el.citetitle&.first&.content&.join ||
+          begin
+            ct = el.citetitle&.first
+            ct&.content&.join
+          end ||
           format_bibliomixed_id(el.xml_id)
       when Docbook::Elements::RefEntry
         resolve_refentry_title(el)

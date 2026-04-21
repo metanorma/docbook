@@ -883,8 +883,8 @@ module Docbook
       end
 
       def citerefentry_node(el)
-        title = el.refentrytitle&.content.join
-        manvol = el.manvolnum&.content.join
+        title = el.refentrytitle&.content&.join
+        manvol = el.manvolnum&.content&.join
         text = manvol.empty? ? title : "#{title}(#{manvol})"
         text_node(text)
       end

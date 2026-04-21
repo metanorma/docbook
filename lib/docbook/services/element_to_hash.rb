@@ -176,7 +176,8 @@ module Docbook
           if obj.respond_to?(:imageobject) && obj.imageobject&.first
             imagedata = obj.imageobject.first.imagedata
             result[:src] = imagedata&.fileref
-            result[:alt] = obj.imageobject.first.textobject&.phrase&.content&.join
+            phrase = obj.imageobject.first.textobject&.phrase
+            result[:alt] = phrase&.content&.join if phrase
           end
         end
 
