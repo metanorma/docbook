@@ -1,0 +1,125 @@
+---
+layout: default
+title: Output Formats
+parent: Features
+nav_order: 6
+---
+
+== Output Formats
+
+The docbook gem supports four output formats, selected via the `--format` option on `docbook build` and `docbook library` commands.
+
+=== inline (default)
+
+Single self-contained HTML file. All CSS, JavaScript, and book data inlined.
+
+* Works from `file://` protocol (offline, email attachments)
+* No server required
+* Large file size for big books
+* No SEO (content is JSON, not visible to search engines)
+
+[source,bash]
+----
+$ docbook build book.xml --format inline
+$ docbook build book.xml  # inline is the default
+----
+
+=== dom
+
+Single HTML file with content pre-rendered in the DOM. Same as inline but content is also embedded as semantic HTML.
+
+* Works from `file://` protocol
+* Content visible to search engines without JavaScript
+* Larger file size than inline (HTML + JSON)
+* Vue app hydrates the pre-rendered content
+
+[source,bash]
+----
+$ docbook build book.xml --format dom -o reader.html
+----
+
+=== dist (distribution)
+
+Directory with separate files: `index.html` + `data/*.json`.
+
+* Book data loaded on demand (better for large books)
+* Requires HTTP server (not `file://` compatible)
+* CDN-friendly (static files)
+* No SEO (content is in JSON files)
+
+[source,bash]
+----
+$ docbook build book.xml --format dist -o my-book/
+# Output:
+#   my-book/index.html
+#   my-book/data/book.json
+----
+
+=== paged (split pages)
+
+Directory with one HTML file per chapter/section. Best SEO and natural pagination.
+
+* Best SEO (every page is indexable)
+* Natural pagination (no full-book load)
+* Requires HTTP server
+* Deep linking to specific chapters
+
+[source,bash]
+----
+$ docbook build book.xml --format paged -o my-book/
+# Output:
+#   my-book/index.html
+#   my-book/pages/ch-intro.html
+#   my-book/pages/ch-advanced.html
+#   ...
+----
+
+=== Format Comparison
+
+[cols="1,1,1,1,1"]
+|===
+| | inline | dom | dist | paged
+
+| Output
+| 1 file
+| 1 file
+| directory
+| directory
+
+| SEO
+| No
+| Yes
+| No
+| Yes
+
+| file://
+| Yes
+| Yes
+| No
+| No
+
+| Incremental load
+| No
+| No
+| Yes
+| Yes
+
+| Large books
+| Slow initial
+| Slow initial
+| Fast
+| Fast
+|===
+
+=== Ruby API
+
+You can also select formats programmatically:
+
+[source,ruby]
+----
+Docbook::Output::Builder.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  format: :inline,  # or :dom, :dist, :paged
+).build
+----

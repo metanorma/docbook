@@ -16,6 +16,7 @@ module Docbook
       attribute :mediaobject, MediaObject, collection: true
       attribute :releaseinfo, ReleaseInfo
       attribute :abstract, Para, collection: true
+      attribute :cover, Cover, collection: true
 
       xml do
         element "info"
@@ -34,6 +35,7 @@ module Docbook
         map_element "mediaobject", to: :mediaobject
         map_element "releaseinfo", to: :releaseinfo
         map_element "abstract", to: :abstract
+        map_element "cover", to: :cover
       end
     end
   end

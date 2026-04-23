@@ -1,0 +1,112 @@
+---
+layout: default
+title: Organizing a Book
+parent: Guides
+nav_order: 5
+---
+
+== Organizing a Book
+
+How to organize a single DocBook book project for building with the docbook gem.
+
+=== Recommended Folder Structure
+
+----
+my-book/
+  book.xml              # DocBook 5 XML (required)
+  cover.png             # Cover image (optional, convention)
+  media/                # Images referenced from XML
+    figure1.png
+    screenshot.jpg
+  chapters/             # XIncludes (optional)
+    ch01.xml
+    ch02.xml
+----
+
+=== Cover Image
+
+Cover images are resolved in priority order:
+
+. **Convention file** -- `cover.png`, `cover.jpg`, `cover.svg`, `cover.webp`, or `cover.gif` in the book's directory
+. **XML `<cover>` element** -- DocBook 5 `<cover><mediaobject>...</mediaobject></cover>` in `<info>`
+
+=== DocBook XML Metadata
+
+Use the `<info>` element for metadata that appears in the reader:
+
+[source,xml]
+----
+<book xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <info>
+    <title>My Book</title>
+    <subtitle>A Subtitle</subtitle>
+    <author>
+      <personname><firstname>Jane</firstname><surname>Doe</surname></personname>
+    </author>
+    <pubdate>2025-01-15</pubdate>
+    <copyright><year>2025</year><holder>Jane Doe</holder></copyright>
+    <cover>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="cover.png"/>
+        </imageobject>
+      </mediaobject>
+    </cover>
+  </info>
+  <!-- content -->
+</book>
+----
+
+=== CLI Usage
+
+Build a single book:
+
+[source,bash]
+----
+# Default: self-contained HTML (inline format)
+$ docbook build book.xml
+Built /path/to/book.html
+
+# SEO-friendly with pre-rendered content
+$ docbook build book.xml --format dom -o reader.html
+
+# Distribution directory with external JSON
+$ docbook build book.xml --format dist -o /var/www/book/
+
+# Split pages for best SEO
+$ docbook build book.xml --format paged -o /var/www/book/
+----
+
+=== Ruby API
+
+Build programmatically:
+
+[source,ruby]
+----
+require "docbook"
+
+Docbook::Output::Builder.new(
+  xml_path: "book.xml",
+  output_path: "output.html",
+  format: :inline,
+  image_strategy: :data_url,
+  title: "My Book"
+).build
+----
+
+=== XIncludes
+
+For large books, split content into separate files using XInclude:
+
+[source,xml]
+----
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      version="5.0">
+  <info><title>Large Book</title></info>
+  <xi:include href="chapters/ch01.xml"/>
+  <xi:include href="chapters/ch02.xml"/>
+</book>
+----
+
+The docbook gem resolves XIncludes automatically during build.

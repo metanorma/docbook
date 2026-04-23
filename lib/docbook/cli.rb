@@ -27,8 +27,9 @@ module Docbook
 
     desc "build [INPUT]", "Build an interactive HTML reader from DocBook XML"
     option :output, aliases: "-o",
-                    desc: "Output HTML file path (default: <input>.html or demo.html with --demo)"
+                    desc: "Output file or directory path (default: <input>.html or <input>/ with --format dist/paged)"
     option :demo, desc: "Build a bundled demo: xslTNG or model-flow"
+    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged"
     option :xinclude, type: :boolean, default: true,
                       desc: "Resolve XIncludes before processing"
     option :image_search_dir, type: :array,
@@ -49,32 +50,28 @@ module Docbook
                                                     build_file_params(input)
                                                   end
 
-      FileUtils.mkdir_p(File.dirname(output_path))
-
-      verbose_step("Parsing #{File.basename(xml_path)}...")
-
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-      page = Docbook::Output::SinglePage.new(
+      builder = Docbook::Output::Builder.new(
         xml_path: xml_path,
         output_path: output_path,
+        format: options[:format].to_sym,
         image_search_dirs: search_dirs,
         image_strategy: options[:image_strategy].to_sym,
         sort_glossary: options[:sort_glossary],
         title: title,
       )
-
-      page.generate
+      result_path = builder.build
 
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
 
       if verbose?
-        stats = build_stats(output_path)
+        stats = build_stats(result_path)
         verbose_step("  Completed in #{format_time(elapsed)}")
-        verbose_step("  Output: #{output_path} (#{stats})")
+        verbose_step("  Output: #{result_path} (#{stats})")
       end
 
-      say "Built #{output_path}"
+      say "Built #{result_path}"
     end
 
     desc "export INPUT", "Export DocBook XML as DocbookMirror JSON"
@@ -236,6 +233,47 @@ module Docbook
       end
     end
 
+    desc "library INPUT", "Build a multi-book library from a directory or manifest"
+    option :output, aliases: "-o",
+                    desc: "Output file or directory path (default: library.html or library/ with --format dist/paged)"
+    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged"
+    option :image_strategy, default: "data_url",
+                            desc: "Image resolution: data_url, file_url, or relative"
+    option :sort_glossary, type: :boolean, default: false,
+                           desc: "Sort glossary entries alphabetically"
+    option :title, desc: "Library title (default: derived from manifest or directory name)"
+    def library(input)
+      input_path = File.expand_path(input)
+      unless File.exist?(input_path)
+        raise FileNotFoundError, "Path not found: #{input_path}"
+      end
+
+      output_path = File.expand_path(options[:output] || derive_library_output(input))
+      title = options[:title] || derive_library_title(input_path)
+
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      builder = Docbook::Output::LibraryBuilder.new(
+        input_path: input_path,
+        output_path: output_path,
+        format: options[:format].to_sym,
+        image_strategy: options[:image_strategy].to_sym,
+        sort_glossary: options[:sort_glossary],
+        title: title,
+      )
+      result_path = builder.build
+
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+
+      if verbose?
+        stats = build_stats(result_path)
+        verbose_step("  Completed in #{format_time(elapsed)}")
+        verbose_step("  Output: #{result_path} (#{stats})")
+      end
+
+      say "Built library: #{result_path}"
+    end
+
     # ---- Development commands (hidden from help) ----
 
     desc "roundtrip INPUT...", "Round-trip test DocBook XML files", hide: true
@@ -336,7 +374,23 @@ module Docbook
 
     def derive_output_path(input)
       base = File.basename(input, ".*")
-      File.join(File.dirname(File.expand_path(input)), "#{base}.html")
+      format = options[:format].to_sym
+      ext = %i[dist paged].include?(format) ? "" : ".html"
+      File.join(File.dirname(File.expand_path(input)), "#{base}#{ext}")
+    end
+
+    def derive_library_output(input)
+      format = options[:format].to_sym
+      ext = %i[dist paged].include?(format) ? "" : ".html"
+      File.expand_path("library#{ext}")
+    end
+
+    def derive_library_title(input_path)
+      if File.directory?(input_path)
+        File.basename(input_path)
+      else
+        "DocBook Library"
+      end
     end
 
     def verbose?
@@ -377,5 +431,6 @@ module Docbook
         "#{seconds.round(1)}s"
       end
     end
+
   end
 end

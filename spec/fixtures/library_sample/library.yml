@@ -1,0 +1,9 @@
+name: "Test Library"
+description: "A test library for specs"
+books:
+  - id: "book-one"
+    source: "book-one/book-one.xml"
+    title: "Book One"
+    cover: "book-one/cover.png"
+  - id: "book-two"
+    source: "book-two/book-two.xml"

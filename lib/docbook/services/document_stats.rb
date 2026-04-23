@@ -30,6 +30,7 @@ module Docbook
           "pubdate" => extract_pubdate,
           "releaseinfo" => extract_releaseinfo,
           "copyright" => extract_copyright,
+          "cover" => extract_cover,
           "root_element" => root_element_name,
           **counts,
         }
@@ -156,6 +157,20 @@ module Docbook
           parts << holders if holders && !holders.empty?
           parts.any? ? parts.join(" ") : nil
         end.join("; ")
+      end
+
+      def extract_cover
+        info = @document.info if @document.respond_to?(:info)
+        return unless info&.cover && !info.cover.empty?
+
+        first_cover = info.cover.first
+        return unless first_cover.mediaobject && !first_cover.mediaobject.empty?
+
+        first_media = first_cover.mediaobject.first
+        return unless first_media.imageobject && !first_media.imageobject.empty?
+
+        first_image = first_media.imageobject.first
+        first_image.imagedata&.fileref
       end
 
       def text_content(content)

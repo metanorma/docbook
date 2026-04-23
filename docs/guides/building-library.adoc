@@ -1,0 +1,186 @@
+---
+layout: default
+title: Building a Library
+parent: Guides
+nav_order: 6
+---
+
+== Building a Library
+
+How to organize and build a multi-book library using the docbook gem.
+
+=== Directory Auto-Discovery
+
+The simplest approach: one subdirectory per book.
+
+----
+my-library/
+  book-one/
+    book-one.xml
+    cover.png
+    media/
+      figure1.png
+  book-two/
+    book-two.xml
+    cover.svg
+----
+
+Build:
+
+[source,bash]
+----
+$ docbook library my-library/ --format dist -o /var/www/library/
+Built library: /var/www/library/
+----
+
+The CLI discovers XML files in each subdirectory and finds cover images by convention.
+
+=== Manifest File
+
+For more control, create a YAML or JSON manifest specifying book metadata and covers.
+
+==== YAML Manifest
+
+Create `library.yml`:
+
+[source,yaml]
+----
+name: "My Technical Library"
+description: "A curated collection of DocBook publications"
+books:
+  - id: "user-guide"
+    source: "user-guide/guide.xml"
+    title: "User Guide v3.0"
+    author: "Jane Doe"
+    description: "Complete user documentation"
+    cover: "user-guide/cover.png"
+  - id: "api-reference"
+    source: "api/api-ref.xml"
+    title: "API Reference"
+  - id: "cookbook"
+    source: "cookbook/cookbook.xml"
+----
+
+==== JSON Manifest
+
+Same structure in JSON:
+
+[source,json]
+----
+{
+  "name": "My Technical Library",
+  "description": "A curated collection",
+  "books": [
+    {
+      "id": "user-guide",
+      "source": "user-guide/guide.xml",
+      "title": "User Guide v3.0",
+      "cover": "user-guide/cover.png"
+    }
+  ]
+}
+----
+
+==== Manifest Schema
+
+[cols="2,1,3"]
+|===
+| Field | Required | Description
+
+| `name` | Yes | Library name displayed in the reader
+| `description` | No | Library description
+| `books` | Yes | Array of book entries
+|===
+
+Each book entry:
+
+[cols="2,1,3"]
+|===
+| Field | Required | Description
+
+| `id` | Yes | Unique identifier (used for filenames and URLs)
+| `source` | Yes | Relative path to DocBook XML file
+| `title` | No | Display title (falls back to XML `<title>`)
+| `author` | No | Author name (falls back to XML `<author>`)
+| `description` | No | Book description for the library card
+| `cover` | No | Relative path to cover image
+|===
+
+=== Cover Resolution Priority
+
+For each book, covers are resolved in this order:
+
+. **Manifest cover** -- explicit `cover` field in the manifest entry
+. **Convention file** -- `cover.png`/`.jpg`/`.svg`/`.webp`/`.gif` in the book directory
+. **XML `<cover>` element** -- from the DocBook `<info>` block
+
+=== Output Formats
+
+Libraries support all four output formats. See link:../features/output-formats[Output Formats] for a detailed comparison.
+
+==== Inline Library
+
+Single HTML file with all book data embedded:
+
+[source,bash]
+----
+$ docbook library library.yml --format inline -o library.html
+----
+
+==== DOM Library
+
+Single HTML with pre-rendered book list for SEO:
+
+[source,bash]
+----
+$ docbook library library.yml --format dom -o library.html
+----
+
+==== Dist Library
+
+Directory with per-book JSON files (best for web):
+
+[source,bash]
+----
+$ docbook library library.yml --format dist -o /var/www/library/
+# Output:
+#   /var/www/library/index.html
+#   /var/www/library/data/user-guide.json
+#   /var/www/library/data/api-reference.json
+----
+
+==== Paged Library
+
+Each book gets its own subdirectory with split pages:
+
+[source,bash]
+----
+$ docbook library library.yml --format paged -o /var/www/library/
+# Output:
+#   /var/www/library/index.html
+#   /var/www/library/user-guide/
+#   /var/www/library/api-reference/
+----
+
+=== Ruby API
+
+Build libraries programmatically:
+
+[source,ruby]
+----
+require "docbook"
+
+Docbook::Output::LibraryBuilder.new(
+  input_path: "library.yml",
+  output_path: "library.html",
+  format: :inline,
+  image_strategy: :data_url,
+  title: "My Library"
+).build
+----
+
+=== See Also
+
+* link:../interfaces/cli/library-command[CLI: library] -- Full command reference
+* link:../features/output-formats[Output Formats] -- Format comparison table
+* link:organizing-book[Organizing a Book] -- Single book setup

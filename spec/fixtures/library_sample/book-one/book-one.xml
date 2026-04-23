@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0" xml:id="book-one">
+  <info>
+    <title>Book One</title>
+    <author><personname><firstname>Jane</firstname><surname>Doe</surname></personname></author>
+  </info>
+  <chapter xml:id="ch-intro">
+    <title>Introduction</title>
+    <para>This is the first book in the test library.</para>
+  </chapter>
+</book>

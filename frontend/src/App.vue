@@ -70,7 +70,10 @@
         />
 
         <!-- DocbookMirror format (ProseMirror-style) -->
-        <div v-if="documentStore.mirrorDocument" class="db-content">
+        <div v-if="useDomContent" id="docbook-content" class="db-content">
+          <!-- DOM format: content is pre-rendered by Ruby HtmlRenderer, already in #docbook-content -->
+        </div>
+        <div v-else-if="documentStore.mirrorDocument" class="db-content">
           <!-- Reference card swiper mode -->
           <RefCardSwiper
             v-if="ebookStore.refCardMode.value && refEntries.length > 0"
@@ -159,6 +162,7 @@ import { useReadingStats } from '@/composables/useReadingStats'
 import { useTts } from '@/composables/useTts'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useScrollTracker } from '@/composables/useScrollTracker'
+import { isDomFormat } from '@/composables/useContentLoader'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
@@ -179,6 +183,9 @@ const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const ebookStore = useEbookStore()
 const mainContent = ref<HTMLElement | null>(null)
+
+// DOM format: content is pre-rendered in #docbook-content, skip MirrorRenderer
+const useDomContent = isDomFormat()
 
 // Lazy section rendering
 const { isVisible, observeSection, markVisible, initialized: lazyInitialized } = useLazySections(mainContent)

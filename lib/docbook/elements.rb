@@ -50,6 +50,7 @@ module Docbook
     autoload :ProductName, "#{__dir__}/elements/productname"
     autoload :ProductNumber, "#{__dir__}/elements/productnumber"
     autoload :Version, "#{__dir__}/elements/version"
+    autoload :Cover, "#{__dir__}/elements/cover"
 
     # Block elements
     autoload :Para, "#{__dir__}/elements/para"

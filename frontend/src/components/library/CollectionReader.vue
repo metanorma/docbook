@@ -79,7 +79,7 @@ async function loadBook() {
     return
   }
 
-  if (book.source && (book.source.startsWith('http') || book.source.startsWith('/'))) {
+  if (book.source) {
     try {
       const res = await fetch(book.source)
       if (res.ok) {
