@@ -40,7 +40,7 @@
     <main class="library__content" :class="`library__content--${viewMode}`">
       <TransitionGroup name="book">
         <BookCard
-          v-for="(book, index) in collectionStore.sortedBooks"
+          v-for="(book, index) in collectionStore.books"
           :key="book.id"
           :book="book"
           :style="{ '--stagger-delay': `${index * 50}ms` }"
