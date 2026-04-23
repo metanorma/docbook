@@ -15,5 +15,6 @@ module Docbook
     autoload :DocumentStats, "#{SERVICES_DIR}/document_stats"
     autoload :Linter, "#{SERVICES_DIR}/linter"
     autoload :ListOfGenerator, "#{SERVICES_DIR}/list_of_generator"
+    autoload :CollectionManifestResolver, "#{SERVICES_DIR}/collection_manifest"
   end
 end

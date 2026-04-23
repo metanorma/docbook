@@ -12,5 +12,7 @@ module Docbook
     autoload :DocumentMetadata, "#{MODELS_DIR}/document_metadata"
     autoload :SectionRoot, "#{MODELS_DIR}/section_root"
     autoload :DocumentRoot, "#{MODELS_DIR}/document_root"
+    autoload :BookEntry, "#{MODELS_DIR}/book_entry"
+    autoload :CollectionManifest, "#{MODELS_DIR}/collection_manifest"
   end
 end

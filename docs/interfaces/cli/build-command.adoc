@@ -8,7 +8,12 @@ nav_order: 1
 
 == build
 
-Build an interactive HTML reader from a DocBook XML file. The output is a single self-contained file that works offline -- CSS, JavaScript, and images are all inlined.
+Build an interactive HTML reader from a DocBook XML file. The output format is controlled by `--format` (default: `inline`).
+
+* `inline` -- Single self-contained HTML file (default). Works offline.
+* `dom` -- Single HTML with pre-rendered content for SEO. Works offline.
+* `dist` -- Directory with external JSON files. Requires HTTP server.
+* `paged` -- Directory with per-chapter HTML pages. Requires HTTP server.
 
 === Usage
 
@@ -33,7 +38,8 @@ $ docbook build --demo [options]
 |===
 | Option | Default | Description
 
-| `--output`, `-o` PATH | `<input>.html` or `demo.html` | Output HTML file path
+| `--output`, `-o` PATH | `<input>.html` or `demo.html` | Output file or directory path
+| `--format` FORMAT | `inline` | Output format: `inline`, `dom`, `dist`, `paged`
 | `--demo` | _(off)_ | Build a bundled demo: `xslTNG` (default) or `model-flow`
 | `--xinclude` | `true` | Resolve XInclude elements before processing
 | `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
@@ -153,4 +159,5 @@ The file works offline because all CSS, JavaScript, and (with `data_url` strateg
 === See Also
 
 * link:../export-command[export] -- Export as DocbookMirror JSON
-* link:../../ruby-api/single-page[Ruby API: SinglePage] -- Programmatic reader generation
+* link:../../features/output-formats[Output Formats] -- Format comparison table
+* link:library-command[library] -- Build a multi-book library

@@ -14,6 +14,8 @@ Key features:
 * **DocBook 5 parsing** -- Full element support via lutaml-model
 * **XInclude resolution** -- Transparent handling of multi-file documents
 * **DocbookMirror JSON** -- ProseMirror-compatible structured representation
+* **Output formats** -- Inline, DOM (SEO), distribution directory, and split-pages modes
+* **Library support** -- Multi-book collections with covers and manifests
 
 == Installation
 
@@ -56,19 +58,41 @@ Try the bundled demo:
 $ docbook build --demo
 ----
 
+SEO-friendly with pre-rendered content:
+
+[source,bash]
+----
+$ docbook build guide.xml --format dom -o reader.html
+----
+
+=== Library
+
+Build a multi-book library:
+
+[source,bash]
+----
+$ docbook library my-library/ --format dist -o /var/www/library/
+----
+
 === Ruby API
 
 [source,ruby]
 ----
 require 'docbook'
 
-# Build an interactive reader
-Docbook::Output::SinglePage.new(
+# Build an interactive reader (any format)
+Docbook::Output::Builder.new(
   xml_path: 'guide.xml',
   output_path: 'guide.html',
-  image_search_dirs: ['images/'],
-  image_strategy: :data_url
-).generate
+  format: :inline  # or :dom, :dist, :paged
+).build
+
+# Build a multi-book library
+Docbook::Output::LibraryBuilder.new(
+  input_path: 'library.yml',
+  output_path: 'library.html',
+  format: :inline
+).build
 
 # Export as DocbookMirror JSON
 parsed = Docbook::Document.from_xml(File.read('guide.xml'))
@@ -83,7 +107,10 @@ File.write('guide.json', json)
 |Command |Description
 
 |`build`
-|Build an interactive HTML reader from DocBook XML. Pass `--demo` for the bundled sample, or `--demo=xslTNG` / `--demo=model-flow`.
+|Build an interactive HTML reader from DocBook XML. Pass `--demo` for the bundled sample, or `--demo=xslTNG` / `--demo=model-flow`. Supports `--format` to choose output format.
+
+|`library`
+|Build a multi-book library from a directory or manifest
 
 |`export`
 |Export as DocbookMirror JSON
@@ -110,9 +137,11 @@ Options:
 
 * `-o, --output FILE` -- Output HTML file path (default: `<input>.html` or `demo.html`)
 * `--demo` -- Use the bundled DocBook sample as input (accepts name: `xslTNG` or `model-flow`)
+* `--format FORMAT` -- Output format: `inline` (default), `dom`, `dist`, or `paged`
 * `--image-search-dir DIR` -- Directories to search for images (default: XML file directory)
 * `--image-strategy STRATEGY` -- Image handling: `data_url` (default), `file_url`, or `relative`
 * `--title TITLE` -- Page title (default: derived from document)
+* `--sort-glossary` -- Sort glossary entries alphabetically
 * `--xinclude` / `--no-xinclude` -- Resolve XIncludes (default: true)
 
 Examples:
@@ -124,6 +153,15 @@ $ docbook build book.xml
 
 # Custom output path
 $ docbook build book.xml -o output.html
+
+# SEO-friendly with pre-rendered content
+$ docbook build book.xml --format dom -o output.html
+
+# Distribution directory (separate assets)
+$ docbook build book.xml --format dist -o /var/www/book/
+
+# Split into individual pages
+$ docbook build book.xml --format paged -o /var/www/book/
 
 # With custom image paths
 $ docbook build book.xml --image-search-dir media/ images/
@@ -172,6 +210,22 @@ Format/prettify DocBook XML:
 $ docbook format input.xml -o output.xml
 ----
 
+=== library
+
+Build a multi-book library from a directory or manifest:
+
+[source,bash]
+----
+# From a directory (auto-discovers XML files)
+$ docbook library my-library/ -o library.html
+
+# From a YAML manifest
+$ docbook library library.yml --format dist -o /var/www/library/
+
+# From a JSON manifest
+$ docbook library library.json --format paged -o /var/www/library/
+----
+
 == Ruby API
 
 === Parsing
@@ -194,14 +248,22 @@ doc = Docbook::Document.from_xml(resolved.to_xml)
 [source,ruby]
 ----
 # Full pipeline: parse + TOC + numbering + index + images + HTML
-page = Docbook::Output::SinglePage.new(
+builder = Docbook::Output::Builder.new(
   xml_path: 'guide.xml',
   output_path: 'output/guide.html',
+  format: :inline,             # :inline, :dom, :dist, or :paged
   image_search_dirs: ['media/'],
   image_strategy: :data_url,   # :data_url, :file_url, or :relative
   title: "My Document"
 )
-page.generate
+builder.build
+
+# Build a multi-book library
+Docbook::Output::LibraryBuilder.new(
+  input_path: 'library.yml',
+  output_path: 'library.html',
+  format: :inline
+).build
 ----
 
 === Exporting JSON
@@ -296,14 +358,12 @@ After building, `docbook build` automatically includes the compiled assets.
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │                        Output Layer                               │  │
 │  │                                                                   │  │
-│  │  ┌──────────────────┐  ┌──────────────────────────────────────┐  │  │
-│  │  │  Output::Single  │  │  Output::DocbookMirror               │  │  │
-│  │  │  Page            │  │                                      │  │  │
-│  │  │                  │  │  Docbook Element objects →            │  │  │
-│  │  │  Bundles Vue SPA │  │  ProseMirror-compatible JSON         │  │  │
-│  │  │  + DocbookMirror │  │  (doc > nodes > text, with marks)    │  │  │
-│  │  │  into one .html  │  │                                      │  │  │
-│  │  └────────┬─────────┘  └──────────────────────────────────────┘  │  │
+│  │  ┌──────────────────┐  ┌────────────────┐  ┌──────────────────┐  │  │
+│  │  │  Output::Builder │  │  Output::       │  │  Output::        │  │  │
+│  │  │  Pipeline →      │  │  HtmlRenderer   │  │  Formats::*      │  │  │
+│  │  │  Format          │  │  (DOM/Paged)    │  │  Inline/Dom/     │  │  │
+│  │  │                  │  │                 │  │  Dist/Paged      │  │  │
+│  │  └────────┬─────────┘  └─────────────────┘  └──────────────────┘  │  │
 │  │           │                                                       │  │
 │  └───────────┼───────────────────────────────────────────────────────┘  │
 │              │                                                          │
@@ -322,7 +382,7 @@ After building, `docbook build` automatically includes the compiled assets.
 │  │  │   (emphasis, code, link, xref, citation, tag)               │  │  │
 │  │  └─────────────────────────────────────────────────────────────┘  │  │
 │  │                     │                          │                  │  │
-│  │           export cmd (JSON)            embedded in SinglePage     │  │
+│  │           export cmd (JSON)            embedded in Builder        │  │
 │  │                     │                          │                  │  │
 │  └─────────────────────┼──────────────────────────┼──────────────────┘  │
 │                        │                          │                     │
@@ -363,8 +423,8 @@ After building, `docbook build` automatically includes the compiled assets.
                                  ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                    Interactive HTML Reader                             │
-│           Single .html file (CSS+JS inlined, works via file://)        │
-│                    opened in any browser                               │
+│    Inline (single .html), DOM (pre-rendered), Dist (directory),       │
+│    Paged (split pages) -- all driven by Format strategy classes       │
 └────────────────────────────────────────────────────────────────────────┘
 ----
 
@@ -372,8 +432,9 @@ CLI Commands:
 
 [source]
 ----
-  docbook build    [INPUT] [-o out.html]  →  SinglePage (Vue SPA bundled)
+  docbook build    [INPUT] [-o out.html]  →  Builder → Format (inline|dom|dist|paged)
   docbook build    --demo                 →  Demo from bundled sample
+  docbook library  DIRECTORY/manifest     →  Multi-book library
   docbook export   INPUT [-o out.json]    →  DocbookMirror JSON
   docbook validate INPUT                  →  RELAX NG schema validation
 ----
@@ -391,9 +452,9 @@ DocbookMirror::  A ProseMirror-compatible intermediate JSON format. The Ruby
 Vue SPA::        Renders DocbookMirror JSON via MirrorRenderer and TextRenderer
                  components. The data is embedded as window.DOCBOOK_DATA.
 
-SinglePage::     Bundles the Vue SPA build artifacts inline into a single HTML
-                 file, with DocbookMirror JSON embedded as window.DOCBOOK_DATA
-                 for the SPA to consume on load.
+Builder/Formats::  The output layer. Pipeline processes XML into a guide hash,
+                   then a Format strategy class (Inline, Dom, Dist, Paged) packages
+                   it into the chosen output structure.
 
 == Contributing
 

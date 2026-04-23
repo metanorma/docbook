@@ -1,52 +1,41 @@
 # frozen_string_literal: true
 
 require "json"
-require "base64"
 require_relative "index_generator"
 
 module Docbook
   module Output
-    # Generates a self-contained single-page HTML from DocBook XML.
+    # Shared data processing pipeline for DocBook XML.
     #
-    # Orchestrates the full pipeline: parse XML → generate TOC, numbering,
-    # index → transform to DocbookMirror JSON → resolve images → render HTML.
+    # Orchestrates steps 1-8: parse XML, generate TOC, numbering, index,
+    # transform to DocbookMirror JSON, attach metadata, generate lists,
+    # and resolve image paths. Returns a complete guide hash ready for
+    # consumption by any Format class.
     #
     # Usage:
-    #   page = Docbook::Output::SinglePage.new(
-    #     xml_path: "guide.xml",
-    #     dist_dir: "frontend/dist",
-    #     output_path: "output/guide.html",
-    #     image_search_dirs: ["resources/media"],
-    #     image_strategy: :data_url
-    #   )
-    #   page.generate
+    #   guide = Pipeline.new(xml_path: "book.xml").process
     #
-    class SinglePage
-      attr_reader :xml_path, :dist_dir, :output_path, :image_search_dirs,
-                  :image_strategy
+    class Pipeline
+      attr_reader :xml_path, :image_search_dirs, :image_strategy,
+                  :sort_glossary, :title
 
       # @param xml_path [String] path to the DocBook XML file
-      # @param dist_dir [String] path to the frontend dist directory (defaults to gem's bundled frontend)
-      # @param output_path [String] path to write the output HTML file
       # @param image_search_dirs [Array<String>] directories to search for images
       # @param image_strategy [Symbol] :file_url, :data_url, or :relative
-      # @param title [String] page title for the HTML
       # @param sort_glossary [Boolean] sort glossary entries alphabetically
-      def initialize(xml_path:, output_path:, dist_dir: nil, image_search_dirs: [],
-                     image_strategy: :data_url, title: "DocBook Library",
-                     sort_glossary: false)
+      # @param title [String] fallback title for the document
+      def initialize(xml_path:, image_search_dirs: [], image_strategy: :data_url,
+                     sort_glossary: false, title: "DocBook")
         @xml_path = xml_path
-        @dist_dir = dist_dir || FRONTEND_DIST
-        @output_path = output_path
         @image_search_dirs = Array(image_search_dirs)
         @image_strategy = image_strategy
-        @title = title
         @sort_glossary = sort_glossary
+        @title = title
       end
 
-      # Run the full pipeline and write the HTML file.
-      # @return [String] the output file path
-      def generate
+      # Run the full data processing pipeline and return the guide hash.
+      # @return [Hash] the complete guide data with toc, index, meta, content
+      def process
         xml_dir = File.dirname(@xml_path)
 
         # 1. Parse the XML
@@ -88,6 +77,7 @@ module Docbook
           "pubdate" => stats["pubdate"],
           "releaseinfo" => stats["releaseinfo"],
           "copyright" => stats["copyright"],
+          "cover" => stats["cover"],
           "root_element" => stats["root_element"],
         }.compact
 
@@ -111,10 +101,7 @@ module Docbook
           strategy: @image_strategy,
         ).resolve(guide)
 
-        # 9. Build HTML
-        write_html(guide)
-
-        @output_path
+        guide
       end
 
       private
@@ -139,35 +126,6 @@ module Docbook
           end
         end
         result.compact
-      end
-
-      FRONTEND_DIST = File.expand_path("../../../frontend/dist", __dir__)
-
-      def write_html(guide)
-        dist = @dist_dir || FRONTEND_DIST
-        css_content = File.read(File.join(dist, "app.css"))
-        js_content = File.read(File.join(dist, "app.iife.js"))
-
-        html = <<~HTML
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>#{@title}</title>
-            <style>#{css_content}</style>
-            <script>
-              window.DOCBOOK_DATA = #{JSON.generate(guide).gsub("</script", '<\\/script')};
-            </script>
-          </head>
-          <body>
-            <div id="docbook-app"></div>
-            <script>#{js_content}</script>
-          </body>
-          </html>
-        HTML
-
-        File.write(@output_path, html)
       end
     end
   end

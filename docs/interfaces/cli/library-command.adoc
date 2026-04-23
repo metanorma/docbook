@@ -1,0 +1,162 @@
+---
+layout: default
+title: library
+parent: CLI Reference
+grand_parent: Interfaces
+nav_order: 8
+---
+
+== library
+
+Build a multi-book library from a directory or manifest file. Supports all four output formats.
+
+=== Usage
+
+[source,bash]
+----
+$ docbook library INPUT [options]
+----
+
+=== Arguments
+
+[cols="2,4"]
+|===
+| Argument | Description
+
+| `INPUT` | Path to a directory, YAML manifest (`.yml`), or JSON manifest (`.json`)
+|===
+
+=== Options
+
+[cols="3,1,4"]
+|===
+| Option | Default | Description
+
+| `--output`, `-o` PATH | `library.html` or `library/` | Output file or directory path
+| `--format` FORMAT | `inline` | Output format: `inline`, `dom`, `dist`, or `paged`
+| `--image-strategy` STRATEGY | `data_url` | Image handling: `data_url`, `file_url`, or `relative`
+| `--title` TITLE | Derived from manifest or directory | Library title
+| `--sort-glossary` | `false` | Sort glossary entries alphabetically
+|===
+
+=== Input Types
+
+==== Directory (auto-discovery)
+
+Point to a directory containing subdirectories with DocBook XML files. Each subdirectory becomes a book.
+
+[source,bash]
+----
+$ docbook library my-library/ --format dist -o /var/www/library/
+----
+
+The CLI auto-discovers XML files and finds cover images by convention (files named `cover.png`, `cover.jpg`, etc. in each book directory).
+
+==== YAML Manifest
+
+A YAML file listing books with metadata:
+
+[source,yaml]
+----
+name: "My Technical Library"
+description: "A curated collection of DocBook publications"
+books:
+  - id: "user-guide"
+    source: "user-guide/guide.xml"
+    title: "User Guide v3.0"
+    cover: "user-guide/cover.png"
+  - id: "api-reference"
+    source: "api/api-ref.xml"
+----
+
+[source,bash]
+----
+$ docbook library library.yml --format inline -o library.html
+----
+
+==== JSON Manifest
+
+Same structure as YAML, in JSON format:
+
+[source,json]
+----
+{
+  "name": "My Technical Library",
+  "books": [
+    { "id": "user-guide", "source": "user-guide/guide.xml" }
+  ]
+}
+----
+
+[source,bash]
+----
+$ docbook library library.json --format dom -o library.html
+----
+
+=== Output Structure by Format
+
+==== inline / dom
+
+Single HTML file with all book data inlined.
+
+==== dist
+
+Directory with per-book JSON files:
+
+----
+library/
+  index.html
+  data/
+    user-guide.json
+    api-reference.json
+----
+
+==== paged
+
+Directory with per-book subdirectories, each containing split pages:
+
+----
+library/
+  index.html
+  user-guide/
+    index.html
+    pages/
+      ch-intro.html
+      ch-setup.html
+  api-reference/
+    index.html
+    pages/
+      overview.html
+----
+
+=== Examples
+
+Build a library from a directory as a single HTML file:
+
+[source,bash]
+----
+$ docbook library my-library/ -o library.html
+Built library: library.html
+----
+
+Build a library for web deployment with per-book JSON files:
+
+[source,bash]
+----
+$ docbook library library.yml --format dist -o /var/www/library/
+Built library: /var/www/library/
+----
+
+Build a paged library for best SEO:
+
+[source,bash]
+----
+$ docbook library my-library/ --format paged -o /var/www/library/
+Built library: /var/www/library/
+----
+
+=== See Also
+
+* link:build-command[build] -- Build a single book
+* link:../../features/output-formats[Output Formats] -- Format comparison
+* link:../../guides/building-library[Building a Library] -- Step-by-step guide

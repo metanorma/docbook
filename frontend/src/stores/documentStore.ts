@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
+import { createContentLoader, getOutputFormat } from '@/composables/useContentLoader'
 
 // ============================================================
 // DocbookMirror (ProseMirror-style) Types
@@ -156,11 +157,24 @@ export const useDocumentStore = defineStore('document', () => {
   }
 
   function loadFromWindow(): Promise<void> {
+    // Try inline data first (covers inline, dom, paged formats)
     const inlineData = (window as any).DOCBOOK_DATA
     if (inlineData && inlineData !== null) {
       return processDocbookData(inlineData)
     }
 
+    // Try external data (dist format)
+    const format = getOutputFormat()
+    if (format === 'dist') {
+      const loader = createContentLoader()
+      return loader.load().then(data => {
+        if (data) return processDocbookData(data)
+        documentMeta.value = null
+        return Promise.resolve()
+      })
+    }
+
+    // Try collection with inline data
     const collection = (window as any).DOCBOOK_COLLECTION
     if (collection && collection.books && collection.books.length > 0) {
       const firstBook = collection.books[0]

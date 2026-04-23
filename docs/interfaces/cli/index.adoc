@@ -30,6 +30,7 @@ The CLI executable is installed as `docbook` (via the gem's `exe/docbook` entry 
 | `info` | 0.1.0 | Display document metadata and statistics
 | `validate` | 0.1.0 | Validate DocBook XML against RELAX NG schema
 | `lint` | 0.1.0 | Check for common DocBook issues (well-formedness, xrefs, images)
+| `library` | 0.1.0 | Build a multi-book library from a directory or manifest
 | `format` | 0.1.0 | Reformat and prettify DocBook XML
 |===
 
@@ -63,6 +64,7 @@ Select a command for detailed usage instructions, options, and examples:
 * link:info-command[info] -- Display document metadata and statistics
 * link:validate-command[validate] -- Validate DocBook XML
 * link:lint-command[lint] -- Check for common DocBook issues
+* link:library-command[library] -- Build a multi-book library
 * link:format-command[format] -- Format DocBook XML
 * link:roundtrip-command[roundtrip] -- Round-trip test (development)
 
