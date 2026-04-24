@@ -6,7 +6,7 @@ module Docbook
   module Output
     module Formats
       class InlineFormat < BaseFormat
-        def write(output_path, guide, title: "DocBook", manifest: nil)
+        def write(output_path, guide, title: "DocBook", _manifest: nil)
           FileUtils.mkdir_p(File.dirname(output_path))
           data_script = "window.DOCBOOK_DATA = #{safe_json(guide)};"
           html = html_boilerplate(title: title, body_content: '<div id="docbook-app"></div>',

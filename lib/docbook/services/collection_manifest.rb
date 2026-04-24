@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "ostruct"
 require "yaml"
 
 module Docbook
@@ -13,7 +12,7 @@ module Docbook
     # Manifest mode: parses JSON or YAML files into a CollectionManifest model,
     # then resolves relative paths to absolute paths.
     #
-    # Returns an OpenStruct with :name, :description, and :books (array of
+    # Returns a CollectionResult with :name, :description, and :books (array of
     # ResolvedBook structs with absolute paths).
     #
     # Usage:
@@ -26,9 +25,10 @@ module Docbook
 
       ResolvedBook = Struct.new(:id, :source, :title, :author, :description,
                                 :cover, keyword_init: true)
+      CollectionResult = Struct.new(:name, :description, :books, keyword_init: true)
 
       # @param path [String] path to a directory, JSON file, or YAML file
-      # @return [OpenStruct] resolved collection with :name, :description, :books
+      # @return [CollectionResult] resolved collection with :name, :description, :books
       def self.resolve(path)
         new(path).resolve
       end
@@ -54,11 +54,7 @@ module Docbook
       def resolve_directory
         books = discover_books(@path)
 
-        OpenStruct.new(
-          name: File.basename(@path),
-          description: nil,
-          books: books,
-        )
+        CollectionResult.new(name: File.basename(@path), description: nil, books: books)
       end
 
       def resolve_json_file
@@ -81,11 +77,7 @@ module Docbook
           resolve_book(book, base_dir)
         end
 
-        OpenStruct.new(
-          name: manifest.name,
-          description: manifest.description,
-          books: books,
-        )
+        CollectionResult.new(name: manifest.name, description: manifest.description, books: books)
       end
 
       def resolve_book(book, base_dir)
