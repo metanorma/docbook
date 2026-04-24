@@ -300,6 +300,92 @@ RSpec.describe Docbook::CLI do
     end
   end
 
+  describe "build --format" do
+    let(:guide_xml) { "spec/fixtures/xslTNG/guide/xml/guide.xml" }
+
+    it "builds dom format", if: frontend_built? do
+      Tempfile.create(["test", ".html"]) do |out|
+        expect do
+          described_class.start(["build", guide_xml, "-o", out.path, "--format", "dom"])
+        end.to output(/Built/).to_stdout
+        content = File.read(out.path)
+        expect(content).to include('id="docbook-content"')
+        expect(content).to include("window.DOCBOOK_FORMAT = 'dom'")
+      end
+    end
+
+    it "builds dist format", if: frontend_built? do
+      dir = Dir.mktmpdir
+      begin
+        expect do
+          described_class.start(["build", guide_xml, "-o", File.join(dir, "index.html"), "--format", "dist"])
+        end.to output(/Built/).to_stdout
+        expect(File.exist?(File.join(dir, "index.html"))).to be true
+        expect(File.exist?(File.join(dir, "data", "book.json"))).to be true
+      ensure
+        FileUtils.rm_rf(dir)
+      end
+    end
+
+    it "builds paged format", if: frontend_built? do
+      dir = Dir.mktmpdir
+      begin
+        expect do
+          described_class.start(["build", guide_xml, "-o", File.join(dir, "index.html"), "--format", "paged"])
+        end.to output(/Built/).to_stdout
+        expect(File.exist?(File.join(dir, "index.html"))).to be true
+        pages = Dir.glob(File.join(dir, "pages", "*.html"))
+        expect(pages).not_to be_empty
+      ensure
+        FileUtils.rm_rf(dir)
+      end
+    end
+  end
+
+  describe "library" do
+    let(:library_dir) { "spec/fixtures/library_sample" }
+    let(:manifest_yml) { "spec/fixtures/library_sample/library.yml" }
+
+    it "builds a library from directory", if: frontend_built? do
+      Tempfile.create(["library", ".html"]) do |out|
+        expect do
+          described_class.start(["library", library_dir, "-o", out.path])
+        end.to output(/Built library/).to_stdout
+        content = File.read(out.path)
+        expect(content).to include("window.DOCBOOK_COLLECTION")
+      end
+    end
+
+    it "builds a library from YAML manifest", if: frontend_built? do
+      Tempfile.create(["library", ".html"]) do |out|
+        expect do
+          described_class.start(["library", manifest_yml, "-o", out.path])
+        end.to output(/Built library/).to_stdout
+        content = File.read(out.path)
+        expect(content).to include("window.DOCBOOK_COLLECTION")
+      end
+    end
+
+    it "builds a library with --format dist", if: frontend_built? do
+      dir = Dir.mktmpdir
+      begin
+        expect do
+          described_class.start(["library", manifest_yml, "-o", File.join(dir, "index.html"), "--format", "dist"])
+        end.to output(/Built library/).to_stdout
+        expect(File.exist?(File.join(dir, "index.html"))).to be true
+        expect(File.exist?(File.join(dir, "data", "book-one.json"))).to be true
+      ensure
+        FileUtils.rm_rf(dir)
+      end
+    end
+
+    it "raises on non-existent path" do
+      expect do
+        described_class.start(["library", "/nonexistent/path"])
+      end.to raise_error(Docbook::FileNotFoundError)
+    end
+  end
+
   describe "roundtrip" do
     it "round-trips valid DocBook files" do
       Tempfile.create(["test", ".xml"]) do |f|
