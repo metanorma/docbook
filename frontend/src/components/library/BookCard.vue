@@ -1,7 +1,7 @@
 <template>
   <article
     class="book-card"
-    :class="{ 'book-card--loading': loading }"
+    :class="[`book-card--${layout}`, { 'book-card--loading': loading }]"
     @click="handleClick"
     role="button"
     tabindex="0"
@@ -14,7 +14,7 @@
         <svg class="book-card__cover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
         </svg>
-        <span class="book-card__cover-letter">{{ book.title.charAt(0).toUpperCase() }}</span>
+        <span v-if="layout === 'grid'" class="book-card__cover-letter">{{ book.title.charAt(0).toUpperCase() }}</span>
       </div>
 
       <div v-if="book.progress" class="book-card__progress">
@@ -25,7 +25,7 @@
     <div class="book-card__content">
       <h3 class="book-card__title">{{ book.title }}</h3>
       <p v-if="book.author" class="book-card__author">{{ book.author }}</p>
-      <p v-if="book.description" class="book-card__description">{{ book.description }}</p>
+      <p v-if="book.description && layout === 'grid'" class="book-card__description">{{ book.description }}</p>
     </div>
 
     <div class="book-card__overlay">
@@ -38,9 +38,12 @@
 import { ref } from 'vue'
 import type { BookMeta } from '@/stores/collectionStore'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   book: BookMeta
-}>()
+  layout?: 'grid' | 'list'
+}>(), {
+  layout: 'grid'
+})
 
 const emit = defineEmits<{
   select: [book: BookMeta]
@@ -80,11 +83,60 @@ function handleClick() {
   outline-offset: 2px;
 }
 
+/* Grid layout (default) */
 .book-card__cover {
   position: relative;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: var(--color-surface-elevated);
+}
+
+/* List layout — horizontal */
+.book-card--list {
+  flex-direction: row;
+  align-items: center;
+  padding: 16px 20px;
+  gap: 20px;
+  border-radius: 8px;
+}
+
+.book-card--list .book-card__cover {
+  flex-shrink: 0;
+  width: 48px;
+  height: 64px;
+  aspect-ratio: auto;
+  border-radius: 4px;
+}
+
+.book-card--list .book-card__content {
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.book-card--list .book-card__title {
+  font-size: 1rem;
+  -webkit-line-clamp: 1;
+}
+
+.book-card--list .book-card__author {
+  font-size: 0.8125rem;
+  margin: 2px 0 0;
+}
+
+.book-card--list .book-card__overlay {
+  border-radius: 8px;
+}
+
+.book-card--list .book-card__cover-placeholder {
+  background: linear-gradient(135deg,
+    var(--color-surface-elevated) 0%,
+    var(--color-border) 100%);
+}
+
+.book-card--list .book-card__cover-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .book-card__cover-img {

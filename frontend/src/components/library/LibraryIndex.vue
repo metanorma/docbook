@@ -43,6 +43,7 @@
           v-for="(book, index) in collectionStore.books"
           :key="book.id"
           :book="book"
+          :layout="viewMode"
           :style="{ '--stagger-delay': `${index * 50}ms` }"
           @select="openBook"
         />
@@ -80,7 +81,6 @@ function openBook(book: BookMeta) {
 
 <style scoped>
 .library {
-  min-height: 100vh;
   padding: 48px;
   background: var(--color-bg);
 }

@@ -15,6 +15,7 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
 
   function createObserver() {
     if (observer.value) return
+    if (!containerRef.value) return
 
     observer.value = new IntersectionObserver(
       (entries) => {
@@ -42,6 +43,11 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
         threshold: THRESHOLD,
       }
     )
+
+    // Re-enable lazy mode after a frame so sections render first
+    requestAnimationFrame(() => {
+      initialized.value = true
+    })
   }
 
   function observeSection(id: string) {
@@ -100,11 +106,24 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
     }
   })
 
+  // Reset for a new document (e.g., switching library books)
+  function reset() {
+    unobserveAll()
+    if (observer.value) {
+      observer.value.disconnect()
+      observer.value = null
+    }
+    visibleIds.value = new Set()
+    initialized.value = false
+  }
+
   return {
     visibleIds,
     isVisible,
     observeSection,
     markVisible,
     initialized,
+    reset,
+    createObserver,
   }
 }

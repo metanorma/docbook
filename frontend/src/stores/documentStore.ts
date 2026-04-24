@@ -218,6 +218,7 @@ export const useDocumentStore = defineStore('document', () => {
   }
 
   return {
+    documentMeta,
     mirrorDocument,
     loadFromWindow,
     title,
