@@ -8,7 +8,7 @@ RSpec.describe Docbook::Output::Formats::PagedFormat do
 
   it "creates directory with index.html and pages" do
     guide = Docbook::Output::Pipeline.new(
-      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml"
+      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml",
     ).process
 
     Dir.mktmpdir do |dir|
@@ -21,7 +21,7 @@ RSpec.describe Docbook::Output::Formats::PagedFormat do
 
   it "includes page map and TOC in index.html" do
     guide = Docbook::Output::Pipeline.new(
-      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml"
+      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml",
     ).process
 
     Dir.mktmpdir do |dir|
@@ -35,7 +35,7 @@ RSpec.describe Docbook::Output::Formats::PagedFormat do
 
   it "each page contains content" do
     guide = Docbook::Output::Pipeline.new(
-      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml"
+      xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml",
     ).process
 
     Dir.mktmpdir do |dir|

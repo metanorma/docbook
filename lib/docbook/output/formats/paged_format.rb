@@ -25,7 +25,7 @@ module Docbook
             page_full = html_boilerplate(
               title: "#{title} — Page #{i + 1}",
               body_content: %(<div id="docbook-content">#{page_html}</div>\n<div id="docbook-app"></div>),
-              script_data: "window.DOCBOOK_FORMAT = 'paged'; window.DOCBOOK_PAGE_ID = '#{page_key}';"
+              script_data: "window.DOCBOOK_FORMAT = 'paged'; window.DOCBOOK_PAGE_ID = '#{page_key}';",
             )
             File.write(File.join(dir, filename), page_full)
             page_map[page_key] = filename

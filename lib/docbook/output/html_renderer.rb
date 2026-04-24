@@ -21,13 +21,13 @@ module Docbook
         "part" => 1, "chapter" => 2, "section" => 3,
         "appendix" => 2, "preface" => 2, "dedication" => 2,
         "reference" => 1, "refentry" => 2, "refsection" => 3,
-        "acknowledgements" => 2, "colophon" => 2,
+        "acknowledgements" => 2, "colophon" => 2
       }.freeze
 
       ADMONITION_TITLES = {
         "note" => "Note", "warning" => "Warning",
         "tip" => "Tip", "caution" => "Caution",
-        "important" => "Important", "danger" => "Danger",
+        "important" => "Important", "danger" => "Danger"
       }.freeze
 
       def initialize(guide)
@@ -52,6 +52,7 @@ module Docbook
         type = node["type"]
         method = :"render_#{type}"
         return send(method, node) if respond_to?(method, true)
+
         render_generic(node)
       end
 
@@ -64,6 +65,7 @@ module Docbook
       def render_generic(node)
         children = node["content"]
         return "" unless children
+
         render_children(node)
       end
 
@@ -109,14 +111,14 @@ module Docbook
 
       def render_paragraph(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         content = render_inline(node["content"])
         %(<p#{id_attr} class="db-paragraph">#{content}</p>)
       end
 
       def render_code_block(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         text = attrs["text"] || ""
         lang = attrs["language"]
         lang_class = lang ? " language-#{lang}" : ""
@@ -144,6 +146,7 @@ module Docbook
       def render_ordered_list(node)
         items = (node["content"] || []).map do |item|
           next render_node(item) unless item["type"] == "list_item"
+
           %(<li class="db-list-item">#{render_children(item)}</li>)
         end.join("\n")
         %(<ol class="db-ordered-list">\n  #{items}\n</ol>)
@@ -152,6 +155,7 @@ module Docbook
       def render_bullet_list(node)
         items = (node["content"] || []).map do |item|
           next render_node(item) unless item["type"] == "list_item"
+
           %(<li class="db-list-item">#{render_children(item)}</li>)
         end.join("\n")
         %(<ul class="db-bullet-list">\n  #{items}\n</ul>)
@@ -208,7 +212,7 @@ module Docbook
 
       def render_table(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         number = @numbering[attrs["xml_id"]]
 
@@ -229,7 +233,7 @@ module Docbook
 
       def render_equation(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         number = @numbering[attrs["xml_id"]]
 
@@ -247,7 +251,7 @@ module Docbook
 
       def render_sidebar(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<div class="sidebar-title">#{e(title)}</div>) : ""
         content = render_children(node)
@@ -256,7 +260,7 @@ module Docbook
 
       def render_procedure(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<div class="db-procedure__title">#{e(title)}</div>) : ""
         content = render_children(node)
@@ -265,7 +269,7 @@ module Docbook
 
       def render_step(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         content = render_children(node)
         %(<li#{id_attr} class="step-item">#{content}</li>)
       end
@@ -277,7 +281,7 @@ module Docbook
 
       def render_calloutlist(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<div>#{e(title)}</div>) : ""
         content = render_children(node)
@@ -286,14 +290,14 @@ module Docbook
 
       def render_callout(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         content = render_children(node)
         %(<li#{id_attr} class="callout-item">#{content}</li>)
       end
 
       def render_qandaset(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<h3>#{e(title)}</h3>) : ""
         content = render_children(node)
@@ -302,7 +306,7 @@ module Docbook
 
       def render_qandaentry(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         content = render_children(node)
         %(<div#{id_attr} class="db-qandaentry">#{content}</div>)
       end
@@ -321,7 +325,7 @@ module Docbook
 
       def render_glossary(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<h2>#{e(title)}</h2>) : ""
         content = render_children(node)
@@ -360,7 +364,7 @@ module Docbook
 
       def render_bibliography(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<h2>#{e(title)}</h2>) : ""
         content = render_children(node)
@@ -369,7 +373,7 @@ module Docbook
 
       def render_biblio_entry(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         content = render_inline(node["content"])
         %(<div#{id_attr} class="db-biblio-entry">#{content}</div>)
       end
@@ -378,7 +382,7 @@ module Docbook
 
       def render_index_block(node)
         attrs = node["attrs"] || {}
-        id_attr = attrs["xml_id"] ? %( id="#{e(attrs['xml_id'])}") : ""
+        id_attr = attrs["xml_id"] ? %( id="#{e(attrs["xml_id"])}") : ""
         title = attrs["title"]
         heading = title ? %(<h2>#{e(title)}</h2>) : ""
         content = render_children(node)
@@ -417,7 +421,7 @@ module Docbook
         "<br />"
       end
 
-      def render_annotation(node)
+      def render_annotation(_node)
         # Annotations are interactive-only; render nothing in static HTML
         ""
       end
@@ -436,7 +440,7 @@ module Docbook
               content = render_inline(cell["content"])
               cell_attrs = cell["attrs"] || {}
               colspan = cell_attrs["nameend"] ? %( colspan="#{colspan_value(cell_attrs)}") : ""
-              rowspan = cell_attrs["morerows"] ? %( rowspan="#{cell_attrs['morerows'].to_i + 1}") : ""
+              rowspan = cell_attrs["morerows"] ? %( rowspan="#{cell_attrs["morerows"].to_i + 1}") : ""
               %(<#{cell_tag}#{colspan}#{rowspan}>#{content}</#{cell_tag}>)
             end.join
             %(<tr>#{cells}</tr>)
@@ -467,7 +471,7 @@ module Docbook
             id = attrs["id"]
             ref_id = attrs["ref_id"]
             id_attr = id ? %( id="#{e(id)}") : ""
-            %(<sup class="footnote-marker"><a#{id_attr} href="##{e(ref_id || '')}">#{e(attrs['number'] || '*')}</a></sup>)
+            %(<sup class="footnote-marker"><a#{id_attr} href="##{e(ref_id || "")}">#{e(attrs["number"] || "*")}</a></sup>)
           elsif node["type"] == "soft_break"
             "<br />"
           else
@@ -497,7 +501,11 @@ module Docbook
         when "xref"
           linkend = mark.dig("attrs", "linkend") || ""
           resolved = mark.dig("attrs", "resolved") || ""
-          display = resolved.empty? ? text : (text.empty? ? e(resolved) : text)
+          display = if resolved.empty?
+                      text
+                    else
+                      (text.empty? ? e(resolved) : text)
+                    end
           %(<a href="##{e(linkend)}">#{display}</a>)
         when "citation"
           bibref = mark.dig("attrs", "bibref") || ""
@@ -517,11 +525,13 @@ module Docbook
 
       def extract_text(node)
         return node["text"] || "" if node["type"] == "text"
+
         (node["content"] || []).map { |child| extract_text(child) }.join
       end
 
       def e(text)
         return "" unless text
+
         text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
       end
     end

@@ -52,6 +52,7 @@ module Docbook
           if book_entry.cover && File.exist?(book_entry.cover)
             return embed_as_data_url(book_entry.cover)
           end
+
           xml_cover = guide.dig("meta", "cover")
           if xml_cover
             xml_dir = File.dirname(book_entry.source)

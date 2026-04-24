@@ -57,7 +57,7 @@ module Docbook
         OpenStruct.new(
           name: File.basename(@path),
           description: nil,
-          books: books
+          books: books,
         )
       end
 
@@ -84,7 +84,7 @@ module Docbook
         OpenStruct.new(
           name: manifest.name,
           description: manifest.description,
-          books: books
+          books: books,
         )
       end
 
@@ -98,7 +98,7 @@ module Docbook
           title: book.title,
           author: book.author,
           description: book.description,
-          cover: cover
+          cover: cover,
         )
       end
 
@@ -115,7 +115,7 @@ module Docbook
             title: nil,
             author: nil,
             description: nil,
-            cover: find_cover(subdir)
+            cover: find_cover(subdir),
           )
         end
       end
@@ -133,7 +133,7 @@ module Docbook
       end
 
       def yaml_file?
-        File.exist?(@path) && (@path.end_with?(".yml") || @path.end_with?(".yaml"))
+        File.exist?(@path) && @path.end_with?(".yml", ".yaml")
       end
     end
   end

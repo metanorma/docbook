@@ -37,7 +37,7 @@ module Docbook
           JSON.generate(data).gsub("</script", '<\\/script')
         end
 
-        def html_boilerplate(title:, head_extra: "", body_content:, script_data: nil)
+        def html_boilerplate(title:, body_content:, head_extra: "", script_data: nil)
           assets = dist_assets
           data_script = script_data ? %(<script>\n#{script_data}\n</script>) : ""
 
@@ -62,8 +62,10 @@ module Docbook
 
         def embed_as_data_url(path)
           return nil unless path && File.exist?(path)
+
           mime = mime_type(path)
           return path unless mime
+
           data = File.binread(path)
           "data:#{mime};base64,#{Base64.strict_encode64(data)}"
         rescue StandardError

@@ -44,9 +44,9 @@ RSpec.describe Docbook::Services::CollectionManifestResolver do
 
     context "with non-existent path" do
       it "raises an error" do
-        expect {
+        expect do
           described_class.new("/nonexistent/path").resolve
-        }.to raise_error(StandardError)
+        end.to raise_error(StandardError)
       end
     end
   end
