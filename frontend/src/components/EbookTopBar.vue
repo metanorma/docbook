@@ -1,7 +1,17 @@
 <template>
   <div class="ebook-topbar" role="banner" :class="{ 'ebook-topbar--with-sidebar': sidebarOpen }">
     <div class="flex items-center justify-between px-4 py-2">
-      <!-- Left: Menu button -->
+      <!-- Left: Back to library + Menu -->
+      <button
+        v-if="showBackToLibrary"
+        @click="$emit('back-to-library')"
+        class="topbar-btn"
+        aria-label="Back to library"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
       <button
         @click="$emit('toggle-toc')"
         class="topbar-btn"
@@ -63,11 +73,13 @@ import { useEbookStore } from '@/composables/useEbookStore'
 defineProps<{
   title?: string
   sidebarOpen?: boolean
+  showBackToLibrary?: boolean
 }>()
 
 defineEmits<{
   'toggle-toc': []
   'toggle-settings': []
+  'back-to-library': []
 }>()
 
 const ebookStore = useEbookStore()

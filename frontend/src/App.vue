@@ -1,6 +1,13 @@
 <template>
   <EbookContainer :class="['h-screen overflow-hidden', ebookStore.getThemeClass()]" :style="ebookStore.getCssVariables()">
     <!-- Skip to content (accessibility) -->
+    <!-- Library Index (collection mode) -->
+    <div v-if="showLibraryIndex" class="library-index-wrapper" :class="{ dark: isLibraryDark }">
+      <LibraryIndex @open-book="onLibraryBookOpened" />
+    </div>
+
+    <!-- Single book / Library book reader -->
+    <template v-else>
     <a href="#main-content" class="skip-link" @click.prevent="skipToContent">Skip to content</a>
 
     <!-- Reading progress bar -->
@@ -21,8 +28,10 @@
       <EbookTopBar
         :title="documentStore.title"
         :sidebar-open="uiStore.sidebarOpen"
+        :show-back-to-library="isLibraryMode"
         @toggle-toc="toggleToc"
         @toggle-settings="ebookStore.toggleSettings"
+        @back-to-library="backToLibrary"
       />
     </div>
 
@@ -146,6 +155,7 @@
       class="reading-ruler"
       :style="{ top: rulerY + 'px' }"
     ></div>
+    </template>
   </EbookContainer>
 </template>
 
@@ -163,6 +173,8 @@ import { useTts } from '@/composables/useTts'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useScrollTracker } from '@/composables/useScrollTracker'
 import { isDomFormat } from '@/composables/useContentLoader'
+import { useCollectionStore, type BookMeta } from '@/stores/collectionStore'
+import LibraryIndex from '@/components/library/LibraryIndex.vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SearchModal from '@/components/SearchModal.vue'
 import SettingsPanel from '@/components/SettingsPanel.vue'
@@ -187,8 +199,14 @@ const mainContent = ref<HTMLElement | null>(null)
 // DOM format: content is pre-rendered in #docbook-content, skip MirrorRenderer
 const useDomContent = isDomFormat()
 
+// Library mode (collection)
+const collectionStore = useCollectionStore()
+const isLibraryMode = ref(false)
+const showLibraryIndex = computed(() => isLibraryMode.value && !collectionStore.isReading)
+const isLibraryDark = computed(() => ebookStore.theme.value === 'night' || ebookStore.theme.value === 'oled')
+
 // Lazy section rendering
-const { isVisible, observeSection, markVisible, initialized: lazyInitialized } = useLazySections(mainContent)
+const { isVisible, observeSection, markVisible, initialized: lazyInitialized, reset: resetLazySections, createObserver: createLazyObserver } = useLazySections(mainContent)
 provide('lazySectionVisible', isVisible)
 provide('lazyObserveSection', observeSection)
 provide('lazyInitialized', lazyInitialized)
@@ -395,36 +413,112 @@ function skipToContent() {
   mainContent.value?.scrollTo({ top: 0 })
 }
 
-onMounted(() => {
-  documentStore.loadFromWindow()
-  delete (window as any).DOCBOOK_DATA
-  ebookStore.applyTheme()
-  if (ebookStore.settingsOpen.value) ebookStore.toggleSettings()
-  if (window.innerWidth >= 1024) uiStore.openSidebar()
+// Library mode: load book data when a book is selected
+watch(() => collectionStore.currentBookId, async (bookId) => {
+  if (!isLibraryMode.value || !bookId) return
+  await loadLibraryBook()
+})
 
-  document.addEventListener('click', handleDocumentClick)
-  window.addEventListener('hashchange', handleHashChange)
-  document.addEventListener('keydown', handleGlobalKeydown)
-  document.addEventListener('mousemove', handleMouseMove)
+async function loadLibraryBook() {
+  const book = collectionStore.currentBook as (BookMeta & { data?: any }) | null
+  if (!book) return
 
+  // Reset lazy sections for the new book
+  resetLazySections()
+
+  if (book.data) {
+    ;(window as any).DOCBOOK_DATA = book.data
+    documentStore.loadFromWindow()
+  } else if (book.source) {
+    try {
+      const res = await fetch(book.source)
+      if (res.ok) {
+        const data = await res.json()
+        ;(window as any).DOCBOOK_DATA = data
+        documentStore.loadFromWindow()
+      }
+    } catch (e) {
+      console.error('Failed to load book:', e)
+    }
+  }
+
+  await nextTick()
+  // Recreate the lazy observer now that mainContent is in the DOM
+  createLazyObserver()
   setTimeout(() => {
     updateActiveSection()
     handleHashChange()
     calculatePages()
-    if (!window.location.hash) {
-      try {
-        const saved = localStorage.getItem('docbook-position-' + documentStore.title)
-        if (saved && document.getElementById(saved)) navigateToId(saved)
-      } catch {}
-    }
+    if (window.innerWidth >= 1024) uiStore.openSidebar()
   }, 200)
+
+  history.pushState({ mode: 'book', bookId: book.id }, '', `#book-${book.id}`)
+}
+
+function backToLibrary() {
+  collectionStore.closeBook()
+  history.pushState({ mode: 'library' }, '', '#')
+}
+
+function handlePopState(e: PopStateEvent) {
+  if (!isLibraryMode.value) return
+  if (e.state?.mode === 'book' && e.state.bookId) {
+    collectionStore.selectBook(e.state.bookId)
+  } else {
+    collectionStore.closeBook()
+  }
+}
+
+function onLibraryBookOpened(_book: BookMeta) {
+  // Book selection is handled by the currentBookId watcher
+}
+
+// Wrap keyboard handler to skip when showing library index
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (showLibraryIndex.value) return
+  handleGlobalKeydown(e)
+}
+
+onMounted(() => {
+  if ((window as any).DOCBOOK_COLLECTION) {
+    isLibraryMode.value = true
+    collectionStore.loadFromWindow()
+    history.replaceState({ mode: 'library' }, '', '')
+  } else {
+    documentStore.loadFromWindow()
+    delete (window as any).DOCBOOK_DATA
+  }
+  ebookStore.applyTheme()
+  if (ebookStore.settingsOpen.value) ebookStore.toggleSettings()
+  if (window.innerWidth >= 1024 && !isLibraryMode.value) uiStore.openSidebar()
+
+  document.addEventListener('click', handleDocumentClick)
+  window.addEventListener('hashchange', handleHashChange)
+  document.addEventListener('keydown', onGlobalKeydown)
+  document.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('popstate', handlePopState)
+
+  if (!isLibraryMode.value) {
+    setTimeout(() => {
+      updateActiveSection()
+      handleHashChange()
+      calculatePages()
+      if (!window.location.hash) {
+        try {
+          const saved = localStorage.getItem('docbook-position-' + documentStore.title)
+          if (saved && document.getElementById(saved)) navigateToId(saved)
+        } catch {}
+      }
+    }, 200)
+  }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
   window.removeEventListener('hashchange', handleHashChange)
-  document.removeEventListener('keydown', handleGlobalKeydown)
+  document.removeEventListener('keydown', onGlobalKeydown)
   document.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('popstate', handlePopState)
 })
 </script>
 
@@ -643,5 +737,40 @@ onUnmounted(() => {
 
 .tts-label {
   font-size: 0.75rem;
+}
+</style>
+
+<style>
+/* Library Index CSS Variables */
+.library-index-wrapper {
+  --color-bg: #faf8f5;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f5f3f0;
+  --color-text: #2d2d2d;
+  --color-text-secondary: #5c5c5c;
+  --color-text-muted: #8a8a8a;
+  --color-border: #e8e4df;
+  --color-accent: #b8860b;
+  --color-accent-hover: #9a7209;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Source Serif Pro', Georgia, serif;
+  --font-ui: 'Source Sans 3', system-ui, sans-serif;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.library-index-wrapper.dark {
+  --color-bg: #1a1a1a;
+  --color-surface: #242424;
+  --color-surface-elevated: #2d2d2d;
+  --color-text: #f0f0f0;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #707070;
+  --color-border: #3d3d3d;
+  --color-accent: #d4a84b;
+  --color-accent-hover: #e5b94d;
 }
 </style>
