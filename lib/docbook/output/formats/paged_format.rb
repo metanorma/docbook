@@ -8,7 +8,7 @@ module Docbook
       class PagedFormat < BaseFormat
         SECTION_BOUNDARY_TYPES = %w[chapter part section appendix preface reference].freeze
 
-        def write(output_path, guide, title: "DocBook", manifest: nil)
+        def write(output_path, guide, title: "DocBook", _manifest: nil)
           dir = ensure_directory(output_path)
           FileUtils.mkdir_p(File.join(dir, "pages"))
 

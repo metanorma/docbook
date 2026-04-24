@@ -6,7 +6,7 @@ module Docbook
   module Output
     module Formats
       class DistFormat < BaseFormat
-        def write(output_path, guide, title: "DocBook", manifest: nil)
+        def write(output_path, guide, title: "DocBook", _manifest: nil)
           dir = ensure_directory(output_path)
           FileUtils.mkdir_p(File.join(dir, "data"))
 

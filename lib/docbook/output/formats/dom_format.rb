@@ -6,7 +6,7 @@ module Docbook
   module Output
     module Formats
       class DomFormat < BaseFormat
-        def write(output_path, guide, title: "DocBook", manifest: nil)
+        def write(output_path, guide, title: "DocBook", _manifest: nil)
           FileUtils.mkdir_p(File.dirname(output_path))
           renderer = HtmlRenderer.new(guide)
           content_html = renderer.render
