@@ -43,7 +43,7 @@ module Docbook
 
             {
               "id" => book.id,
-              "title" => book.title || meta["title"] || book.id,
+              "title" => meta["title"] || book.title || book.id,
               "author" => book.author || meta["author"],
               "description" => book.description,
               "cover" => cover,
