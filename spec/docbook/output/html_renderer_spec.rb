@@ -73,7 +73,7 @@ RSpec.describe Docbook::Output::HtmlRenderer do
         { "content" => [{ "type" => "paragraph",
                           "content" => [{ "type" => "text", "text" => "click",
                                           "marks" => [{ "type" => "link",
-                                                         "attrs" => { "href" => "https://example.com" } }] }] }] }
+                                                        "attrs" => { "href" => "https://example.com" } }] }] }] }
       end
 
       it "renders <a> with href" do
@@ -92,7 +92,7 @@ RSpec.describe Docbook::Output::HtmlRenderer do
     context "with full kitchen-sink document" do
       let(:guide) do
         Docbook::Output::Pipeline.new(
-          xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml"
+          xml_path: "spec/fixtures/kitchen-sink/kitchen-sink.xml",
         ).process
       end
 

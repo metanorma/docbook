@@ -379,7 +379,7 @@ module Docbook
       File.join(File.dirname(File.expand_path(input)), "#{base}#{ext}")
     end
 
-    def derive_library_output(input)
+    def derive_library_output(_input)
       format = options[:format].to_sym
       ext = %i[dist paged].include?(format) ? "" : ".html"
       File.expand_path("library#{ext}")
@@ -431,6 +431,5 @@ module Docbook
         "#{seconds.round(1)}s"
       end
     end
-
   end
 end

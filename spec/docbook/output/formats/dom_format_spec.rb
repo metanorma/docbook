@@ -8,7 +8,7 @@ RSpec.describe Docbook::Output::Formats::DomFormat do
 
   it "writes a single HTML with pre-rendered content" do
     guide = Docbook::Output::Pipeline.new(
-      xml_path: "spec/fixtures/article/article.xml"
+      xml_path: "spec/fixtures/article/article.xml",
     ).process
 
     Dir.mktmpdir do |dir|
@@ -23,7 +23,7 @@ RSpec.describe Docbook::Output::Formats::DomFormat do
 
   it "includes JSON data for TOC and search" do
     guide = Docbook::Output::Pipeline.new(
-      xml_path: "spec/fixtures/article/article.xml"
+      xml_path: "spec/fixtures/article/article.xml",
     ).process
 
     Dir.mktmpdir do |dir|
