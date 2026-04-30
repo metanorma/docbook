@@ -34,6 +34,15 @@ Previous/next navigation arrows appear at the bottom of the viewport when scroll
 
 Clicking any TOC item, cross-reference, or heading anchor updates the URL hash fragment, enabling browser back/forward navigation and shareable URLs to specific sections.
 
+=== Mobile swipe gestures
+
+On touch devices, swipe gestures provide natural navigation:
+
+* **Swipe right** from the left edge opens the sidebar
+* **Swipe left** closes the sidebar
+* The swipe detection area starts from the left 30px edge
+* Vertical swipes are ignored to avoid interfering with scrolling
+
 == Keyboard shortcuts
 
 The reader supports vim-inspired keyboard navigation:
@@ -129,13 +138,14 @@ Code blocks include:
 * **Copy button** -- one-click copy of the code content to clipboard
 * **Syntax highlighting** -- monospace font with proper formatting
 
-=== Admonition icons
+=== Admonition blocks
 
 Admonition blocks (note, warning, tip, caution, important, danger) display with:
 
 * A colored left border
 * A type-specific SVG icon (info circle, exclamation triangle, light bulb, etc.)
 * Distinct background colors per type
+* Theme-aware contrast -- colors adapt automatically to the active theme (Day, Sepia, Night, OLED)
 
 === Image lightbox
 
@@ -143,7 +153,7 @@ Clicking any image opens a full-screen lightbox overlay showing the image at max
 
 === Tables
 
-Tables with horizontal overflow automatically show horizontal scroll bars. Column alignment and cell spanning are preserved from the source DocBook.
+Tables with horizontal overflow automatically show horizontal scroll bars. Column alignment and cell spanning are preserved from the source DocBook. Table cells support rich content including links, bold, italic, code, images, and nested lists.
 
 === Footnotes
 
@@ -171,9 +181,12 @@ A floating "back to top" button appears in the bottom-right corner after scrolli
 Full-text search powered by FlexSearch:
 
 * Press `/` or click the search field in the sidebar to open the search modal
-* Results show matching section titles with context
-* Click a result to navigate to that section
+* Results show matching section titles with context snippets
+* Matched terms are highlighted in the results
+* Click a result to navigate to that section -- a brief highlight flash shows where you landed
 * Press `Escape` to close
+* The search engine loads lazily -- FlexSearch is deferred until you first open search, keeping initial page load fast
+* Search index building runs during idle time so it doesn't block rendering
 
 == Themes and typography
 
@@ -246,15 +259,26 @@ The reader tracks reading statistics displayed in the settings panel:
 
 Statistics persist in `localStorage` and accumulate across sessions.
 
-== Cloud sync
+== Backup
 
-The reader provides a sync infrastructure for synchronizing reading state across devices:
+The reader provides backup infrastructure for exporting and importing reading state:
 
-* **Push** -- exports bookmarks, reading position, settings, and statistics to the configured sync backend
-* **Pull** -- imports data from the sync backend and restores it to the current browser
-* The default backend uses `localStorage` (single-device sync for demonstration)
+* **Export settings** -- exports bookmarks, reading position, settings, and statistics to the configured sync backend
+* **Import settings** -- imports data from the sync backend and restores it to the current browser
+* The default backend uses `localStorage` (single-device backup for demonstration)
 * The `SyncBackend` interface is extensible -- custom backends (WebDAV, Google Drive, etc.) can be plugged in
-* Access sync controls from the settings panel
+* Access backup controls from the settings panel
+
+== Progressive loading (chunked format)
+
+When using the `chunked` output format, the reader loads sections on demand rather than requiring the entire document upfront:
+
+* **Skeleton loading screen** -- a pulsing placeholder mimicking the document layout appears while sections load, giving immediate visual feedback
+* **Sentinel-triggered loading** -- an intersection observer at the bottom of the content triggers the next section load as you scroll
+* **Initial batch** -- the first three sections load immediately so content is visible right away
+* **IndexedDB caching** -- every loaded section is cached in the browser's IndexedDB. Revisiting a cached section is instant, with no network request
+* **Prefetch** -- sections ahead of the current reading position are prefetched for seamless scrolling
+* **Error recovery** -- if a section fails to load, an error state with a retry button appears so the reader can continue
 
 == Accessibility
 
@@ -262,3 +286,6 @@ The reader provides a sync infrastructure for synchronizing reading state across
 * **ARIA landmarks** -- `role="navigation"` on the sidebar, `role="main"` on the content area
 * **Screen reader announcements** -- section changes are announced via an `aria-live` region
 * **Keyboard navigation** -- all features are accessible without a mouse
+* **Reduced motion** -- when the user's system preference is `prefers-reduced-motion: reduce`, all animations and transitions are disabled
+* **Focus indicators** -- interactive controls show visible focus rings (`focus-visible` outlines) for keyboard users
+* **Touch targets** -- sidebar buttons and interactive elements meet minimum 44×44px touch target guidelines
