@@ -39,6 +39,33 @@ export const useCollectionStore = defineStore('collection', () => {
     })
   )
 
+  // Prefetch cache: book id -> fetched data
+  const prefetchedData = ref<Map<string, any>>(new Map())
+
+  function prefetchBook(bookId: string) {
+    const book = books.value.find(b => b.id === bookId) as (BookMeta & { data?: any }) | undefined
+    if (!book) return
+    // Already prefetched or inline data available
+    if (prefetchedData.value.has(bookId) || (book as any).data) return
+    // Only prefetch for books with a fetchable source (dist format)
+    if (!book.source || book.source.startsWith('#')) return
+    fetch(book.source)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          prefetchedData.value = new Map([...prefetchedData.value, [bookId, data]])
+        }
+      })
+      .catch(() => {/* prefetch failure is non-critical */})
+  }
+
+  function getPrefetchedData(bookId: string): any | null {
+    const book = books.value.find(b => b.id === bookId) as (BookMeta & { data?: any }) | undefined
+    if (!book) return null
+    if ((book as any).data) return (book as any).data
+    return prefetchedData.value.get(bookId) || null
+  }
+
   function loadCollection(data: CollectionData) {
     collectionName.value = data.name || 'My Library'
     books.value = data.books.map(book => ({
@@ -91,6 +118,8 @@ export const useCollectionStore = defineStore('collection', () => {
     loadFromWindow,
     selectBook,
     closeBook,
-    setProgress
+    setProgress,
+    prefetchBook,
+    getPrefetchedData,
   }
 })

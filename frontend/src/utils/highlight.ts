@@ -1,46 +1,61 @@
-import Prism from 'prismjs'
+// Lazy-loaded PrismJS syntax highlighter.
+// Prism and language grammars are loaded only when the first code block renders,
+// keeping the initial bundle free of parsing cost.
 
-// Import language components
-import 'prismjs/components/prism-ruby'
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-typescript'
-import 'prismjs/components/prism-python'
-import 'prismjs/components/prism-bash'
-import 'prismjs/components/prism-json'
-import 'prismjs/components/prism-yaml'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-css'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Prism: any = null
+const loadedLanguages = new Set<string>()
 
-// Make Prism globally available for debugging
-if (typeof window !== 'undefined') {
-  (window as any).Prism = Prism;
+async function ensurePrism(): Promise<void> {
+  if (Prism) return
+  const mod = await import('prismjs')
+  Prism = mod.default ?? mod
+  // Make globally available for debugging
+  ;(window as any).Prism = Prism
 }
 
-export function highlightCode(code: string, language: string | undefined): string {
-  if (!code) return ''
+async function loadLanguage(lang: string): Promise<void> {
+  if (loadedLanguages.has(lang)) return
+  loadedLanguages.add(lang)
 
-  const lang = language || 'plaintext'
-
-  // Map common language aliases
-  const langMap: Record<string, string> = {
-    'rb': 'ruby',
-    'js': 'javascript',
-    'ts': 'typescript',
-    'py': 'python',
-    'sh': 'bash',
-    'shell': 'bash',
-    'yml': 'yaml',
-    'xslt': 'xslt',
+  const langMap: Record<string, () => Promise<unknown>> = {
+    ruby:       () => import('prismjs/components/prism-ruby'),
+    javascript: () => import('prismjs/components/prism-javascript'),
+    typescript: () => import('prismjs/components/prism-typescript'),
+    python:     () => import('prismjs/components/prism-python'),
+    bash:       () => import('prismjs/components/prism-bash'),
+    json:       () => import('prismjs/components/prism-json'),
+    yaml:       () => import('prismjs/components/prism-yaml'),
+    'xml-doc':  () => import('prismjs/components/prism-xml-doc'),
+    css:        () => import('prismjs/components/prism-css'),
   }
 
-  const prismLang = langMap[lang.toLowerCase()] || lang
+  const loader = langMap[lang]
+  if (loader) {
+    await loader()
+  }
+}
+
+const ALIASES: Record<string, string> = {
+  rb: 'ruby', js: 'javascript', ts: 'typescript',
+  py: 'python', sh: 'bash', shell: 'bash',
+  yml: 'yaml', xslt: 'xslt',
+}
+
+export async function highlightCode(code: string, language: string | undefined): Promise<string> {
+  if (!code) return ''
+
+  const lang = ALIASES[language?.toLowerCase() ?? ''] ?? language ?? 'plaintext'
+
+  await ensurePrism()
+  await loadLanguage(lang)
 
   try {
-    if (Prism.languages[prismLang]) {
-      return Prism.highlight(code, Prism.languages[prismLang], prismLang)
+    if (Prism.languages[lang]) {
+      return Prism.highlight(code, Prism.languages[lang], lang)
     }
   } catch (e) {
-    console.warn('Highlighting failed for', prismLang, e)
+    console.warn('Highlighting failed for', lang, e)
   }
 
   // Escape HTML for plain text
@@ -49,8 +64,26 @@ export function highlightCode(code: string, language: string | undefined): strin
   return div.innerHTML
 }
 
-export function escapeHtml(text: string): string {
+// Synchronous fallback for when async highlighting isn't needed yet
+export function highlightCodeSync(code: string, language: string | undefined): string {
+  if (!code) return ''
+  const lang = ALIASES[language?.toLowerCase() ?? ''] ?? language ?? 'plaintext'
+
+  if (Prism?.languages?.[lang]) {
+    try {
+      return Prism.highlight(code, Prism.languages[lang], lang)
+    } catch {}
+  }
+
   const div = document.createElement('div')
-  div.textContent = text
+  div.textContent = code
   return div.innerHTML
+}
+
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }

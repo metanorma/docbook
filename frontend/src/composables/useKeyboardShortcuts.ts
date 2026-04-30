@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useEbookStore } from '@/composables/useEbookStore'
+import { useEbookStore } from '@/stores/ebookStore'
 
 export interface KeyboardShortcutContext {
   showKeyboardHelp: Ref<boolean>
@@ -32,7 +32,7 @@ export function useKeyboardShortcuts(ctx: KeyboardShortcutContext) {
         ctx.showKeyboardHelp.value = false
         return
       }
-      if (ctx.ebookStore.settingsOpen.value) {
+      if (ctx.ebookStore.settingsOpen) {
         ctx.ebookStore.toggleSettings()
         return
       }
@@ -110,7 +110,7 @@ export function useKeyboardShortcuts(ctx: KeyboardShortcutContext) {
     }
 
     // Paged mode navigation
-    if (ctx.ebookStore.readingMode.value === 'paged') {
+    if (ctx.ebookStore.readingMode === 'paged') {
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault()
         ctx.nextPage()
