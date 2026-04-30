@@ -1,131 +1,68 @@
 # frozen_string_literal: true
 
-require "json"
-require_relative "index_generator"
+require_relative "pipeline/context"
+require_relative "pipeline_steps"
 
 module Docbook
   module Output
-    # Shared data processing pipeline for DocBook XML.
+    # Composable data processing pipeline for DocBook XML.
     #
-    # Orchestrates steps 1-8: parse XML, generate TOC, numbering, index,
+    # Orchestrates steps that parse XML, generate TOC, numbering, index,
     # transform to DocbookMirror JSON, attach metadata, generate lists,
     # and resolve image paths. Returns a complete guide hash ready for
     # consumption by any Format class.
     #
+    # Steps are pluggable — pass a custom step list to add, remove, or
+    # reorder processing stages without modifying this class.
+    #
     # Usage:
     #   guide = Pipeline.new(xml_path: "book.xml").process
     #
+    #   # Custom pipeline with extra step
+    #   steps = Pipeline::DEFAULT_STEPS.dup.insert(5, MyCustomStep)
+    #   guide = Pipeline.new(xml_path: "book.xml", steps: steps).process
+    #
     class Pipeline
-      attr_reader :xml_path, :image_search_dirs, :image_strategy,
-                  :sort_glossary, :title
+      DEFAULT_STEPS = [
+        PipelineSteps::ParseXml,
+        PipelineSteps::AssignIds,
+        PipelineSteps::GenerateToc,
+        PipelineSteps::GenerateNumbering,
+        PipelineSteps::GenerateIndex,
+        PipelineSteps::TransformMirror,
+        PipelineSteps::AttachMetadata,
+        PipelineSteps::GenerateLists,
+        PipelineSteps::ResolveImages,
+      ].freeze
+
+      attr_reader :steps, :context
 
       # @param xml_path [String] path to the DocBook XML file
+      # @param steps [Array<Class>] pipeline step classes (must implement #call(guide, context))
       # @param image_search_dirs [Array<String>] directories to search for images
       # @param image_strategy [Symbol] :file_url, :data_url, or :relative
       # @param sort_glossary [Boolean] sort glossary entries alphabetically
       # @param title [String] fallback title for the document
-      def initialize(xml_path:, image_search_dirs: [], image_strategy: :data_url,
-                     sort_glossary: false, title: "DocBook")
-        @xml_path = xml_path
-        @image_search_dirs = Array(image_search_dirs)
-        @image_strategy = image_strategy
-        @sort_glossary = sort_glossary
-        @title = title
+      def initialize(xml_path:, steps: DEFAULT_STEPS, image_search_dirs: [],
+                     image_strategy: :data_url, sort_glossary: false, title: "DocBook")
+        @steps = steps
+        @context = PipelineContext.new(
+          xml_path: xml_path,
+          image_search_dirs: Array(image_search_dirs),
+          image_strategy: image_strategy,
+          sort_glossary: sort_glossary,
+          title: title,
+          parsed: nil
+        )
       end
 
-      # Run the full data processing pipeline and return the guide hash.
-      # @return [Hash] the complete guide data with toc, index, meta, content
+      # Run the pipeline and return the complete guide hash.
+      # @return [Hash] the guide data with toc, index, meta, content
       def process
-        xml_dir = File.dirname(@xml_path)
-
-        # 1. Parse the XML
-        parsed = parse_xml
-
-        # 2. Generate TOC
-        toc_tree = Services::TocGenerator.new(parsed).generate
-        toc_sections = toc_tree.map { |node| toc_node_to_hash(node) }
-
-        # 3. Generate numbering
-        numbering_list = Services::NumberingService.new(parsed).generate
-        numbering_hash = {}
-        numbering_list.each { |sn| numbering_hash[sn.id] = sn.number }
-
-        # 4. Generate index
-        index_collector = Docbook::Output::IndexCollector.new(parsed)
-        index_terms = index_collector.collect
-        index_generator = Docbook::Output::IndexGenerator.new(index_terms)
-        index_data = index_generator.generate
-        index_hash = { "title" => "Index", "type" => "index",
-                       "groups" => index_data }
-
-        # 5. Transform to DocbookMirror JSON
-        require_relative "../mirror"
-        require_relative "docbook_mirror"
-        mirror_output = Docbook::Output::DocbookMirror.new(parsed, sort_glossary: @sort_glossary)
-        guide = JSON.parse(mirror_output.to_pretty_json)
-
-        # 6. Attach TOC, numbering, index, and metadata
-        guide["toc"] =
-          { "sections" => toc_sections, "numbering" => numbering_hash }
-        guide["index"] = index_hash
-
-        stats = Services::DocumentStats.new(parsed).generate
-        guide["meta"] = {
-          "title" => stats["title"] || @title,
-          "subtitle" => stats["subtitle"],
-          "author" => stats["author"],
-          "pubdate" => stats["pubdate"],
-          "releaseinfo" => stats["releaseinfo"],
-          "copyright" => stats["copyright"],
-          "cover" => stats["cover"],
-          "root_element" => stats["root_element"],
-        }.compact
-
-        # 7. Generate lists of figures/tables/examples
-        list_of = Services::ListOfGenerator.new(parsed).generate(numbering: numbering_hash)
-        list_of.each do |type, entries|
-          guide["list_of_#{type}"] = entries.map do |e|
-            {
-              "id" => e.id,
-              "title" => e.title,
-              "number" => e.number,
-              "section_id" => e.section_id,
-              "section_title" => e.section_title,
-            }.compact
-          end
+        guide = {}
+        @steps.reduce(guide) do |current_guide, step_class|
+          step_class.new.call(current_guide, @context)
         end
-
-        # 8. Resolve image paths
-        Services::ImageResolver.new(
-          search_dirs: @image_search_dirs + [xml_dir],
-          strategy: @image_strategy,
-        ).resolve(guide)
-
-        guide
-      end
-
-      private
-
-      def parse_xml
-        xml_string = File.read(@xml_path)
-        resolved_xml = Docbook::XIncludeResolver.resolve_string(xml_string,
-                                                                base_path: @xml_path)
-        Docbook::Document.from_xml(resolved_xml.to_xml)
-      end
-
-      def toc_node_to_hash(node)
-        result = {
-          "id" => node.id,
-          "title" => node.title,
-          "type" => node.type,
-          "number" => node.number,
-        }
-        if node.children&.any?
-          result["children"] = node.children.map do |c|
-            toc_node_to_hash(c)
-          end
-        end
-        result.compact
       end
     end
   end

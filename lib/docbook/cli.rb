@@ -29,7 +29,7 @@ module Docbook
     option :output, aliases: "-o",
                     desc: "Output file or directory path (default: <input>.html or <input>/ with --format dist/paged)"
     option :demo, desc: "Build a bundled demo: xslTNG or model-flow"
-    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged"
+    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged, chunked"
     option :xinclude, type: :boolean, default: true,
                       desc: "Resolve XIncludes before processing"
     option :image_search_dir, type: :array,
@@ -39,6 +39,7 @@ module Docbook
     option :sort_glossary, type: :boolean, default: false,
                            desc: "Sort glossary entries alphabetically"
     option :title, desc: "Page title (default: derived from document)"
+    option :dist_dir, desc: "Path to frontend dist directory"
     def build(input = nil)
       xml_path, output_path, search_dirs, title = if options[:demo]
                                                     demo_name = options[:demo]
@@ -60,6 +61,7 @@ module Docbook
         image_strategy: options[:image_strategy].to_sym,
         sort_glossary: options[:sort_glossary],
         title: title,
+        dist_dir: options[:dist_dir],
       )
       result_path = builder.build
 
@@ -236,12 +238,13 @@ module Docbook
     desc "library INPUT", "Build a multi-book library from a directory or manifest"
     option :output, aliases: "-o",
                     desc: "Output file or directory path (default: library.html or library/ with --format dist/paged)"
-    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged"
+    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged, chunked"
     option :image_strategy, default: "data_url",
                             desc: "Image resolution: data_url, file_url, or relative"
     option :sort_glossary, type: :boolean, default: false,
                            desc: "Sort glossary entries alphabetically"
     option :title, desc: "Library title (default: derived from manifest or directory name)"
+    option :dist_dir, desc: "Path to frontend dist directory"
     def library(input)
       input_path = File.expand_path(input)
       unless File.exist?(input_path)
@@ -260,6 +263,7 @@ module Docbook
         image_strategy: options[:image_strategy].to_sym,
         sort_glossary: options[:sort_glossary],
         title: title,
+        dist_dir: options[:dist_dir],
       )
       result_path = builder.build
 
