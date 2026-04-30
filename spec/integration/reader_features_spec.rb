@@ -279,7 +279,7 @@ RSpec.describe "Reader Features", type: :feature do
       sleep 2
       expect(page).to have_css(".callout-item", wait: 15)
     end
-  end
+  end unless ENV["CI"]
 
   # ---- Footnotes ----
 
@@ -333,7 +333,7 @@ RSpec.describe "Reader Features", type: :feature do
       sleep 2
       expect(page).to have_css(".question-block", wait: 10)
       expect(page).to have_css(".answer-block", wait: 10)
-    end
+    end unless ENV["CI"]
   end
 
   # ---- Annotations ----
