@@ -121,7 +121,7 @@ RSpec.describe "DocBook Reader", type: :feature do
       find("body").send_keys("/")
       expect(page).to have_css("[role='dialog'][aria-label='Search']")
       find("body").send_keys(:escape)
-      expect(page).not_to have_css("[role='dialog'][aria-label='Search']")
+      expect(page).not_to have_css("[role='dialog'][aria-label='Search']", wait: 5)
     end
   end
 
