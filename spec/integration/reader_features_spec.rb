@@ -274,12 +274,13 @@ RSpec.describe "Reader Features", type: :feature do
 
   describe "callout markers" do
     it "renders callout list with descriptions" do
+      skip("Flaky on CI: headless Chrome lazy content loading timing") if ENV["CI"]
       visit_reader
       navigate_to_section("Callouts")
       sleep 2
       expect(page).to have_css(".callout-item", wait: 15)
     end
-  end unless ENV["CI"]
+  end
 
   # ---- Footnotes ----
 
@@ -328,12 +329,13 @@ RSpec.describe "Reader Features", type: :feature do
     end
 
     it "renders question and answer blocks" do
+      skip("Flaky on CI: headless Chrome lazy content loading timing") if ENV["CI"]
       visit_reader
       navigate_to_section("Questions")
       sleep 2
       expect(page).to have_css(".question-block", wait: 10)
       expect(page).to have_css(".answer-block", wait: 10)
-    end unless ENV["CI"]
+    end
   end
 
   # ---- Annotations ----
