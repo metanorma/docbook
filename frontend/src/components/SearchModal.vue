@@ -1,88 +1,90 @@
 <template>
   <Teleport to="body">
-    <div
-      v-if="uiStore.searchOpen"
-      role="dialog"
-      aria-label="Search"
-      class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-[10vh] transition-opacity duration-200"
-      @click.self="uiStore.closeSearch"
-    >
-      <div class="search-modal w-full max-w-xl rounded-xl shadow-xl overflow-hidden transition-transform duration-200">
-        <!-- Search Input -->
-        <div class="search-input-row flex items-center gap-3 p-4">
-          <svg class="w-5 h-5 flex-shrink-0 search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input
-            ref="inputRef"
-            v-model="searchQuery"
-            type="text"
-            class="search-input flex-1 bg-transparent border-none outline-none text-base"
-            placeholder="Search headings and content..."
-            @keydown="handleKeydown"
-          />
-          <button
-            v-if="searchQuery"
-            @click="searchQuery = ''"
-            class="search-clear p-1 rounded"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    <Transition name="search-backdrop">
+      <div
+        v-if="uiStore.searchOpen"
+        class="search-backdrop"
+        @click.self="uiStore.closeSearch"
+      >
+        <div ref="modalEl" class="search-modal">
+          <!-- Search Input -->
+          <div class="search-input-row">
+            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </button>
-        </div>
+            <input
+              ref="inputRef"
+              v-model="searchQuery"
+              type="text"
+              class="search-input"
+              placeholder="Search headings and content..."
+              @keydown="handleKeydown"
+            />
+            <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
 
-        <!-- Search Results -->
-        <div class="max-h-80 overflow-y-auto">
-          <div v-if="isSearching" class="search-empty p-8 text-center">
-            Searching...
-          </div>
-          <div v-else-if="searchQuery && results.length === 0" class="search-empty p-8 text-center">
-            No results found for "{{ searchQuery }}"
-          </div>
-          <div v-else-if="results.length > 0" class="p-2">
-            <a
-              v-for="(result, index) in results"
-              :key="result.id"
-              :href="'#' + result.id"
-              @click="selectResult(result)"
-              class="search-result flex flex-col gap-1 px-3 py-2 rounded-lg cursor-pointer"
-              :class="{ 'search-result-focused': focusedIndex === index }"
-              @mouseenter="focusedIndex = index"
-            >
-              <div class="flex items-center gap-3">
-                <span class="search-result-type text-xs px-2 py-0.5 rounded">
-                  {{ result.type }}
-                </span>
-                <span class="flex-1 search-result-title" v-html="highlightMatch(result.title)"></span>
+          <!-- Results -->
+          <div class="search-results">
+            <div v-if="isSearching" class="search-empty">
+              <div class="search-loading-ring"></div>
+              <span>Searching...</span>
+            </div>
+            <div v-else-if="searchQuery && results.length === 0" class="search-empty">
+              <div class="search-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
               </div>
-              <div v-if="result.snippet" class="search-result-snippet text-xs pl-[3.5rem] line-clamp-2" v-html="highlightMatch(result.snippet)"></div>
-            </a>
+              <p class="search-empty-title">No results</p>
+              <p class="search-empty-hint">Try a different search term</p>
+            </div>
+            <div v-else-if="results.length > 0" class="search-results-list">
+              <a
+                v-for="(result, index) in results"
+                :key="result.id"
+                :href="'#' + result.id"
+                @click="selectResult(result)"
+                class="search-result"
+                :class="{ 'search-result--focused': focusedIndex === index }"
+                @mouseenter="focusedIndex = index"
+              >
+                <div class="search-result-header">
+                  <span class="search-result-type">{{ result.type }}</span>
+                  <span class="search-result-title" v-html="highlightMatch(result.title)"></span>
+                </div>
+                <p v-if="result.snippet" class="search-result-snippet" v-html="highlightMatch(result.snippet)"></p>
+              </a>
+            </div>
+            <div v-else class="search-empty search-empty--idle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="search-idle-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <span>Type to search headings and content</span>
+            </div>
           </div>
-          <div v-else class="search-empty p-8 text-center text-sm">
-            Type to search...
-          </div>
-        </div>
 
-        <!-- Footer hints -->
-        <div class="search-footer px-4 py-3">
-          <div class="flex gap-4 text-xs">
-            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">↑</kbd><kbd class="search-kbd px-1.5 py-0.5 rounded ml-0.5">↓</kbd> Navigate</span>
-            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">Enter</kbd> Select</span>
-            <span><kbd class="search-kbd px-1.5 py-0.5 rounded">Esc</kbd> Close</span>
+          <!-- Footer hints -->
+          <div class="search-footer">
+            <span class="search-hint"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+            <span class="search-hint"><kbd>↵</kbd> Open</span>
+            <span class="search-hint"><kbd>esc</kbd> Close</span>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick, inject } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick, inject } from 'vue'
 import { useDocumentStore, type TocItem, type MirrorBlockNode, type MirrorTextNode } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
 import { SECTION_TYPES } from '@/utils/typeMetadata'
-import FlexSearch from 'flexsearch'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
@@ -100,20 +102,43 @@ const results = ref<SearchResult[]>([])
 const isSearching = ref(false)
 const focusedIndex = ref(0)
 const inputRef = ref<HTMLInputElement | null>(null)
+const modalEl = ref<HTMLElement | null>(null)
 
-// FlexSearch Document index for titles and body text
-const index = new (FlexSearch as any).Document({
-  document: {
-    id: 'id',
-    index: ['title', 'body'],
-    store: ['id', 'title', 'type', 'body']
-  },
-  tokenize: 'forward',
-  resolution: 9,
-  minlength: 2
+const focusTrap = useFocusTrap(modalEl, { onEscape: () => uiStore.closeSearch() })
+
+watch(() => uiStore.searchOpen, (open) => {
+  if (open) {
+    nextTick(() => focusTrap.activate())
+  } else {
+    focusTrap.deactivate()
+  }
 })
 
-// Map from section id to its body text for snippet extraction
+// Lazy-loaded FlexSearch
+let FlexSearchClass: any = null
+let flexSearchLoaded = false
+let index: any = null
+
+async function loadFlexSearch() {
+  if (flexSearchLoaded) return
+  const mod = await import('flexsearch')
+  FlexSearchClass = (mod as any).default ?? mod
+  flexSearchLoaded = true
+}
+
+function createIndex(): any {
+  return new FlexSearchClass.Document({
+    document: {
+      id: 'id',
+      index: ['title', 'body'],
+      store: ['id', 'title', 'type', 'body']
+    },
+    tokenize: 'forward',
+    resolution: 9,
+    minlength: 2
+  })
+}
+
 const sectionTexts = new Map<string, string>()
 
 function extractTextFromNode(node: any): string {
@@ -132,7 +157,6 @@ function buildSectionIndex(nodes: any[], parentTitle: string = '', parentType: s
 
     const xmlId = node.attrs?.xml_id
     if (!xmlId) {
-      // Not a sectioned node — recurse children
       if (node.content) buildSectionIndex(node.content, parentTitle, parentType)
       return
     }
@@ -140,29 +164,16 @@ function buildSectionIndex(nodes: any[], parentTitle: string = '', parentType: s
     const title = node.attrs?.title || parentTitle
     const type = node.type || parentType
 
-    // Collect all text from this node's content (excluding nested sections)
     const bodyText = collectBodyText(node.content)
     const fullText = bodyText.join(' ').trim()
 
     if (fullText.length > 0) {
       sectionTexts.set(xmlId, fullText)
-      index.add({
-        id: xmlId,
-        title: title,
-        type: type,
-        body: fullText
-      })
+      index.add({ id: xmlId, title, type, body: fullText })
     } else if (title) {
-      // Section with title but no body text (container section)
-      index.add({
-        id: xmlId,
-        title: title,
-        type: type,
-        body: ''
-      })
+      index.add({ id: xmlId, title, type, body: '' })
     }
 
-    // Recurse into child sections
     if (node.content) {
       buildSectionIndex(node.content, title, type)
     }
@@ -174,7 +185,6 @@ function collectBodyText(content: any[] | undefined): string[] {
   const texts: string[] = []
   content.forEach(node => {
     if (!node) return
-    // Don't descend into nested section-like nodes — those get their own index entry
     if (SECTION_TYPES.has(node.type) && node.attrs?.xml_id) return
     const text = extractTextFromNode(node)
     if (text) texts.push(text)
@@ -184,14 +194,8 @@ function collectBodyText(content: any[] | undefined): string[] {
 
 function buildTocIndex(items: TocItem[]) {
   items.forEach(item => {
-    // Only add if not already indexed from body content
     if (!sectionTexts.has(item.id)) {
-      index.add({
-        id: item.id,
-        title: item.title,
-        type: item.type,
-        body: ''
-      })
+      index.add({ id: item.id, title: item.title, type: item.type, body: '' })
     }
     if (item.children && item.children.length > 0) {
       buildTocIndex(item.children)
@@ -216,6 +220,19 @@ function search() {
     return
   }
 
+  if (!index) {
+    isSearching.value = true
+    ensureIndex().then(() => {
+      performSearch()
+      isSearching.value = false
+    })
+    return
+  }
+
+  performSearch()
+}
+
+function performSearch() {
   isSearching.value = true
 
   const searchResults = index.search(searchQuery.value, { limit: 30, enrich: true })
@@ -245,7 +262,6 @@ function search() {
   isSearching.value = false
 }
 
-// Debounced search
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 watch(searchQuery, () => {
   if (debounceTimer) clearTimeout(debounceTimer)
@@ -253,9 +269,27 @@ watch(searchQuery, () => {
 })
 
 let bodyIndexBuilt = false
+let indexReady = false
+let lastIndexedContentLength = 0
 
-// Build heading index when document data is available
+watch(() => documentStore.mirrorDocument?.content?.length, (newLen) => {
+  if (!indexReady || !documentStore.isChunkedMode) return
+  if (newLen && newLen > lastIndexedContentLength) {
+    bodyIndexBuilt = false
+    rebuildIndexes()
+  }
+})
+
+async function ensureIndex() {
+  if (indexReady) return
+  await loadFlexSearch()
+  index = createIndex()
+  indexReady = true
+  rebuildIndexes()
+}
+
 function rebuildIndexes() {
+  if (!index) return
   buildHeadingIndex()
   if (!bodyIndexBuilt) {
     buildBodyIndex()
@@ -264,7 +298,6 @@ function rebuildIndexes() {
 
 function buildHeadingIndex() {
   sectionTexts.clear()
-  // Only index TOC entries for fast heading search
   buildTocIndex(documentStore.sections)
 }
 
@@ -273,25 +306,26 @@ function buildBodyIndex() {
   if (!doc?.content) return
 
   try {
+    if (bodyIndexBuilt) {
+      sectionTexts.clear()
+    }
     buildSectionIndex(doc.content)
     buildTocIndex(documentStore.sections)
   } catch (e) {
     console.error('Search index build failed:', e)
   }
   bodyIndexBuilt = true
+  lastIndexedContentLength = doc.content.length
   document.body.dataset.searchIndexReady = 'true'
 }
 
 onMounted(() => {
-  // Build indexes once document data is available (after App.vue onMounted loads data)
-  nextTick(() => {
-    try {
-      rebuildIndexes()
-    } catch (e) {
-      console.error('Search index build failed:', e)
-    }
-  })
   nextTick(() => inputRef.value?.focus())
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => ensureIndex(), { timeout: 2000 })
+  } else {
+    setTimeout(() => ensureIndex(), 100)
+  }
 })
 
 function handleKeydown(e: KeyboardEvent) {
@@ -311,6 +345,11 @@ function handleKeydown(e: KeyboardEvent) {
 
 function selectResult(result: SearchResult) {
   navigateToId(result.id)
+  const el = document.getElementById(result.id)
+  if (el) {
+    el.classList.add('search-highlight-flash')
+    setTimeout(() => el.classList.remove('search-highlight-flash'), 2000)
+  }
   uiStore.closeSearch()
   searchQuery.value = ''
   results.value = []
@@ -319,82 +358,274 @@ function selectResult(result: SearchResult) {
 function highlightMatch(text: string): string {
   if (!searchQuery.value) return text
   const regex = new RegExp(`(${searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-  return text.replace(regex, '<mark class="search-highlight rounded px-0.5">$1</mark>')
+  return text.replace(regex, '<mark class="search-hl">$1</mark>')
 }
 </script>
 
 <style scoped>
-.search-modal {
-  background: var(--chrome-bg);
-  border: 1px solid var(--chrome-border);
+/* Backdrop */
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
 }
 
+.search-backdrop-enter-active { transition: opacity 0.2s ease; }
+.search-backdrop-leave-active { transition: opacity 0.15s ease; }
+.search-backdrop-enter-from,
+.search-backdrop-leave-to { opacity: 0; }
+
+/* Modal */
+.search-modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: modal-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Input row */
 .search-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--chrome-border);
 }
 
 .search-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   color: var(--chrome-text-dim);
 }
 
 .search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
   color: var(--chrome-text);
 }
+
 .search-input::placeholder {
   color: var(--chrome-text-dim);
 }
 
 .search-clear {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
   color: var(--chrome-text-dim);
-}
-.search-clear:hover {
-  background: var(--chrome-bg-hover);
+  transition: color 0.15s ease;
 }
 
-.search-empty {
-  color: var(--chrome-text-dim);
+.search-clear:hover { color: var(--chrome-text); }
+
+/* Results area */
+.search-results {
+  max-height: 360px;
+  overflow-y: auto;
 }
 
+.search-results-list {
+  padding: 6px;
+}
+
+/* Result card */
 .search-result {
+  display: block;
   text-decoration: none;
-  color: var(--chrome-text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.12s ease;
 }
+
 .search-result:hover {
   background: var(--chrome-bg-hover);
 }
 
-.search-result-focused {
-  background: var(--chrome-bg-hover);
+.search-result--focused {
+  background: color-mix(in srgb, var(--chrome-accent) 8%, var(--chrome-bg));
+}
+
+.search-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-result-type {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text-dim);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--chrome-accent) 12%, transparent);
+  color: var(--chrome-accent);
+  flex-shrink: 0;
 }
 
 .search-result-title {
+  font-size: 0.88rem;
+  font-weight: 500;
   color: var(--chrome-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-result-snippet {
+  font-size: 0.75rem;
   color: var(--chrome-text-dim);
+  line-height: 1.5;
+  margin: 4px 0 0;
+  padding-left: 48px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.search-footer {
-  border-top: 1px solid var(--chrome-border);
-  background: var(--chrome-bg-alt);
-  color: var(--chrome-text-dim);
-}
-
-.search-kbd {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text-dim);
-}
-
-.search-highlight {
-  background: color-mix(in srgb, #eab308 40%, transparent);
+/* Highlight */
+:deep(.search-hl) {
+  background: color-mix(in srgb, #eab308 35%, transparent);
   color: inherit;
   padding: 0 2px;
   border-radius: 2px;
+}
+
+/* Empty states */
+.search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.search-empty--idle {
+  flex-direction: row;
+  gap: 8px;
+  padding: 32px;
+  font-size: 0.82rem;
+  color: var(--chrome-text-dim);
+}
+
+.search-idle-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.4;
+}
+
+.search-empty-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chrome-bg-hover);
+  border-radius: 50%;
+}
+
+.search-empty-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--chrome-text-dim);
+}
+
+.search-empty-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--chrome-text);
+  margin: 0;
+}
+
+.search-empty-hint {
+  font-size: 0.8rem;
+  color: var(--chrome-text-dim);
+  margin: 0;
+}
+
+.search-loading-ring {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--chrome-border);
+  border-top-color: var(--chrome-accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.search-footer {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--chrome-border);
+  background: color-mix(in srgb, var(--chrome-bg-hover) 40%, var(--chrome-bg));
+}
+
+.search-hint {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  color: var(--chrome-text-dim);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.search-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 1px 5px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .search-modal {
+    max-width: 100%;
+    border-radius: 0 0 14px 14px;
+    margin: 0 8px;
+  }
+  .search-backdrop {
+    padding-top: 0;
+    align-items: flex-start;
+    justify-content: center;
+  }
 }
 </style>

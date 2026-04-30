@@ -9,15 +9,20 @@
     <Transition name="settings-panel">
       <div
         v-if="isSettingsOpen"
+        ref="panelEl"
         role="dialog"
         aria-label="Display settings"
+        aria-modal="true"
         class="fixed top-0 right-0 bottom-0 z-50 w-[340px] max-w-[90vw] settings-panel overflow-y-auto"
       >
         <!-- Header -->
         <div class="settings-header">
-          <h2 class="settings-title">Display</h2>
+          <div class="settings-header-inner">
+            <div class="settings-header-dot"></div>
+            <h2 class="settings-title">Display</h2>
+          </div>
           <button @click="close" class="settings-close" title="Close settings">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
@@ -25,212 +30,10 @@
 
         <!-- Sections with staggered animation -->
         <div class="settings-body">
-          <!-- Theme -->
-          <section class="settings-section" style="--delay: 0">
-            <h3 class="settings-label">Theme</h3>
-            <div class="theme-grid">
-              <button
-                v-for="t in themes"
-                :key="t.value"
-                @click="ebookStore.setTheme(t.value)"
-                class="theme-card"
-                :class="{ 'theme-card--active': currentTheme === t.value }"
-                :aria-pressed="currentTheme === t.value"
-                :aria-label="t.label + ' theme'"
-              >
-                <div class="theme-preview" :style="t.previewStyle">
-                  <span class="theme-preview-text" :style="t.textStyle">Aa</span>
-                </div>
-                <span class="theme-card-label">{{ t.label }}</span>
-              </button>
-            </div>
-          </section>
-
-          <!-- Typography -->
-          <section class="settings-section" style="--delay: 1">
-            <h3 class="settings-label">Typography</h3>
-
-            <!-- Font Size -->
-            <div class="settings-row">
-              <div class="settings-row-header">
-                <span class="settings-sublabel">Size</span>
-                <span class="settings-value">{{ currentFontSize }}px</span>
-              </div>
-              <div class="slider-track">
-                <span class="slider-label-sm">A</span>
-                <input
-                  type="range"
-                  min="12"
-                  max="32"
-                  step="1"
-                  :value="currentFontSize"
-                  @input="ebookStore.setFontSize(Number(($event.target as HTMLInputElement).value))"
-                  class="slider-input"
-                  aria-label="Font size"
-                  :aria-valuenow="currentFontSize"
-                  aria-valuemin="12"
-                  aria-valuemax="32"
-                />
-                <span class="slider-label-lg">A</span>
-              </div>
-            </div>
-
-            <!-- Typeface -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Face</span>
-              <div class="toggle-group">
-                <button
-                  v-for="f in fontFamilies"
-                  :key="f.value"
-                  @click="ebookStore.setFontFamily(f.value)"
-                  class="toggle-btn"
-                  :class="{ 'toggle-btn--active': currentFontFamily === f.value }"
-                  :style="{ fontFamily: f.css }"
-                  :aria-pressed="currentFontFamily === f.value"
-                >{{ f.label }}</button>
-              </div>
-            </div>
-
-            <!-- Line Height -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Leading</span>
-              <div class="toggle-group">
-                <button
-                  v-for="lh in lineHeightOptions"
-                  :key="lh.value"
-                  @click="ebookStore.setLineHeight(lh.value)"
-                  class="toggle-btn toggle-btn--wide"
-                  :class="{ 'toggle-btn--active': currentLineHeight === lh.value }"
-                >
-                  <span class="leading-preview">
-                    <span :style="{ lineHeight: lh.numeric }">A</span>
-                  </span>
-                  {{ lh.label }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Text Alignment -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Align</span>
-              <div class="toggle-group">
-                <button
-                  v-for="al in alignmentOptions"
-                  :key="al.value"
-                  @click="ebookStore.setTextAlignment(al.value)"
-                  class="toggle-btn"
-                  :class="{ 'toggle-btn--active': currentTextAlignment === al.value }"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                    <rect :x="al.value === 'justify' ? 0 : 0" y="1" :width="al.value === 'justify' ? 16 : 10" height="1.5" rx="0.5"/>
-                    <rect :x="al.value === 'justify' ? 0 : 0" y="5" :width="al.value === 'justify' ? 16 : 12" height="1.5" rx="0.5"/>
-                    <rect :x="al.value === 'justify' ? 0 : 0" y="9" :width="al.value === 'justify' ? 16 : 10" height="1.5" rx="0.5"/>
-                    <rect :x="al.value === 'justify' ? 0 : 0" y="13" :width="al.value === 'justify' ? 16 : 8" height="1.5" rx="0.5"/>
-                  </svg>
-                  {{ al.label }}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Layout -->
-          <section class="settings-section" style="--delay: 2">
-            <h3 class="settings-label">Layout</h3>
-
-            <!-- Content Width -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Width</span>
-              <div class="width-presets">
-                <button
-                  v-for="w in widthOptions"
-                  :key="w.value"
-                  @click="ebookStore.setContentWidth(w.value)"
-                  class="width-card"
-                  :class="{ 'width-card--active': currentContentWidth === w.value }"
-                >
-                  <div class="width-bar-container">
-                    <div class="width-bar" :style="{ width: w.barWidth }"></div>
-                  </div>
-                  <span class="width-label">{{ w.label }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Focus Mode -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Focus</span>
-              <ToggleSwitch
-                :model-value="currentFocusMode"
-                @update:model-value="ebookStore.setFocusMode($event)"
-                label="Focus mode"
-              />
-            </div>
-
-            <!-- Reading Mode -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Mode</span>
-              <div class="toggle-group">
-                <button
-                  @click="ebookStore.setReadingMode('scroll')"
-                  class="toggle-btn"
-                  :class="{ 'toggle-btn--active': currentReadingMode === 'scroll' }"
-                  :aria-pressed="currentReadingMode === 'scroll'"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M2 2h12M2 6h12M2 10h12M2 14h10"/>
-                  </svg>
-                  Scroll
-                </button>
-                <button
-                  @click="ebookStore.setReadingMode('paged')"
-                  class="toggle-btn"
-                  :class="{ 'toggle-btn--active': currentReadingMode === 'paged' }"
-                  :aria-pressed="currentReadingMode === 'paged'"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="2" y="2" width="12" height="12" rx="1"/>
-                    <line x1="8" y1="2" x2="8" y2="14"/>
-                  </svg>
-                  Pages
-                </button>
-              </div>
-            </div>
-
-            <!-- Reference Card Mode -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Ref Cards</span>
-              <ToggleSwitch
-                :model-value="currentRefCardMode"
-                @update:model-value="ebookStore.setRefCardMode($event)"
-                label="Reference card swipe mode"
-              />
-            </div>
-          </section>
-
-          <!-- Advanced -->
-          <section class="settings-section" style="--delay: 3">
-            <h3 class="settings-label">Advanced</h3>
-
-            <!-- Hyphenation -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Hyphens</span>
-              <ToggleSwitch
-                :model-value="currentHyphenation"
-                @update:model-value="ebookStore.setHyphenation($event)"
-                label="Hyphenation"
-              />
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="settings-row">
-              <span class="settings-sublabel">Progress</span>
-              <ToggleSwitch
-                :model-value="currentShowProgress"
-                @update:model-value="ebookStore.setShowProgress($event)"
-                label="Progress bar"
-              />
-            </div>
-          </section>
+          <ThemeSelector />
+          <TypographyControls />
+          <ReadingControls />
+          <DisplayToggles />
 
           <!-- Reading Stats -->
           <section v-if="readingStats" class="settings-section" style="--delay: 4">
@@ -257,17 +60,17 @@
 
           <!-- Sync -->
           <section class="settings-section" style="--delay: 5">
-            <h3 class="settings-label">Sync</h3>
+            <h3 class="settings-label">Backup</h3>
             <div class="settings-row">
               <span class="settings-sublabel">Export</span>
               <button @click="cloudSync.push()" class="sync-btn" :disabled="cloudSync.syncing.value">
-                {{ cloudSync.syncing.value ? 'Saving...' : 'Save to cloud' }}
+                {{ cloudSync.syncing.value ? 'Saving...' : 'Export settings' }}
               </button>
             </div>
             <div class="settings-row">
               <span class="settings-sublabel">Import</span>
               <button @click="cloudSync.pull()" class="sync-btn" :disabled="cloudSync.syncing.value">
-                {{ cloudSync.syncing.value ? 'Loading...' : 'Load from cloud' }}
+                {{ cloudSync.syncing.value ? 'Loading...' : 'Import settings' }}
               </button>
             </div>
             <div v-if="cloudSync.syncError.value" class="sync-error">
@@ -289,66 +92,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-import { useEbookStore, type Theme, type FontFamily, type ContentWidth, type LineHeight, type TextAlignment, type ReadingMode } from '@/composables/useEbookStore'
+import { computed, inject, ref, watch, nextTick } from 'vue'
+import { useEbookStore } from '@/stores/ebookStore'
 import { useReadingStats } from '@/composables/useReadingStats'
 import { useCloudSync } from '@/composables/useCloudSync'
 import { useDocumentStore } from '@/stores/documentStore'
-import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import { useFocusTrap } from '@/composables/useFocusTrap'
+import ThemeSelector from '@/components/settings/ThemeSelector.vue'
+import TypographyControls from '@/components/settings/TypographyControls.vue'
+import ReadingControls from '@/components/settings/ReadingControls.vue'
+import DisplayToggles from '@/components/settings/DisplayToggles.vue'
 
 const ebookStore = useEbookStore()
 const documentStore = useDocumentStore()
 const readingStats = inject<ReturnType<typeof useReadingStats>>('readingStats')
 
-// Cloud sync
 const cloudSync = useCloudSync(documentStore.title)
+const panelEl = ref<HTMLElement | null>(null)
 
-const isSettingsOpen = computed(() => ebookStore.settingsOpen.value)
-const currentTheme = computed(() => ebookStore.theme.value)
-const currentFontSize = computed(() => ebookStore.fontSize.value)
-const currentFontFamily = computed(() => ebookStore.fontFamily.value)
-const currentContentWidth = computed(() => ebookStore.contentWidth.value)
-const currentLineHeight = computed(() => ebookStore.lineHeight.value)
-const currentTextAlignment = computed(() => ebookStore.textAlignment.value)
-const currentHyphenation = computed(() => ebookStore.hyphenation.value)
-const currentFocusMode = computed(() => ebookStore.focusMode.value)
-const currentShowProgress = computed(() => ebookStore.showProgress.value)
-const currentReadingMode = computed(() => ebookStore.readingMode.value)
-const currentRefCardMode = computed(() => ebookStore.refCardMode.value)
+const focusTrap = useFocusTrap(panelEl, { onEscape: () => close() })
+
+const isSettingsOpen = computed(() => ebookStore.settingsOpen)
+
+watch(isSettingsOpen, (open) => {
+  if (open) {
+    nextTick(() => focusTrap.activate())
+  } else {
+    focusTrap.deactivate()
+  }
+})
 
 function close() {
   ebookStore.toggleSettings()
 }
-
-const themes = [
-  { value: 'day' as Theme, label: 'Day', previewStyle: 'background: #fafaf8; border: 1px solid #e2e0dc;', textStyle: 'color: #1a1a1a;' },
-  { value: 'sepia' as Theme, label: 'Sepia', previewStyle: 'background: #f4e8d1;', textStyle: 'color: #3e2f23;' },
-  { value: 'night' as Theme, label: 'Night', previewStyle: 'background: #1a1a20;', textStyle: 'color: #ddd9d2;' },
-  { value: 'oled' as Theme, label: 'OLED', previewStyle: 'background: #000000; border: 1px solid #1e1e1e;', textStyle: 'color: #e8e6e1;' },
-]
-
-const fontFamilies = [
-  { value: 'sans' as FontFamily, label: 'Sans', css: 'system-ui, -apple-system, sans-serif' },
-  { value: 'serif' as FontFamily, label: 'Serif', css: 'Georgia, "Times New Roman", serif' },
-]
-
-const lineHeightOptions = [
-  { value: 'compact' as LineHeight, label: 'Tight', numeric: '1.0' },
-  { value: 'comfortable' as LineHeight, label: 'Comfy', numeric: '1.3' },
-  { value: 'relaxed' as LineHeight, label: 'Open', numeric: '1.6' },
-  { value: 'spacious' as LineHeight, label: 'Airy', numeric: '2.0' },
-]
-
-const alignmentOptions = [
-  { value: 'left' as TextAlignment, label: 'Left' },
-  { value: 'justify' as TextAlignment, label: 'Justify' },
-]
-
-const widthOptions = [
-  { value: 'narrow' as ContentWidth, label: 'Narrow', barWidth: '30%' },
-  { value: 'default' as ContentWidth, label: 'Default', barWidth: '55%' },
-  { value: 'wide' as ContentWidth, label: 'Wide', barWidth: '90%' },
-]
 
 function resetToDefaults() {
   ebookStore.setFontSize(18)
@@ -365,6 +141,7 @@ function resetToDefaults() {
 }
 </script>
 
+<style scoped src="./settings/settings-base.css"></style>
 <style scoped>
 /* Panel backdrop */
 .settings-backdrop-enter-active,
@@ -399,7 +176,7 @@ function resetToDefaults() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--chrome-border);
   position: sticky;
   top: 0;
@@ -407,12 +184,26 @@ function resetToDefaults() {
   background: var(--chrome-bg);
 }
 
+.settings-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-header-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chrome-accent);
+}
+
 .settings-title {
-  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--chrome-text-dim);
+  letter-spacing: 0.12em;
+  color: var(--chrome-text);
 }
 
 .settings-close {
@@ -425,6 +216,9 @@ function resetToDefaults() {
   color: var(--chrome-text-dim);
   transition: background 0.15s ease, color 0.15s ease;
 }
+
+.settings-close svg { width: 18px; height: 18px; }
+
 .settings-close:hover {
   background: var(--chrome-bg-hover);
   color: var(--chrome-text);
@@ -432,286 +226,6 @@ function resetToDefaults() {
 
 .settings-body {
   padding: 8px 0;
-}
-
-/* Staggered section entrance */
-.settings-section {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--chrome-border);
-  animation: sectionFadeIn 0.3s ease backwards;
-  animation-delay: calc(var(--delay, 0) * 60ms);
-}
-
-@keyframes sectionFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.settings-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--chrome-accent);
-  margin-bottom: 12px;
-}
-
-.settings-sublabel {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--chrome-text);
-  white-space: nowrap;
-}
-
-.settings-value {
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--chrome-text-dim);
-}
-
-/* Rows */
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.settings-row:last-child {
-  margin-bottom: 0;
-}
-
-.settings-row-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Theme cards */
-.theme-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.theme-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 4px;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  transition: border-color 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-}
-.theme-card:hover {
-  border-color: var(--chrome-border);
-}
-.theme-card--active {
-  border-color: var(--chrome-accent);
-  background: color-mix(in srgb, var(--chrome-accent) 8%, var(--chrome-bg));
-}
-
-.theme-preview {
-  width: 40px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.theme-preview-text {
-  font-size: 13px;
-  font-weight: 600;
-  font-family: Georgia, serif;
-}
-
-.theme-card-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--chrome-text-dim);
-}
-.theme-card--active .theme-card-label {
-  color: var(--chrome-accent);
-}
-
-/* Slider */
-.slider-track {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.slider-label-sm {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--chrome-text-dim);
-}
-
-.slider-label-lg {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--chrome-text-dim);
-}
-
-.slider-input {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--chrome-bg-hover);
-  outline: none;
-  cursor: pointer;
-}
-
-.slider-input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--chrome-accent);
-  border: 3px solid var(--chrome-bg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  transition: transform 0.1s ease;
-}
-
-.slider-input::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
-
-.slider-input::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--chrome-accent);
-  border: 3px solid var(--chrome-bg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-}
-
-/* Toggle group (for font face, line height, alignment) */
-.toggle-group {
-  display: flex;
-  gap: 4px;
-  background: var(--chrome-bg-hover);
-  padding: 3px;
-  border-radius: 8px;
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 6px;
-  color: var(--chrome-text-dim);
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.toggle-btn:hover {
-  color: var(--chrome-text);
-}
-
-.toggle-btn--active {
-  background: var(--chrome-bg);
-  color: var(--chrome-accent);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.toggle-btn--wide {
-  padding: 6px 8px;
-  font-size: 0.7rem;
-}
-
-.leading-preview {
-  display: inline-flex;
-  flex-direction: column;
-  width: 14px;
-  overflow: hidden;
-}
-
-.leading-preview span {
-  display: block;
-  font-size: 8px;
-  font-weight: 700;
-}
-
-/* Width presets */
-.width-presets {
-  display: flex;
-  gap: 6px;
-  flex: 1;
-}
-
-.width-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 6px 8px;
-  border-radius: 8px;
-  border: 2px solid transparent;
-  transition: border-color 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-}
-.width-card:hover {
-  border-color: var(--chrome-border);
-}
-.width-card--active {
-  border-color: var(--chrome-accent);
-  background: color-mix(in srgb, var(--chrome-accent) 8%, var(--chrome-bg));
-}
-
-.width-bar-container {
-  width: 100%;
-  height: 3px;
-  background: var(--chrome-bg-hover);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.width-bar {
-  height: 100%;
-  background: var(--chrome-text-dim);
-  border-radius: 2px;
-  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.width-card--active .width-bar {
-  background: var(--chrome-accent);
-}
-
-.width-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--chrome-text-dim);
-}
-.width-card--active .width-label {
-  color: var(--chrome-accent);
 }
 
 /* Footer */
@@ -734,14 +248,6 @@ function resetToDefaults() {
   color: var(--chrome-text);
 }
 
-/* Mobile: full-screen settings panel */
-@media (max-width: 640px) {
-  .settings-panel {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}
-
 /* Reading stats */
 .stats-grid {
   display: grid;
@@ -756,9 +262,11 @@ function resetToDefaults() {
   padding: 10px 6px;
   border-radius: 8px;
   background: var(--chrome-bg-hover);
+  border: 1px solid color-mix(in srgb, var(--chrome-border) 60%, transparent);
 }
 
 .stat-value {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--chrome-accent);
@@ -766,10 +274,11 @@ function resetToDefaults() {
 }
 
 .stat-label {
-  font-size: 0.65rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.6rem;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--chrome-text-dim);
   margin-top: 2px;
 }
@@ -805,5 +314,13 @@ function resetToDefaults() {
   font-size: 0.7rem;
   color: var(--chrome-text-dim);
   margin-top: 4px;
+}
+
+/* Mobile: full-screen settings panel */
+@media (max-width: 640px) {
+  .settings-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }
 </style>

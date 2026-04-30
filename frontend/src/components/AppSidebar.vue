@@ -3,111 +3,124 @@
     ref="sidebarEl"
     role="navigation"
     aria-label="Table of contents"
+    :aria-hidden="!uiStore.sidebarOpen"
+    :inert="!uiStore.sidebarOpen"
     :class="[
-      'sidebar-panel fixed top-0 left-0 z-50 w-[280px] h-full overflow-y-auto transition-transform duration-200',
-      uiStore.sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      'sidebar',
+      uiStore.sidebarOpen ? 'sidebar--open' : 'sidebar--closed'
     ]"
     @scroll="onSidebarScroll"
   >
-    <!-- Sidebar Header -->
-    <div class="sidebar-header sticky top-0 p-4 z-10">
-      <div class="flex items-center justify-between mb-1">
-        <span class="sidebar-title truncate pr-2">
-          {{ documentStore.title }}
-        </span>
-        <button
-          @click="uiStore.closeSidebar"
-          class="sidebar-btn"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-header-top">
+        <div class="sidebar-title-group">
+          <span class="sidebar-title">{{ documentStore.title }}</span>
+          <span v-if="documentStore.author" class="sidebar-author">{{ documentStore.author }}</span>
+        </div>
+        <button @click="uiStore.closeSidebar" class="sidebar-close-btn" aria-label="Close sidebar">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
-      <div v-if="documentStore.author" class="sidebar-author truncate mb-3">{{ documentStore.author }}</div>
 
-      <!-- Search button -->
-      <button
-        @click="uiStore.openSearch"
-        class="sidebar-search w-full flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Search trigger -->
+      <button @click="uiStore.openSearch" class="sidebar-search-btn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
-        <span>Search headings...</span>
-        <kbd class="sidebar-kbd ml-auto text-xs px-1.5 py-0.5 rounded">/</kbd>
+        <span>Search...</span>
+        <kbd class="sidebar-kbd">/</kbd>
       </button>
 
-      <!-- Font toggle -->
-      <div class="flex gap-1 mt-3">
-        <button
-          @click="setFontFamily('sans')"
-          :class="ebookStore.fontFamily.value === 'sans' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
-          class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-sans"
-        >
-          Sans
-        </button>
-        <button
-          @click="setFontFamily('serif')"
-          :class="ebookStore.fontFamily.value === 'serif' ? 'sidebar-toggle-active' : 'sidebar-toggle'"
-          class="flex-1 py-1 px-2 text-xs rounded-md transition-colors font-serif"
-        >
-          Serif
+      <!-- TOC filter -->
+      <div class="sidebar-filter">
+        <svg class="sidebar-filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 8h12M3 12h6"/>
+        </svg>
+        <input v-model="tocFilter" type="text" class="sidebar-filter-input" placeholder="Filter sections..." />
+        <button v-if="tocFilter" @click="tocFilter = ''" class="sidebar-filter-clear">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
       </div>
 
-      <!-- Theme toggle -->
-      <button
-        @click="cycleTheme"
-        class="sidebar-theme-btn w-full flex items-center justify-between mt-2 py-1.5 px-3 text-xs rounded-md transition-colors"
-      >
-        <span class="flex items-center gap-2">
-          <svg v-if="ebookStore.theme.value === 'day' || ebookStore.theme.value === 'sepia'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-          </svg>
-          <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-          </svg>
-          <span>{{ themeLabel }}</span>
-        </span>
-      </button>
+      <!-- Progress ring -->
+      <div v-if="readingStats && readingStats.totalSections > 0" class="sidebar-progress">
+        <svg class="sidebar-progress-ring" viewBox="0 0 48 48" width="44" height="44">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--chrome-border)" stroke-width="2.5" />
+          <circle
+            cx="24" cy="24" r="20" fill="none"
+            stroke="var(--chrome-accent)"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            :stroke-dasharray="progressCircumference"
+            :stroke-dashoffset="progressOffset"
+            transform="rotate(-90 24 24)"
+            class="sidebar-progress-arc"
+          />
+          <text x="24" y="24" text-anchor="middle" dominant-baseline="central"
+                font-size="10" font-weight="700" fill="var(--chrome-text)"
+                font-family="'JetBrains Mono', ui-monospace, monospace">
+            {{ readingStats.readPercentage.value }}%
+          </text>
+        </svg>
+        <div class="sidebar-progress-info">
+          <span class="sidebar-progress-label">{{ readingStats.sectionsReadCount.value }} of {{ readingStats.totalSections }} sections read</span>
+          <span v-if="readingStats.estimatedReadingTime.value > 0" class="sidebar-progress-time">~{{ readingStats.estimatedReadingTime.value }} min remaining</span>
+        </div>
+      </div>
     </div>
 
-    <!-- TOC -->
-    <nav class="p-3 relative">
-      <ul class="space-y-0.5">
+    <!-- TOC Tree -->
+    <nav class="sidebar-toc">
+      <div v-if="tocFilter && filteredSections.length === 0" class="sidebar-toc-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="sidebar-toc-empty-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <span>No matching sections</span>
+      </div>
+      <ul v-else class="sidebar-toc-list">
         <TocTreeItem
-          v-for="item in documentStore.sections"
+          v-for="item in (tocFilter ? filteredSections : documentStore.sections)"
           :key="item.id"
           :item="item"
           :depth="1"
+          :force-open="!!tocFilter"
         />
       </ul>
-      <!-- Follow focus button -->
-      <button
-        v-if="!uiStore.tocFollowFocus"
-        @click="followFocus"
-        class="follow-focus-btn"
-      >
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-        Follow active section
-      </button>
     </nav>
 
+    <!-- Follow focus -->
+    <div class="sidebar-toc-actions">
+      <button v-if="!uiStore.tocFollowFocus" @click="followFocus" class="follow-focus-btn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
+        Follow current section
+      </button>
+    </div>
+
     <!-- Bookmarks -->
-    <div v-if="bookmarks.bookmarks.value.length > 0" class="sidebar-section">
-      <div class="sidebar-section-title">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+    <div v-if="bookmarks.bookmarks.value.length > 0" class="sidebar-bookmarks">
+      <div class="sidebar-bookmarks-title">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+        </svg>
         Bookmarks
-        <kbd class="sidebar-kbd text-xs px-1 py-0.5 rounded ml-auto">b</kbd>
+        <kbd class="sidebar-kbd sidebar-kbd--sm">b</kbd>
       </div>
-      <ul class="space-y-0.5">
+      <ul class="sidebar-bookmarks-list">
         <li v-for="bm in bookmarks.bookmarks.value" :key="bm.id" class="bookmark-item">
           <a @click.prevent="navigateToId(bm.sectionId)" class="bookmark-link" :title="bm.snippet">
             {{ bm.title }}
           </a>
           <button @click="bookmarks.remove(bm.sectionId)" class="bookmark-remove" title="Remove bookmark">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
           </button>
         </li>
       </ul>
@@ -117,37 +130,52 @@
 
 <script setup lang="ts">
 import { computed, ref, inject } from 'vue'
-import { useDocumentStore } from '@/stores/documentStore'
+import { useDocumentStore, type TocItem } from '@/stores/documentStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useEbookStore } from '@/composables/useEbookStore'
-import { useBookmarks, type Bookmark } from '@/composables/useBookmarks'
+import { useEbookStore } from '@/stores/ebookStore'
+import { useBookmarks } from '@/composables/useBookmarks'
+import { useReadingStats } from '@/composables/useReadingStats'
 import TocTreeItem from '@/components/TocTreeItem.vue'
 
 const documentStore = useDocumentStore()
 const uiStore = useUiStore()
 const ebookStore = useEbookStore()
 const sidebarEl = ref<HTMLElement | null>(null)
+const tocFilter = ref('')
 
 const bookmarks = inject<ReturnType<typeof useBookmarks>>('bookmarks')!
 const navigateToId = inject<(id: string) => void>('navigateToId', () => {})
+const readingStats = inject<ReturnType<typeof useReadingStats> | null>('readingStats', null)
 
-const themeLabel = computed(() => {
-  switch (ebookStore.theme.value) {
-    case 'day': return 'Day'
-    case 'sepia': return 'Sepia'
-    case 'night': return 'Night'
-    case 'oled': return 'OLED'
-  }
+const progressCircumference = computed(() => 2 * Math.PI * 20)
+const progressOffset = computed(() => {
+  if (!readingStats) return progressCircumference.value
+  const pct = readingStats.readPercentage.value / 100
+  return progressCircumference.value * (1 - pct)
 })
 
-function cycleTheme() { ebookStore.cycleTheme() }
+const filteredSections = computed(() => {
+  const q = tocFilter.value.trim().toLowerCase()
+  if (!q) return documentStore.sections
 
-function setFontFamily(font: 'sans' | 'serif') {
-  ebookStore.setFontFamily(font as any)
-}
+  function filterTree(items: TocItem[]): TocItem[] {
+    const result: TocItem[] = []
+    for (const item of items) {
+      const titleMatch = item.title.toLowerCase().includes(q)
+      const filteredChildren = item.children ? filterTree(item.children) : []
+      if (titleMatch || filteredChildren.length > 0) {
+        result.push({
+          ...item,
+          children: titleMatch ? item.children : filteredChildren,
+        })
+      }
+    }
+    return result
+  }
+  return filterTree(documentStore.sections)
+})
 
 function onSidebarScroll() {
-  // User manually scrolled the TOC — disable auto-follow
   if (uiStore.tocFollowFocus) {
     uiStore.setTocFollowFocus(false)
   }
@@ -159,117 +187,311 @@ function followFocus() {
 </script>
 
 <style scoped>
-.sidebar-panel {
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 280px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: var(--chrome-bg-alt);
   border-right: 1px solid var(--chrome-border);
-  transition: transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
 }
 
+.sidebar--closed {
+  transform: translateX(-100%);
+}
+
+.sidebar--open {
+  transform: translateX(0);
+}
+
+/* Header */
 .sidebar-header {
-  background: var(--chrome-bg-alt);
+  flex-shrink: 0;
+  padding: 16px;
   border-bottom: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-alt);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sidebar-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar-title-group {
+  min-width: 0;
 }
 
 .sidebar-title {
+  display: block;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--chrome-text-dim);
+  font-size: 0.8rem;
+  color: var(--chrome-text);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .sidebar-author {
+  display: block;
   font-size: 0.7rem;
   color: var(--chrome-text-dim);
-  opacity: 0.7;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sidebar-btn {
-  padding: 0.25rem;
-  border-radius: 0.25rem;
+.sidebar-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
   color: var(--chrome-text-dim);
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.sidebar-btn:hover {
+.sidebar-close-btn svg { width: 18px; height: 18px; }
+.sidebar-close-btn:hover {
   background: var(--chrome-bg-hover);
   color: var(--chrome-text);
 }
 
-.sidebar-search {
+/* Search button */
+.sidebar-search-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
   background: var(--chrome-bg);
   border: 1px solid var(--chrome-border);
+  border-radius: 8px;
   color: var(--chrome-text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.sidebar-search:hover {
+.sidebar-search-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.sidebar-search-btn:hover {
+  border-color: var(--chrome-accent);
   background: var(--chrome-bg-hover);
 }
 
 .sidebar-kbd {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
   background: var(--chrome-bg-hover);
   color: var(--chrome-text-dim);
+  border: 1px solid var(--chrome-border);
 }
 
-.sidebar-toggle {
-  background: var(--chrome-bg-hover);
+.sidebar-kbd--sm {
+  font-size: 0.5rem;
+  padding: 1px 4px;
+}
+
+/* Filter */
+.sidebar-filter {
+  position: relative;
+  margin-top: 8px;
+}
+
+.sidebar-filter-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
   color: var(--chrome-text-dim);
+  pointer-events: none;
 }
 
-.sidebar-toggle-active {
-  background: var(--chrome-accent);
-  color: #ffffff;
-}
-
-.sidebar-theme-btn {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text);
-}
-
-.sidebar-theme-btn:hover {
+.sidebar-filter-input {
+  width: 100%;
+  padding: 6px 28px 6px 28px;
+  font-size: 0.78rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
   background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 6px;
+  color: var(--chrome-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sidebar-filter-input::placeholder { color: var(--chrome-text-dim); }
+.sidebar-filter-input:focus {
+  border-color: var(--chrome-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chrome-accent) 12%, transparent);
+}
+
+.sidebar-filter-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  color: var(--chrome-text-dim);
+  border-radius: 3px;
+  transition: color 0.15s ease;
+}
+.sidebar-filter-clear svg { width: 12px; height: 12px; }
+.sidebar-filter-clear:hover { color: var(--chrome-text); }
+
+/* Progress ring */
+.sidebar-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+}
+
+.sidebar-progress-ring { flex-shrink: 0; }
+
+.sidebar-progress-arc {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.sidebar-progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sidebar-progress-label {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--chrome-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-progress-time {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  color: var(--chrome-text-dim);
+  letter-spacing: 0.01em;
+}
+
+/* TOC */
+.sidebar-toc {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+
+.sidebar-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-toc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--chrome-text-dim);
+}
+
+.sidebar-toc-empty-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.4;
+}
+
+.sidebar-toc-actions {
+  padding: 8px 16px;
 }
 
 .follow-focus-btn {
-  position: sticky;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
-  font-size: 0.7rem;
+  width: 100%;
+  padding: 8px 12px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.72rem;
   font-weight: 500;
-  border-radius: 999px;
-  background: var(--chrome-accent);
-  color: #fff;
-  border: none;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--chrome-accent) 10%, transparent);
+  color: var(--chrome-accent);
+  border: 1px solid color-mix(in srgb, var(--chrome-accent) 20%, transparent);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  transition: opacity 0.15s ease;
-  margin-top: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
+
+.follow-focus-btn svg { width: 14px; height: 14px; }
 .follow-focus-btn:hover {
-  opacity: 0.9;
+  background: color-mix(in srgb, var(--chrome-accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--chrome-accent) 30%, transparent);
 }
 
 /* Bookmarks */
-.sidebar-section {
-  padding: 12px 16px 8px;
+.sidebar-bookmarks {
+  padding: 12px 16px;
   border-top: 1px solid var(--chrome-border);
 }
 
-.sidebar-section-title {
+.sidebar-bookmarks-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.7rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--chrome-text-dim);
   margin-bottom: 8px;
+}
+
+.sidebar-bookmarks-title svg { width: 14px; height: 14px; }
+
+.sidebar-bookmarks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .bookmark-item {
@@ -277,28 +499,25 @@ function followFocus() {
   align-items: center;
   gap: 4px;
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: background 0.15s ease;
 }
 
-.bookmark-item:hover {
-  background: var(--chrome-bg-hover);
-}
+.bookmark-item:hover { background: var(--chrome-bg-hover); }
 
 .bookmark-link {
   flex: 1;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--chrome-text);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s ease;
 }
 
-.bookmark-link:hover {
-  color: var(--chrome-accent);
-}
+.bookmark-link:hover { color: var(--chrome-accent); }
 
 .bookmark-remove {
   flex-shrink: 0;
@@ -313,12 +532,11 @@ function followFocus() {
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.bookmark-item:hover .bookmark-remove {
-  opacity: 1;
-}
+.bookmark-remove svg { width: 12px; height: 12px; }
+.bookmark-item:hover .bookmark-remove { opacity: 1; }
+.bookmark-remove:hover { background: var(--chrome-bg-hover); color: var(--chrome-text); }
 
-.bookmark-remove:hover {
-  background: var(--chrome-bg-hover);
-  color: var(--chrome-text);
+@media (max-width: 640px) {
+  .sidebar { width: 100%; }
 }
 </style>

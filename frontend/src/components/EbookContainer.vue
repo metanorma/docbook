@@ -1,15 +1,22 @@
 <template>
   <div class="ebook-container" :class="[themeClass]">
+    <div v-if="themeFlashing" class="theme-flash-overlay"></div>
     <slot></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEbookStore } from '@/composables/useEbookStore'
+import { computed, ref, watch } from 'vue'
+import { useEbookStore } from '@/stores/ebookStore'
 
 const ebookStore = useEbookStore()
 const themeClass = computed(() => `theme-${ebookStore.theme}`)
+const themeFlashing = ref(false)
+
+watch(() => ebookStore.theme, () => {
+  themeFlashing.value = true
+  setTimeout(() => { themeFlashing.value = false }, 200)
+})
 </script>
 
 <style>
@@ -267,5 +274,22 @@ body {
     color: #000;
     background: #fff;
   }
+}
+</style>
+
+<style scoped>
+.theme-flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ebook-bg);
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 100;
+  animation: theme-flash 200ms ease-out forwards;
+}
+
+@keyframes theme-flash {
+  from { opacity: 0.3; }
+  to { opacity: 0; }
 }
 </style>
