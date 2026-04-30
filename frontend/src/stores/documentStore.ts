@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
-import { createContentLoader, getOutputFormat } from '@/composables/useContentLoader'
+import { createContentLoader, getOutputFormat, getCachedPreload } from '@/composables/useContentLoader'
+import { useChunkedLoader, type SectionManifest } from '@/composables/useChunkedLoader'
 
 // ============================================================
 // DocbookMirror (ProseMirror-style) Types
@@ -86,6 +87,7 @@ interface DocumentMeta {
   releaseinfo?: string
   copyright?: string
   root_element?: string
+  cover?: string
   sections: TocItem[]
   numbering: Record<string, string>
   index: IndexData | null
@@ -99,6 +101,64 @@ interface DocumentMeta {
 export const useDocumentStore = defineStore('document', () => {
   const documentMeta = ref<DocumentMeta | null>(null)
   const mirrorDocument = shallowRef<MirrorDocument | null>(null)
+  const isChunkedMode = ref(false)
+  const chunkedContent = ref<any[]>([])
+  const loadError = ref<string | null>(null)
+
+  // Lazy-load sections from IndexedDB before assembling
+  function loadChunkedSection(sectionId: string): void {
+    const loader = useChunkedLoader()
+    loader.loadSection(sectionId).then(() => {
+      chunkedContent.value = loader.getAssembledContent()
+      mirrorDocument.value = {
+        type: 'doc',
+        content: chunkedContent.value,
+      }
+    })
+  }
+
+  // Handle chunked format: load manifest, then initial sections
+  async function loadChunked(): Promise<void> {
+    const loader = useChunkedLoader()
+    isChunkedMode.value = true
+
+    const manifest = await loader.loadManifest()
+    processManifestMetadata(manifest)
+
+    await loader.loadInitial(3)
+
+    chunkedContent.value = loader.getAssembledContent()
+    mirrorDocument.value = {
+      type: 'doc',
+      content: chunkedContent.value,
+    }
+  }
+
+  function processManifestMetadata(manifest: SectionManifest): void {
+    const toc = manifest.toc || {}
+    const meta = manifest.meta || {}
+
+    const list_of: ListOfData = {
+      figures: toc.list_of_figures || [],
+      tables: toc.list_of_tables || [],
+      examples: toc.list_of_examples || [],
+    }
+
+    documentMeta.value = {
+      title: meta.title,
+      subtitle: meta.subtitle,
+      author: meta.author,
+      pubdate: meta.pubdate,
+      releaseinfo: meta.releaseinfo,
+      copyright: meta.copyright,
+      root_element: meta.root_element,
+      cover: meta.cover,
+      sections: toc.sections || [],
+      numbering: convertNumbering(toc.numbering),
+      index: toc.index || null,
+      list_of: list_of,
+    }
+  }
 
   function convertNumbering(numbering: any): Record<string, string> {
     const map: Record<string, string> = {}
@@ -157,6 +217,16 @@ export const useDocumentStore = defineStore('document', () => {
   }
 
   function loadFromWindow(): Promise<void> {
+    loadError.value = null
+
+    // Chunked format: load manifest + lazy sections
+    const format = getOutputFormat()
+    if (format === 'chunked') {
+      return loadChunked().catch(err => {
+        loadError.value = err instanceof Error ? err.message : 'Failed to load document'
+      })
+    }
+
     // Try inline data first (covers inline, dom, paged formats)
     const inlineData = (window as any).DOCBOOK_DATA
     if (inlineData && inlineData !== null) {
@@ -164,13 +234,14 @@ export const useDocumentStore = defineStore('document', () => {
     }
 
     // Try external data (dist format)
-    const format = getOutputFormat()
     if (format === 'dist') {
       const loader = createContentLoader()
       return loader.load().then(data => {
         if (data) return processDocbookData(data)
-        documentMeta.value = null
+        loadError.value = 'No document data found'
         return Promise.resolve()
+      }).catch(err => {
+        loadError.value = err instanceof Error ? err.message : 'Failed to load document'
       })
     }
 
@@ -183,6 +254,12 @@ export const useDocumentStore = defineStore('document', () => {
       }
     }
 
+    // Try async cache preload (dist format may have loaded from IDB)
+    const cached = getCachedPreload()
+    if (cached) {
+      return processDocbookData(cached)
+    }
+
     return fetch('docbook.data.json')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load docbook.data.json')
@@ -191,7 +268,7 @@ export const useDocumentStore = defineStore('document', () => {
       .then(data => processDocbookData(data))
       .catch(err => {
         console.error('Failed to load document data:', err)
-        documentMeta.value = null
+        loadError.value = err instanceof Error ? err.message : 'Failed to load document'
       })
   }
 
@@ -208,6 +285,7 @@ export const useDocumentStore = defineStore('document', () => {
   const author = computed(() => documentMeta.value?.author || '')
   const pubdate = computed(() => documentMeta.value?.pubdate || '')
   const copyright = computed(() => documentMeta.value?.copyright || '')
+  const cover = computed(() => documentMeta.value?.cover || '')
   const sections = computed(() => documentMeta.value?.sections || [])
   const numbering = computed(() => documentMeta.value?.numbering || {})
   const index = computed(() => documentMeta.value?.index || null)
@@ -220,12 +298,16 @@ export const useDocumentStore = defineStore('document', () => {
   return {
     documentMeta,
     mirrorDocument,
+    isChunkedMode,
+    loadError,
     loadFromWindow,
+    loadChunkedSection,
     title,
     subtitle,
     author,
     pubdate,
     copyright,
+    cover,
     sections,
     numbering,
     index,

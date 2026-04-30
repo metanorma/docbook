@@ -92,6 +92,10 @@ export function useReadingStats(docTitle: string, totalSections: number, section
     if (saveTimer) clearInterval(saveTimer)
   })
 
+  function isSectionRead(id: string): boolean {
+    return sectionsRead.value.has(id)
+  }
+
   return {
     sectionsRead,
     sectionsReadCount,
@@ -102,5 +106,6 @@ export function useReadingStats(docTitle: string, totalSections: number, section
     totalSections,
     markSectionRead,
     recordActivity,
+    isSectionRead,
   }
 }

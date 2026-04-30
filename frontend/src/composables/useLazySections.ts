@@ -1,17 +1,67 @@
-import { ref, shallowRef, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, shallowRef, computed, watch, onMounted, onUnmounted, type Ref } from 'vue'
 
 export interface LazySection {
   id: string
   visible: boolean
 }
 
-const ROOT_MARGIN = '2000px 0px'
+const ROOT_MARGIN = '5000px 0px'
 const THRESHOLD = 0
+
+// Progressive rendering: how many top-level blocks to render initially
+const PROGRESSIVE_INITIAL = 20
+const PROGRESSIVE_BATCH = 10
 
 export function useLazySections(containerRef: Ref<HTMLElement | null>) {
   const visibleIds = ref<Set<string>>(new Set())
   const observer = shallowRef<IntersectionObserver | null>(null)
   const initialized = ref(false)
+
+  // Progressive rendering: tracks how many top-level blocks are revealed
+  const revealedCount = ref(PROGRESSIVE_INITIAL)
+  const progressiveDone = ref(true) // true = all blocks revealed
+  let totalBlockCount = 0
+
+  function setTotalBlocks(count: number) {
+    totalBlockCount = count
+    revealedCount.value = count
+    progressiveDone.value = true
+  }
+
+  function isProgressiveVisible(index: number): boolean {
+    return index < revealedCount.value
+  }
+
+  // Use requestIdleCallback to progressively reveal more blocks
+  let revealTimer: ReturnType<typeof setTimeout> | null = null
+
+  function scheduleProgressiveReveal() {
+    if (progressiveDone.value) return
+
+    const reveal = () => {
+      if (progressiveDone.value) return
+      const remaining = totalBlockCount - revealedCount.value
+      if (remaining <= 0) {
+        progressiveDone.value = true
+        return
+      }
+      revealedCount.value = Math.min(
+        revealedCount.value + PROGRESSIVE_BATCH,
+        totalBlockCount
+      )
+      if (revealedCount.value >= totalBlockCount) {
+        progressiveDone.value = true
+      } else {
+        scheduleProgressiveReveal()
+      }
+    }
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(reveal, { timeout: 500 })
+    } else {
+      revealTimer = setTimeout(reveal, 100)
+    }
+  }
 
   function createObserver() {
     if (observer.value) return
@@ -78,7 +128,7 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
   }
 
   function unobserveAll() {
-    if (!observer.value) return
+    if (observer.value) return
     observer.value.disconnect()
     document.querySelectorAll('[data-lazy-observed]').forEach(el => {
       delete (el as HTMLElement).dataset.lazyObserved
@@ -100,6 +150,7 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
 
   onUnmounted(() => {
     unobserveAll()
+    if (revealTimer) clearTimeout(revealTimer)
     if (observer.value) {
       observer.value.disconnect()
       observer.value = null
@@ -109,12 +160,16 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
   // Reset for a new document (e.g., switching library books)
   function reset() {
     unobserveAll()
+    if (revealTimer) clearTimeout(revealTimer)
     if (observer.value) {
       observer.value.disconnect()
       observer.value = null
     }
     visibleIds.value = new Set()
     initialized.value = false
+    revealedCount.value = PROGRESSIVE_INITIAL
+    progressiveDone.value = true
+    totalBlockCount = 0
   }
 
   return {
@@ -125,5 +180,10 @@ export function useLazySections(containerRef: Ref<HTMLElement | null>) {
     initialized,
     reset,
     createObserver,
+    // Progressive rendering
+    setTotalBlocks,
+    isProgressiveVisible,
+    revealedCount,
+    progressiveDone,
   }
 }

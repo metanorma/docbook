@@ -49,6 +49,12 @@ export function useScrollTracker(ctx: ScrollTrackerContext) {
       if (elementScrollTop <= scrollTop + 200) {
         foundSection = section
       }
+
+      // Mark as read if any part of the section is visible in the viewport
+      const isVisible = rect.bottom > containerRect.top && rect.top < containerRect.bottom
+      if (isVisible) {
+        ctx.readingStats.markSectionRead(section.id)
+      }
     }
 
     function walkSections(sects: TocItem[]) {
@@ -64,12 +70,58 @@ export function useScrollTracker(ctx: ScrollTrackerContext) {
 
     if (foundSection && foundSection.id !== ctx.uiStore.activeSectionId) {
       ctx.uiStore.setActiveSection(foundSection.id)
-      ctx.readingStats.markSectionRead(foundSection.id)
       ctx.readingStats.recordActivity()
       history.replaceState(null, '', `#${foundSection.id}`)
-      try {
-        localStorage.setItem('docbook-position-' + ctx.documentStore.title, foundSection.id)
-      } catch {}
+      saveScrollPosition(foundSection.id)
+    }
+
+    // Update scroll offset for current section periodically
+    if (foundSection) {
+      saveScrollOffset(foundSection.id)
+    }
+  }
+
+  function saveScrollPosition(sectionId: string) {
+    try {
+      localStorage.setItem('docbook-position-' + ctx.documentStore.title, sectionId)
+    } catch {}
+  }
+
+  function saveScrollOffset(sectionId: string) {
+    const container = ctx.mainContent.value
+    if (!container) return
+    try {
+      const el = document.getElementById(sectionId)
+      if (!el) return
+      const containerRect = container.getBoundingClientRect()
+      const elTop = el.getBoundingClientRect().top - containerRect.top + container.scrollTop
+      const offset = container.scrollTop - elTop
+      localStorage.setItem('docbook-offset-' + ctx.documentStore.title, String(Math.round(offset)))
+    } catch {}
+  }
+
+  function restoreScrollPosition(): boolean {
+    try {
+      const sectionId = localStorage.getItem('docbook-position-' + ctx.documentStore.title)
+      if (!sectionId || !document.getElementById(sectionId)) return false
+
+      const offsetStr = localStorage.getItem('docbook-offset-' + ctx.documentStore.title)
+      const offset = offsetStr ? parseInt(offsetStr, 10) : 0
+
+      const container = ctx.mainContent.value
+      if (!container) return false
+
+      const el = document.getElementById(sectionId)
+      if (!el) return false
+
+      const containerRect = container.getBoundingClientRect()
+      const elTop = el.getBoundingClientRect().top - containerRect.top + container.scrollTop
+      container.scrollTo({ top: elTop + offset })
+
+      ctx.uiStore.setActiveSection(sectionId)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -78,5 +130,6 @@ export function useScrollTracker(ctx: ScrollTrackerContext) {
     showBackToTop,
     handleScroll,
     updateActiveSection,
+    restoreScrollPosition,
   }
 }

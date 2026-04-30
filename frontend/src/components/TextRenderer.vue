@@ -63,7 +63,7 @@ function markAttrs(mark: Mark): Record<string, any> {
     case 'xref':
       return {
         href: `#${mark.attrs?.linkend}`,
-        class: 'xref link-text hover:underline border-b border-dashed border-link',
+        class: 'xref link-text',
       }
     case 'citation':
       return { class: 'citation citation-text italic' }
@@ -131,6 +131,18 @@ function wrapInMarks(marks: Mark[]): Component {
 
 .link-text {
   color: var(--ebook-link-color);
+  transition: color 0.15s ease;
+}
+
+.xref {
+  text-decoration: none;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ebook-link-color) 40%, transparent);
+  transition: border-bottom-color 0.15s ease, color 0.15s ease;
+}
+
+.xref:hover {
+  border-bottom-color: var(--ebook-link-color);
+  border-bottom-style: solid;
 }
 
 .border-link {

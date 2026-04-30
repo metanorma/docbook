@@ -35,6 +35,11 @@ defineEmits<{
   flex-shrink: 0;
 }
 
+.toggle-switch:focus-visible {
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: 2px;
+}
+
 .toggle-switch--on {
   background: var(--chrome-accent);
 }
