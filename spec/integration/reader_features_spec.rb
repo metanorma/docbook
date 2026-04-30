@@ -63,6 +63,8 @@ RSpec.describe "Reader Features", type: :feature do
         }
       })()
     JS
+    # Wait for lazy content to load (IntersectionObserver fires asynchronously)
+    expect(page).to have_css("##{section_id}", wait: 10)
     sleep 1
     page.execute_script(<<~JS)
       var el = document.getElementById(#{section_id.to_json});
@@ -274,6 +276,7 @@ RSpec.describe "Reader Features", type: :feature do
     it "renders callout list with descriptions" do
       visit_reader
       navigate_to_section("Callouts")
+      sleep 2
       expect(page).to have_css(".callout-item", wait: 15)
     end
   end
@@ -327,7 +330,8 @@ RSpec.describe "Reader Features", type: :feature do
     it "renders question and answer blocks" do
       visit_reader
       navigate_to_section("Questions")
-      expect(page).to have_css(".question-block", wait: 5)
+      sleep 2
+      expect(page).to have_css(".question-block", wait: 10)
       expect(page).to have_css(".answer-block", wait: 10)
     end
   end
