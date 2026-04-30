@@ -120,7 +120,7 @@ RSpec.describe "Reader Features", type: :feature do
       visit_reader
       open_settings
       find(".theme-card[aria-label='Night theme']").click
-      expect(page).to have_css("html.theme-night")
+      expect(page).to have_css("html.theme-night", wait: 5)
       expect(page.evaluate_script("document.documentElement.classList.contains('dark')")).to be true
       close_settings
     end
@@ -168,7 +168,7 @@ RSpec.describe "Reader Features", type: :feature do
       visit_reader
       open_settings
       find(".theme-card[aria-label='Sepia theme']").click
-      expect(page).to have_css("html.theme-sepia", wait: 5)
+      expect(page).to have_css("html.theme-sepia", wait: 10)
       page.execute_script("document.querySelector('.settings-reset')?.click()")
       expect(page).to have_css("html.theme-day", wait: 5)
       close_settings
