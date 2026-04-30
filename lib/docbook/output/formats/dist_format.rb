@@ -17,6 +17,7 @@ module Docbook
           html = html_boilerplate(title: title, body_content: '<div id="docbook-app"></div>',
                                   script_data: data_script)
           File.write(File.join(dir, "index.html"), html)
+          copy_service_worker(dir)
           dir
         end
 
@@ -49,6 +50,7 @@ module Docbook
           html = html_boilerplate(title: title, body_content: '<div id="docbook-app"></div>',
                                   script_data: data_script)
           File.write(File.join(dir, "index.html"), html)
+          copy_service_worker(dir)
           dir
         end
 

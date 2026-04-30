@@ -21,7 +21,8 @@ module Docbook
         "part" => 1, "chapter" => 2, "section" => 3,
         "appendix" => 2, "preface" => 2, "dedication" => 2,
         "reference" => 1, "refentry" => 2, "refsection" => 3,
-        "acknowledgements" => 2, "colophon" => 2
+        "acknowledgements" => 2, "colophon" => 2,
+        "article" => 1, "topic" => 2, "set" => 1
       }.freeze
 
       ADMONITION_TITLES = {
@@ -29,6 +30,31 @@ module Docbook
         "tip" => "Tip", "caution" => "Caution",
         "important" => "Important", "danger" => "Danger"
       }.freeze
+
+      # Extension point: register custom node renderers.
+      # Custom renderers are checked before built-in dispatch.
+      #
+      # Usage:
+      #   HtmlRenderer.register_node_renderer("custom_block",
+      #     ->(node, renderer) { "<div>#{renderer.render_children(node)}</div>" })
+      #
+      class << self
+        def custom_node_renderers
+          @custom_node_renderers ||= {}
+        end
+
+        def register_node_renderer(type, handler)
+          custom_node_renderers[type] = handler
+        end
+
+        def custom_mark_renderers
+          @custom_mark_renderers ||= {}
+        end
+
+        def register_mark_renderer(mark_type, handler)
+          custom_mark_renderers[mark_type] = handler
+        end
+      end
 
       def initialize(guide)
         @guide = guide
@@ -50,6 +76,12 @@ module Docbook
 
       def render_node(node)
         type = node["type"]
+
+        # Check custom renderers first (OCP extension point)
+        custom = self.class.custom_node_renderers[type]
+        return custom.call(node, self) if custom
+
+        # Built-in dispatch
         method = :"render_#{type}"
         return send(method, node) if respond_to?(method, true)
 
@@ -81,6 +113,9 @@ module Docbook
       def render_colophon(node) = render_section_like(node)
       def render_reference(node) = render_section_like(node)
       def render_refentry(node) = render_section_like(node)
+      def render_article(node) = render_section_like(node)
+      def render_topic(node) = render_section_like(node)
+      def render_set(node) = render_section_like(node)
 
       def render_section_like(node)
         type = node["type"]
@@ -487,7 +522,13 @@ module Docbook
       end
 
       def apply_mark(text, mark)
-        case mark["type"]
+        mark_type = mark["type"]
+
+        # Check custom mark renderers first (OCP extension point)
+        custom = self.class.custom_mark_renderers[mark_type]
+        return custom.call(text, mark) if custom
+
+        case mark_type
         when "emphasis"  then "<em>#{text}</em>"
         when "strong"    then "<strong>#{text}</strong>"
         when "italic"    then "<i>#{text}</i>"
@@ -512,6 +553,7 @@ module Docbook
           %(<a href="##{e(bibref)}">#{text}</a>)
         when "subscript"    then "<sub>#{text}</sub>"
         when "superscript"  then "<sup>#{text}</sup>"
+        when "tag"          then %(<span class="tag">#{text}</span>)
         else text
         end
       end

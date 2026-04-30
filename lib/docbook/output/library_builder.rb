@@ -24,6 +24,7 @@ module Docbook
           Pipeline.new(
             xml_path: book.source,
             image_strategy: @options[:image_strategy] || :data_url,
+            image_search_dirs: @options[:image_search_dirs],
             sort_glossary: @options[:sort_glossary] || false,
             title: book.title || File.basename(book.source, ".*"),
           ).process
