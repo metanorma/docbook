@@ -46,7 +46,7 @@ module Docbook
           roots.concat(Array(@document.section))
           roots
         else
-          Array(@document.elements)
+          [@document]
         end
       end
 
