@@ -3,6 +3,8 @@
     <Transition name="search-backdrop">
       <div
         v-if="uiStore.searchOpen"
+        role="dialog"
+        aria-label="Search"
         class="search-backdrop"
         @click.self="uiStore.closeSearch"
       >

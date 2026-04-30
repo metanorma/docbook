@@ -85,8 +85,8 @@ module Docbook
 
         # -- Individual inline element handlers --
 
-        def self.emphasis(el, context:)
-          role = el.role
+        def self.emphasis(element, context:)
+          role = element.role
           mark = if %w[bold strong].include?(role)
                    Mark::Strong.new
                  elsif role == "italic"
@@ -94,25 +94,25 @@ module Docbook
                  else
                    Mark::Emphasis.new
                  end
-          text = el.content.join
+          text = element.content.join
           context.text_node(text, marks: [mark])
         end
 
-        def self.code(el, context:)
-          role = code_role(el)
-          text = context.extract_text(el)
+        def self.code(element, context:)
+          role = code_role(element)
+          text = context.extract_text(element)
           context.text_node(text, marks: [Mark::Code.new(role: role)])
         end
 
-        def self.link(el, context:)
+        def self.link(element, context:)
           xml_id_map = context.instance_variable_get(:@xml_id_map)
-          href = el.xlink_href&.to_s || (el.linkend ? "##{el.linkend}" : "#")
+          href = element.xlink_href&.to_s || (element.linkend ? "##{element.linkend}" : "#")
 
           # Handle self-closing links with no content
-          if el.content.join.empty? && !has_inline_children(el)
+          if element.content.join.empty? && !has_inline_children?(element)
             # For linkend references, resolve the title from xml_id_map
-            if el.linkend
-              text = xml_id_map[el.linkend.to_s] || el.linkend.to_s
+            if element.linkend
+              text = xml_id_map[element.linkend.to_s] || element.linkend.to_s
             else
               uri = begin
                 URI(href)
@@ -128,11 +128,11 @@ module Docbook
                      end
             end
           else
-            text = context.extract_text(el)
+            text = context.extract_text(element)
           end
 
-          link_mark = if el.linkend
-                        Mark::Link.new(linkend: el.linkend)
+          link_mark = if element.linkend
+                        Mark::Link.new(linkend: element.linkend)
                       else
                         Mark::Link.new(href: href)
                       end
@@ -140,9 +140,9 @@ module Docbook
           context.text_node(text, marks: [link_mark])
         end
 
-        def self.xref(el, context:)
+        def self.xref(element, context:)
           xml_id_map = context.instance_variable_get(:@xml_id_map)
-          linkend = el.linkend.to_s
+          linkend = element.linkend.to_s
           resolved_title = xml_id_map[linkend] || linkend
           context.text_node(
             resolved_title,
@@ -151,11 +151,11 @@ module Docbook
           )
         end
 
-        def self.quote(el, context:)
+        def self.quote(element, context:)
           children = []
-          return children unless el.respond_to?(:each_mixed_content)
+          return children unless element.respond_to?(:each_mixed_content)
 
-          el.each_mixed_content do |node|
+          element.each_mixed_content do |node|
             case node
             when String
               text = node
@@ -183,33 +183,33 @@ module Docbook
           children
         end
 
-        def self.tag(el, context:)
-          tag_name = el.content.join
+        def self.tag(element, context:)
+          tag_name = element.content.join
           text = "<#{tag_name}>"
           context.text_node(text, marks: [Mark::Code.new(role: "tag")])
         end
 
-        def self.biblioref(el, context:)
-          linkend = el.linkend.to_s
-          text = el.content.join.empty? ? linkend : el.content.join
+        def self.biblioref(element, context:)
+          linkend = element.linkend.to_s
+          text = element.content.join.empty? ? linkend : element.content.join
           context.text_node(text,
                             marks: [Mark::Citation.new(bibref: linkend)])
         end
 
-        def self.firstterm(el, context:)
-          text = context.extract_text(el)
+        def self.firstterm(element, context:)
+          text = context.extract_text(element)
           context.text_node(text, marks: [Mark::Emphasis.new])
         end
 
-        def self.citetitle(el, context:)
-          text = el.content.join
+        def self.citetitle(element, context:)
+          text = element.content.join
           context.text_node(text,
-                            marks: [Mark::Citation.new(bibref: el.href)])
+                            marks: [Mark::Citation.new(bibref: element.href)])
         end
 
-        def self.productname(el, context:)
-          text = el.content.join
-          suffix = case el.class_name
+        def self.productname(element, context:)
+          text = element.content.join
+          suffix = case element.class_name
                    when "trade" then "\u2122"
                    when "registered" then "\u00AE"
                    when "copyright" then "\u00A9"
@@ -217,18 +217,17 @@ module Docbook
                    else ""
                    end
           full_text = text + suffix
-          if el.href
+          if element.href
             context.text_node(full_text,
-                              marks: [Mark::Link.new(attrs: { href: el.href })])
+                              marks: [Mark::Link.new(attrs: { href: element.href })])
           else
             context.text_node(full_text, marks: [Mark::Strong.new])
           end
         end
 
-        def self.trademark(el, context:)
-          text = el.content.join
-          suffix = case el.class_name
-                   when "trade" then "\u2122"
+        def self.trademark(element, context:)
+          text = element.content.join
+          suffix = case element.class_name
                    when "registered" then "\u00AE"
                    when "copyright" then "\u00A9"
                    when "service" then "\u2120"
@@ -237,41 +236,41 @@ module Docbook
           context.text_node(text + suffix)
         end
 
-        def self.email(el, context:)
-          text = el.content.join
+        def self.email(element, context:)
+          text = element.content.join
           context.text_node(text,
                             marks: [Mark::Link.new(href: "mailto:#{text}")])
         end
 
-        def self.uri(el, context:)
-          text = el.content.join
+        def self.uri(element, context:)
+          text = element.content.join
           context.text_node(text, marks: [Mark::Link.new(href: text)])
         end
 
-        def self.subscript(el, context:)
-          text = el.content.join
+        def self.subscript(element, context:)
+          text = element.content.join
           context.text_node(text, marks: [Mark.new(type: "subscript")])
         end
 
-        def self.superscript(el, context:)
-          text = el.content.join
+        def self.superscript(element, context:)
+          text = element.content.join
           context.text_node(text, marks: [Mark.new(type: "superscript")])
         end
 
-        def self.keycap(el, context:)
-          text = el.content.join
+        def self.keycap(element, context:)
+          text = element.content.join
           context.text_node(text,
                             marks: [Mark::Code.new(role: "keycap")])
         end
 
-        def self.plain_text(el, context:)
-          text = el.content.join
+        def self.plain_text(element, context:)
+          text = element.content.join
           context.text_node(text)
         end
 
-        def self.citerefentry(el, context:)
-          title = el.refentrytitle&.content&.join
-          manvol = el.manvolnum&.content&.join
+        def self.citerefentry(element, context:)
+          title = element.refentrytitle&.content&.join
+          manvol = element.manvolnum&.content&.join
           text = manvol.empty? ? title : "#{title}(#{manvol})"
           context.text_node(text)
         end
@@ -279,17 +278,17 @@ module Docbook
         class << self
           private
 
-          def has_inline_children(el)
-            return false unless el.respond_to?(:each_mixed_content)
+          def has_inline_children?(element)
+            return false unless element.respond_to?(:each_mixed_content)
 
-            el.each_mixed_content do |node|
+            element.each_mixed_content do |node|
               return true if node.is_a?(Lutaml::Model::Serializable)
             end
             false
           end
 
-          def code_role(el)
-            case el
+          def code_role(element)
+            case element
             when Docbook::Elements::Literal then "literal"
             when Docbook::Elements::Code then "code"
             when Docbook::Elements::UserInput then "userinput"
@@ -312,7 +311,7 @@ module Docbook
             when Docbook::Elements::Prompt then "prompt"
             when Docbook::Elements::BuildTarget then "buildtarget"
             when Docbook::Elements::Enumvalue then "enumvalue"
-            else "literal"
+            else element.class.name.split("::").last.downcase
             end
           end
         end
