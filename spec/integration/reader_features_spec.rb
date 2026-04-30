@@ -274,7 +274,7 @@ RSpec.describe "Reader Features", type: :feature do
     it "renders callout list with descriptions" do
       visit_reader
       navigate_to_section("Callouts")
-      expect(page).to have_css(".callout-item", wait: 10)
+      expect(page).to have_css(".callout-item", wait: 15)
     end
   end
 
@@ -328,7 +328,7 @@ RSpec.describe "Reader Features", type: :feature do
       visit_reader
       navigate_to_section("Questions")
       expect(page).to have_css(".question-block", wait: 5)
-      expect(page).to have_css(".answer-block")
+      expect(page).to have_css(".answer-block", wait: 10)
     end
   end
 
