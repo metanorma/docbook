@@ -14,7 +14,7 @@ Key features:
 * **DocBook 5 parsing** -- Full element support via lutaml-model
 * **XInclude resolution** -- Transparent handling of multi-file documents
 * **DocbookMirror JSON** -- ProseMirror-compatible structured representation
-* **Output formats** -- Inline, DOM (SEO), distribution directory, and split-pages modes
+* **Output formats** -- Inline, DOM (SEO), distribution directory, split-pages, and chunked (on-demand loading) modes
 * **Library support** -- Multi-book collections with covers and manifests
 
 == Installation
@@ -84,7 +84,7 @@ require 'docbook'
 Docbook::Output::Builder.new(
   xml_path: 'guide.xml',
   output_path: 'guide.html',
-  format: :inline  # or :dom, :dist, :paged
+  format: :inline  # or :dom, :dist, :paged, :chunked
 ).build
 
 # Build a multi-book library
@@ -137,7 +137,7 @@ Options:
 
 * `-o, --output FILE` -- Output HTML file path (default: `<input>.html` or `demo.html`)
 * `--demo` -- Use the bundled DocBook sample as input (accepts name: `xslTNG` or `model-flow`)
-* `--format FORMAT` -- Output format: `inline` (default), `dom`, `dist`, or `paged`
+* `--format FORMAT` -- Output format: `inline` (default), `dom`, `dist`, `paged`, or `chunked`
 * `--image-search-dir DIR` -- Directories to search for images (default: XML file directory)
 * `--image-strategy STRATEGY` -- Image handling: `data_url` (default), `file_url`, or `relative`
 * `--title TITLE` -- Page title (default: derived from document)
@@ -162,6 +162,9 @@ $ docbook build book.xml --format dist -o /var/www/book/
 
 # Split into individual pages
 $ docbook build book.xml --format paged -o /var/www/book/
+
+# On-demand section loading (best for large books)
+$ docbook build book.xml --format chunked -o /var/www/book/
 
 # With custom image paths
 $ docbook build book.xml --image-search-dir media/ images/
@@ -251,7 +254,7 @@ doc = Docbook::Document.from_xml(resolved.to_xml)
 builder = Docbook::Output::Builder.new(
   xml_path: 'guide.xml',
   output_path: 'output/guide.html',
-  format: :inline,             # :inline, :dom, :dist, or :paged
+  format: :inline,             # :inline, :dom, :dist, :paged, or :chunked
   image_search_dirs: ['media/'],
   image_strategy: :data_url,   # :data_url, :file_url, or :relative
   title: "My Document"
@@ -285,12 +288,16 @@ File.write('guide.json', mirror.to_json)
 The interactive reader built by `docbook build` includes:
 
 Themes:: Day, Sepia, Night, OLED -- all driven by CSS custom properties
-Search:: Full-text search across headings and content (FlexSearch)
+Search:: Full-text search across headings and content (FlexSearch, lazy-loaded)
 TOC:: Collapsible hierarchical table of contents
 Breadcrumb:: Ancestor chain breadcrumb bar with collapsible chips
 Fonts:: Sans-serif (Inter) and serif (Merriweather) options
 Navigation:: Keyboard shortcuts (`/` for search, `Esc` to close)
 Print:: Clean print stylesheet
+Progressive load:: Chunked format with on-demand sections, IndexedDB caching, skeleton screens, and prefetch
+Mobile gestures:: Touch swipe from left edge opens sidebar
+Bookmarks:: Press `b` to bookmark any section
+Accessibility:: Reduced-motion support, focus-visible indicators, 44px touch targets
 
 == Building the frontend
 
@@ -362,7 +369,8 @@ After building, `docbook build` automatically includes the compiled assets.
 │  │  │  Output::Builder │  │  Output::       │  │  Output::        │  │  │
 │  │  │  Pipeline →      │  │  HtmlRenderer   │  │  Formats::*      │  │  │
 │  │  │  Format          │  │  (DOM/Paged)    │  │  Inline/Dom/     │  │  │
-│  │  │                  │  │                 │  │  Dist/Paged      │  │  │
+│  │  │                  │  │                 │  │  Dist/Paged/     │  │  │
+│  │  │                  │  │                 │  │  Chunked         │  │  │
 │  │  └────────┬─────────┘  └─────────────────┘  └──────────────────┘  │  │
 │  │           │                                                       │  │
 │  └───────────┼───────────────────────────────────────────────────────┘  │
@@ -424,7 +432,8 @@ After building, `docbook build` automatically includes the compiled assets.
 ┌────────────────────────────────────────────────────────────────────────┐
 │                    Interactive HTML Reader                             │
 │    Inline (single .html), DOM (pre-rendered), Dist (directory),       │
-│    Paged (split pages) -- all driven by Format strategy classes       │
+│    Paged (split pages), Chunked (on-demand sections)                  │
+│    -- all driven by Format strategy classes                            │
 └────────────────────────────────────────────────────────────────────────┘
 ----
 
@@ -432,7 +441,7 @@ CLI Commands:
 
 [source]
 ----
-  docbook build    [INPUT] [-o out.html]  →  Builder → Format (inline|dom|dist|paged)
+  docbook build    [INPUT] [-o out.html]  →  Builder → Format (inline|dom|dist|paged|chunked)
   docbook build    --demo                 →  Demo from bundled sample
   docbook library  DIRECTORY/manifest     →  Multi-book library
   docbook export   INPUT [-o out.json]    →  DocbookMirror JSON
@@ -453,8 +462,8 @@ Vue SPA::        Renders DocbookMirror JSON via MirrorRenderer and TextRenderer
                  components. The data is embedded as window.DOCBOOK_DATA.
 
 Builder/Formats::  The output layer. Pipeline processes XML into a guide hash,
-                   then a Format strategy class (Inline, Dom, Dist, Paged) packages
-                   it into the chosen output structure.
+                   then a Format strategy class (Inline, Dom, Dist, Paged, Chunked)
+                   packages it into the chosen output structure.
 
 == Contributing
 

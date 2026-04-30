@@ -7,7 +7,7 @@ nav_order: 6
 
 == Output Formats
 
-The docbook gem supports four output formats, selected via the `--format` option on `docbook build` and `docbook library` commands.
+The docbook gem supports five output formats, selected via the `--format` option on `docbook build` and `docbook library` commands.
 
 === inline (default)
 
@@ -74,15 +74,39 @@ $ docbook build book.xml --format paged -o my-book/
 #   ...
 ----
 
+=== chunked (on-demand sections)
+
+Directory with per-section JSON files and a manifest. Sections are loaded progressively as the reader scrolls.
+
+* Sections loaded on demand (fast initial page load)
+* IndexedDB caching for instant revisits
+* Requires HTTP server
+* Skeleton loading screens during fetch
+* Best for large documents on the web
+
+[source,bash]
+----
+$ docbook build book.xml --format chunked -o my-book/
+# Output:
+#   my-book/index.html
+#   my-book/manifest.json
+#   my-book/sections/ch-intro.json
+#   my-book/sections/ch-advanced.json
+#   ...
+----
+
+The manifest (`manifest.json`) contains document metadata, the table of contents, and a list of all section IDs. Each section file contains its content and links to the previous/next section for sequential navigation.
+
 === Format Comparison
 
-[cols="1,1,1,1,1"]
+[cols="1,1,1,1,1,1"]
 |===
-| | inline | dom | dist | paged
+| | inline | dom | dist | paged | chunked
 
 | Output
 | 1 file
 | 1 file
+| directory
 | directory
 | directory
 
@@ -91,10 +115,12 @@ $ docbook build book.xml --format paged -o my-book/
 | Yes
 | No
 | Yes
+| No
 
 | file://
 | Yes
 | Yes
+| No
 | No
 | No
 
@@ -103,12 +129,21 @@ $ docbook build book.xml --format paged -o my-book/
 | No
 | Yes
 | Yes
+| Yes
+
+| Client-side cache
+| No
+| No
+| No
+| No
+| Yes (IndexedDB)
 
 | Large books
 | Slow initial
 | Slow initial
 | Fast
 | Fast
+| Fastest initial
 |===
 
 === Ruby API
@@ -120,6 +155,6 @@ You can also select formats programmatically:
 Docbook::Output::Builder.new(
   xml_path: "book.xml",
   output_path: "output.html",
-  format: :inline,  # or :dom, :dist, :paged
+  format: :inline,  # or :dom, :dist, :paged, :chunked
 ).build
 ----

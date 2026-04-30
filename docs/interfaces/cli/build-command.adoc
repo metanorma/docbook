@@ -14,6 +14,7 @@ Build an interactive HTML reader from a DocBook XML file. The output format is c
 * `dom` -- Single HTML with pre-rendered content for SEO. Works offline.
 * `dist` -- Directory with external JSON files. Requires HTTP server.
 * `paged` -- Directory with per-chapter HTML pages. Requires HTTP server.
+* `chunked` -- Directory with per-section JSON files loaded on demand. Requires HTTP server.
 
 === Usage
 
@@ -39,7 +40,7 @@ $ docbook build --demo [options]
 | Option | Default | Description
 
 | `--output`, `-o` PATH | `<input>.html` or `demo.html` | Output file or directory path
-| `--format` FORMAT | `inline` | Output format: `inline`, `dom`, `dist`, `paged`
+| `--format` FORMAT | `inline` | Output format: `inline`, `dom`, `dist`, `paged`, `chunked`
 | `--demo` | _(off)_ | Build a bundled demo: `xslTNG` (default) or `model-flow`
 | `--xinclude` | `true` | Resolve XInclude elements before processing
 | `--image-search-dir` DIR | XML file directory | Directories to search for image files (accepts multiple values)
@@ -114,6 +115,21 @@ $ docbook build book.xml --image-strategy relative
 Built /path/to/book.html
 ----
 
+==== Chunked output (on-demand loading)
+
+[source,bash]
+----
+$ docbook build book.xml --format chunked -o /var/www/book/
+# Output:
+#   /var/www/book/index.html
+#   /var/www/book/manifest.json
+#   /var/www/book/sections/ch-intro.json
+#   /var/www/book/sections/ch-advanced.json
+#   ...
+----
+
+The chunked format splits the document into per-section JSON files. Sections are loaded on demand as the reader scrolls, with automatic caching in IndexedDB for instant revisits. This format is ideal for large documents hosted on a web server.
+
 ==== Custom title
 
 [source,bash]
@@ -153,6 +169,7 @@ The built HTML file is a complete interactive reader with:
 * **Themes** -- Day, Sepia, Night, and OLED themes with font options
 * **Breadcrumb** -- Ancestor chain navigation bar
 * **Content** -- All DocBook content rendered with proper typography
+* **Progressive loading** -- chunked format loads sections on demand with skeleton loading screens and IndexedDB caching
 
 The file works offline because all CSS, JavaScript, and (with `data_url` strategy) images are embedded.
 
