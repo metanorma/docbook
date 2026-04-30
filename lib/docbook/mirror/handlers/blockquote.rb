@@ -4,8 +4,8 @@ module Docbook
   module Mirror
     module Handlers
       class Blockquote
-        def self.call(el, context:)
-          content = context.extract_content(el)
+        def self.call(element, context:)
+          content = context.extract_content(element)
           return nil if content.empty?
 
           Node::Blockquote.new(content: content)

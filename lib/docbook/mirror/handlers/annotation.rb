@@ -4,13 +4,13 @@ module Docbook
   module Mirror
     module Handlers
       class Annotation
-        def self.call(el, context:)
-          attrs = { xml_id: el.xml_id }.compact
+        def self.call(element, context:)
+          attrs = { xml_id: element.xml_id }.compact
           content = []
-          if el.respond_to?(:para) && el.para&.any?
-            el.para.filter_map { |p| context.paragraph_handler(p) }.each { |n| content << n }
+          if element.respond_to?(:para) && element.para&.any?
+            element.para.filter_map { |p| context.paragraph_handler(p) }.each { |n| content << n }
           else
-            text = context.extract_text(el)
+            text = context.extract_text(element)
             content << context.text_node(text) unless text.empty?
           end
           return nil if content.empty?

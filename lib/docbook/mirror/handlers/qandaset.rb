@@ -4,12 +4,12 @@ module Docbook
   module Mirror
     module Handlers
       class QandASet
-        def self.call(el, context:)
+        def self.call(element, context:)
           attrs = {
-            xml_id: el.xml_id,
-            title: el.title&.content&.join,
+            xml_id: element.xml_id,
+            title: element.title&.content&.join,
           }.compact
-          entries = Array(el.qandaentry).filter_map { |e| qandaentry(e, context) }
+          entries = Array(element.qandaentry).filter_map { |e| qandaentry(e, context) }
           return nil if entries.empty?
 
           Node.new(type: "qandaset", attrs: attrs, content: entries)
@@ -18,14 +18,14 @@ module Docbook
         class << self
           private
 
-          def qandaentry(el, context)
-            attrs = { xml_id: el.xml_id }.compact
+          def qandaentry(element, context)
+            attrs = { xml_id: element.xml_id }.compact
             content = []
-            if el.question
-              q_content = context.extract_content(el.question)
+            if element.question
+              q_content = context.extract_content(element.question)
               content << Node.new(type: "question", attrs: {}, content: q_content) unless q_content.empty?
             end
-            Array(el.answer).each do |a|
+            Array(element.answer).each do |a|
               a_content = context.extract_content(a)
               content << Node.new(type: "answer", attrs: {}, content: a_content) unless a_content.empty?
             end

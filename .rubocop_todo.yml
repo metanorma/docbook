@@ -37,6 +37,8 @@ Lint/ConstantDefinitionInBlock:
     - 'spec/mirror/block_elements_spec.rb'
     - 'spec/mirror/inline_elements_spec.rb'
     - 'spec/mirror/structure_spec.rb'
+    - 'spec/docbook/mirror/handler_registry_spec.rb'
+    - 'spec/docbook/output/rendering_contract_spec.rb'
 
 # Offense count: 13
 # Configuration parameters: IgnoreLiteralBranches, IgnoreConstantBranches, IgnoreDuplicateElseBranch.
@@ -128,6 +130,7 @@ RSpec/DescribeClass:
     - 'spec/mirror/structure_spec.rb'
     - 'spec/roundtrip/oasis_spec.rb'
     - 'spec/roundtrip/xsltng_spec.rb'
+    - 'spec/docbook/output/rendering_contract_spec.rb'
 
 # Offense count: 60
 # Configuration parameters: CountAsOne.
@@ -146,6 +149,8 @@ RSpec/LeakyConstantDeclaration:
     - 'spec/mirror/block_elements_spec.rb'
     - 'spec/mirror/inline_elements_spec.rb'
     - 'spec/mirror/structure_spec.rb'
+    - 'spec/docbook/mirror/handler_registry_spec.rb'
+    - 'spec/docbook/output/rendering_contract_spec.rb'
 
 # Offense count: 2
 RSpec/LeakyLocalVariable:
@@ -185,6 +190,8 @@ RSpec/SpecFilePathFormat:
     - 'spec/roundtrip/examples_spec.rb'
     - 'spec/roundtrip/guide_spec.rb'
     - 'spec/xinclude_resolver_spec.rb'
+    - 'spec/docbook/output/rendering_contract_spec.rb'
+    - 'spec/docbook/output/html_renderer_extensions_spec.rb'
 
 # Offense count: 8
 Style/ItAssignment:
@@ -211,3 +218,25 @@ Style/SafeNavigationChainLength:
     - 'lib/docbook/output/index_generator.rb'
     - 'lib/docbook/services/document_builder.rb'
     - 'lib/docbook/services/index_generator.rb'
+
+# Offense count: 4
+# Configuration parameters: IgnoreEmptyMethods, IgnoreNotImplementedMethods.
+Lint/UnusedMethodArgument:
+  Exclude:
+    - 'lib/docbook/mirror/handlers/index.rb'
+    - 'lib/docbook/mirror/handlers/media.rb'
+    - 'lib/docbook/mirror/handlers/reference.rb'
+    - 'lib/docbook/mirror/handlers/table.rb'
+
+# Offense count: 1
+RSpec/DescribeMethod:
+  Exclude:
+    - 'spec/docbook/output/html_renderer_extensions_spec.rb'
+
+# Offense count: 4
+# Configuration parameters: IgnoreNameless, SymbolName.
+RSpec/VerifiedDoubles:
+  Exclude:
+    - 'spec/docbook/mirror/handler_registry_spec.rb'
+    - 'spec/docbook/output/html_renderer_extensions_spec.rb'
+    - 'spec/docbook/output/rendering_contract_spec.rb'

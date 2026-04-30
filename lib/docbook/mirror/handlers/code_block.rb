@@ -4,12 +4,12 @@ module Docbook
   module Mirror
     module Handlers
       class CodeBlock
-        def self.call(el, context:, language: nil)
-          language ||= el.language if el.respond_to?(:language)
+        def self.call(element, context:, language: nil)
+          language ||= element.language if element.respond_to?(:language)
 
           # Check for <co> callout markers in the code block
-          co_markers = context.extract_co_markers(el)
-          text = context.extract_text_with_callouts(el, co_markers)
+          co_markers = context.extract_co_markers(element)
+          text = context.extract_text_with_callouts(element, co_markers)
           return nil if text.empty?
 
           attrs = { language: language }.compact

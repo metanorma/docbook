@@ -95,11 +95,11 @@ module Docbook
         Node::Text.new(text: text, marks: marks)
       end
 
-      def extract_text(el)
-        return el.content.join unless el.respond_to?(:each_mixed_content)
+      def extract_text(element)
+        return element.content.join unless element.respond_to?(:each_mixed_content)
 
         texts = []
-        el.each_mixed_content do |node|
+        element.each_mixed_content do |node|
           if node.is_a?(String)
             texts << node
           elsif node.respond_to?(:content)
@@ -109,12 +109,12 @@ module Docbook
         texts.join
       end
 
-      def extract_co_markers(el)
+      def extract_co_markers(element)
         markers = []
         counter = 0
-        return markers unless el.respond_to?(:each_mixed_content)
+        return markers unless element.respond_to?(:each_mixed_content)
 
-        el.each_mixed_content do |node|
+        element.each_mixed_content do |node|
           next if node.is_a?(String)
           next unless node.is_a?(Docbook::Elements::Co)
 
@@ -126,12 +126,12 @@ module Docbook
         markers
       end
 
-      def extract_text_with_callouts(el, co_markers)
-        return el.content.join unless el.respond_to?(:each_mixed_content)
+      def extract_text_with_callouts(element, co_markers)
+        return element.content.join unless element.respond_to?(:each_mixed_content)
 
         marker_idx = 0
         texts = []
-        el.each_mixed_content do |node|
+        element.each_mixed_content do |node|
           if node.is_a?(String)
             texts << node
           elsif node.is_a?(Docbook::Elements::Co)
@@ -145,37 +145,37 @@ module Docbook
         texts.join
       end
 
-      def link_node(el)
-        Handlers::Inline.link(el, context: self)
+      def link_node(element)
+        Handlers::Inline.link(element, context: self)
       end
 
-      def citetitle_node(el)
-        Handlers::Inline.citetitle(el, context: self)
+      def citetitle_node(element)
+        Handlers::Inline.citetitle(element, context: self)
       end
 
       # =========================================
       # Footnote Management
       # =========================================
 
-      def register_footnote(el)
+      def register_footnote(element)
         @footnote_counter += 1
         num = @footnote_counter
         fn_id = "fn-#{num}"
         ref_id = "fn-ref-#{num}"
 
-        fn_content = if el.respond_to?(:para) && el.para.any?
-                        el.para.filter_map { |p| paragraph_handler(p) }
-                     elsif el.respond_to?(:each_mixed_content)
-                        process_inline_content(el)
+        fn_content = if element.respond_to?(:para) && element.para.any?
+                       element.para.filter_map { |p| paragraph_handler(p) }
+                     elsif element.respond_to?(:each_mixed_content)
+                       process_inline_content(element)
                      else
-                        [text_node(extract_text(el))]
+                       [text_node(extract_text(element))]
                      end
 
         @footnotes << {
           id: fn_id,
           ref_id: ref_id,
           number: num,
-          xml_id: el.xml_id,
+          xml_id: element.xml_id,
           content: fn_content,
         }
 
@@ -185,8 +185,8 @@ module Docbook
         )
       end
 
-      def resolve_footnoteref(el)
-        linkend = el.linkend if el.respond_to?(:linkend)
+      def resolve_footnoteref(element)
+        linkend = element.linkend if element.respond_to?(:linkend)
         ref_fn = @footnotes.find { |fn| fn[:xml_id] == linkend } if linkend
 
         if ref_fn
@@ -238,10 +238,10 @@ module Docbook
                 when Docbook::Elements::RefEntry
                   resolve_refentry_title(node)
                 when Docbook::Elements::Bibliomixed
-                  node.abbrev&.content&.join || node.citetitle&.first&.content&.join
+                  node.abbrev&.content&.join || node.citetitle&.first&.then { |ct| ct&.content&.join }
                 else
                   t = node.title&.content&.join if node.respond_to?(:title)
-                  t || (node.info&.title&.content&.join if node.respond_to?(:info))
+                  t || (node.info&.title&.then { |ti| ti&.content&.join } if node.respond_to?(:info))
                 end
         flatten_title(title)
       end

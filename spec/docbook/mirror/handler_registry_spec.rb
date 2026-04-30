@@ -5,13 +5,13 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
 
   describe "#register and #entry_for" do
     it "registers and finds a handler" do
-      handler = ->(el, ctx) { "handled" }
+      handler = ->(_el, _ctx) { "handled" }
       registry.register(Docbook::Elements::Para, handler)
 
       entry = registry.entry_for(Docbook::Elements::Para.new)
       expect(entry.handler).to eq(handler)
       expect(entry.method_name).to eq(:call)
-      expect(entry.concat).to eq(false)
+      expect(entry.concat).to be(false)
     end
 
     it "returns nil for unregistered elements" do
@@ -32,15 +32,18 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
 
   describe "#handle" do
     it "invokes a Proc handler" do
-      registry.register(Docbook::Elements::Para, ->(el, ctx) { "result" })
+      registry.register(Docbook::Elements::Para, ->(_el, _ctx) { "result" })
       result, concat = registry.handle(Docbook::Elements::Para.new, context: double("ctx"))
       expect(result).to eq("result")
-      expect(concat).to eq(false)
+      expect(concat).to be(false)
     end
 
     it "passes element and context to Proc handlers" do
       received = nil
-      registry.register(Docbook::Elements::Para, ->(el, ctx) { received = el; "ok" })
+      registry.register(Docbook::Elements::Para, ->(el, _ctx) {
+        received = el
+        "ok"
+      })
       el = Docbook::Elements::Para.new
       registry.handle(el, context: :test_ctx)
       expect(received).to eq(el)
@@ -48,10 +51,10 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
 
     it "supports concat flag" do
       registry.register(Docbook::Elements::RefNamediv,
-                        ->(el, ctx) { ["a", "b"] }, concat: true)
+                        ->(_el, _ctx) { ["a", "b"] }, concat: true)
       result, concat = registry.handle(Docbook::Elements::RefNamediv.new, context: double("ctx"))
       expect(result).to eq(["a", "b"])
-      expect(concat).to eq(true)
+      expect(concat).to be(true)
     end
 
     it "returns nil for unregistered elements" do
@@ -100,7 +103,7 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
     it "registers RefNamediv with concat: true" do
       el = Docbook::Elements::RefNamediv.new
       entry = default.entry_for(el)
-      expect(entry.concat).to eq(true)
+      expect(entry.concat).to be(true)
     end
 
     it "registers Screen with language: text" do
@@ -113,7 +116,7 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
       custom_registry = Docbook::Mirror.default_registry
       custom_registry.register(
         Docbook::Elements::Remark,
-        ->(_el, _ctx) { Docbook::Mirror::Node.new(type: "custom") }
+        ->(_el, _ctx) { Docbook::Mirror::Node.new(type: "custom") },
       )
       el = Docbook::Elements::Remark.new
       result, _concat = custom_registry.handle(el, context: double("ctx"))

@@ -55,8 +55,8 @@ RSpec.describe "Ruby/JS rendering contract" do
       end
 
       expect(missing).to be_empty,
-        "HtmlRenderer missing render methods for: #{missing.join(', ')}. " \
-        "Add render_#{missing.first} or update the contract."
+                         "HtmlRenderer missing render methods for: #{missing.join(", ")}. " \
+                         "Add render_#{missing.first} or update the contract."
     end
 
     it "does not have render methods for types not in the contract" do
@@ -70,8 +70,8 @@ RSpec.describe "Ruby/JS rendering contract" do
 
       extra = methods - CONTRACT_BLOCK_TYPES - CONTRACT_SECTION_TYPES - allowed_extra
       expect(extra).to be_empty,
-        "HtmlRenderer has render methods for unregistered types: #{extra.join(', ')}. " \
-        "Either add them to the contract or remove the methods."
+                       "HtmlRenderer has render methods for unregistered types: #{extra.join(", ")}. " \
+                       "Either add them to the contract or remove the methods."
     end
   end
 
@@ -84,7 +84,7 @@ RSpec.describe "Ruby/JS rendering contract" do
       end
 
       expect(missing).to be_empty,
-        "HtmlRenderer missing render methods for section types: #{missing.join(', ')}"
+                         "HtmlRenderer missing render methods for section types: #{missing.join(", ")}"
     end
   end
 
@@ -98,14 +98,14 @@ RSpec.describe "Ruby/JS rendering contract" do
 
       missing = CONTRACT_ADMONITION_TYPES.reject { |t| titles.key?(t) }
       expect(missing).to be_empty,
-        "ADMONITION_TITLES missing entries for: #{missing.join(', ')}"
+                         "ADMONITION_TITLES missing entries for: #{missing.join(", ")}"
     end
 
     it "does not define extra admonition types beyond the contract" do
       titles = Docbook::Output::HtmlRenderer::ADMONITION_TITLES
       extra = titles.keys - CONTRACT_ADMONITION_TYPES
       expect(extra).to be_empty,
-        "ADMONITION_TITLES has extra types: #{extra.join(', ')}. Update the contract."
+                       "ADMONITION_TITLES has extra types: #{extra.join(", ")}. Update the contract."
     end
   end
 
@@ -175,7 +175,7 @@ RSpec.describe "Ruby/JS rendering contract" do
 
         result = renderer.send(:apply_mark, "text", mark)
         expect(result).not_to eq("text"),
-          "apply_mark for '#{mark_type}' returned unmodified text (unhandled mark type)"
+                              "apply_mark for '#{mark_type}' returned unmodified text (unhandled mark type)"
       end
     end
   end

@@ -544,7 +544,12 @@ module Docbook
         when "function" then Docbook::Elements::Function
         when "parameter" then Docbook::Elements::Parameter
         when "replaceable" then Docbook::Elements::Replaceable
-        else Docbook::Elements::Literal
+        else
+          begin
+            Docbook::Elements.const_get(role.to_s.split("_").map(&:capitalize).join)
+          rescue StandardError
+            Docbook::Elements::Literal
+          end
         end
       end
 

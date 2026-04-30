@@ -4,12 +4,12 @@ module Docbook
   module Mirror
     module Handlers
       class Footnote
-        def self.call(el, context:)
-          context.register_footnote(el)
+        def self.call(element, context:)
+          context.register_footnote(element)
         end
 
-        def self.ref(el, context:)
-          context.resolve_footnoteref(el)
+        def self.ref(element, context:)
+          context.resolve_footnoteref(element)
         end
       end
     end

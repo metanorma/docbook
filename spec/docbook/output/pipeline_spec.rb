@@ -78,7 +78,7 @@ RSpec.describe Docbook::Output::Pipeline do
       steps.insert(5, custom_step)
 
       guide = described_class.new(xml_path: xml_path, steps: steps).process
-      expect(guide["custom_marker"]).to eq(true)
+      expect(guide["custom_marker"]).to be(true)
     end
 
     it "allows reordering steps" do

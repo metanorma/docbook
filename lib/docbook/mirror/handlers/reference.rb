@@ -4,29 +4,29 @@ module Docbook
   module Mirror
     module Handlers
       class Reference
-        def self.reference(el, context:)
+        def self.reference(element, context:)
           attrs = {
-            xml_id: el.xml_id || "elem-#{el.object_id}",
-            title: el.title&.content&.join || el.info&.title&.content&.join,
+            xml_id: element.xml_id || "elem-#{element.object_id}",
+            title: element.title&.content&.join || element.info&.title&.then { |t| t&.content&.join },
           }.compact
 
           content = []
 
           # refentry is a mapped attribute, not mixed content
-          if el.respond_to?(:refentry)
-            el.refentry.each do |re|
+          if element.respond_to?(:refentry)
+            element.refentry.each do |re|
               entry = refentry(re, context: context)
               content << entry if entry
             end
           end
 
-          content.concat(context.extract_content(el))
+          content.concat(context.extract_content(element))
           Node::Reference.new(attrs: attrs, content: content)
         end
 
-        def self.refentry(el, context:)
-          title = context.resolve_refentry_title(el)
-          id = context.refentry_id(el)
+        def self.refentry(element, context:)
+          title = context.resolve_refentry_title(element)
+          id = context.refentry_id(element)
 
           attrs = {
             xml_id: id,
@@ -36,9 +36,9 @@ module Docbook
           content = []
 
           # Build synopsis from refmeta
-          if el.refmeta
-            if el.refmeta.fieldsynopsis && !el.refmeta.fieldsynopsis.empty?
-              fs = el.refmeta.fieldsynopsis.first
+          if element.refmeta
+            if element.refmeta.fieldsynopsis && !element.refmeta.fieldsynopsis.empty?
+              fs = element.refmeta.fieldsynopsis.first
               parts = []
               if fs.type && !fs.type.content.join.empty?
                 parts << Node::Text.new(
@@ -63,13 +63,13 @@ module Docbook
                   content: parts,
                 )
               end
-            elsif el.refmeta.refentrytitle
+            elsif element.refmeta.refentrytitle
               synopsis_parts = []
-              reftitle = el.refmeta.refentrytitle.content.join
-              manvol = el.refmeta.manvolnum
+              reftitle = element.refmeta.refentrytitle.content.join
+              manvol = element.refmeta.manvolnum
               synopsis_parts << "#{reftitle}(#{manvol})" if reftitle && manvol
               synopsis_parts << reftitle.to_s if reftitle && !manvol
-              Array(el.refmeta.refmiscinfo).each do |info|
+              Array(element.refmeta.refmiscinfo).each do |info|
                 synopsis_parts << info.content.join if info.content.any?
               end
               unless synopsis_parts.empty?
@@ -84,19 +84,19 @@ module Docbook
           end
 
           # refnamediv is a mapped attribute, not mixed content — process explicitly
-          if el.respond_to?(:refnamediv) && el.refnamediv
-            content.concat(refnamediv(el.refnamediv, context: context))
+          if element.respond_to?(:refnamediv) && element.refnamediv
+            content.concat(refnamediv(element.refnamediv, context: context))
           end
 
-          content.concat(context.extract_content(el))
+          content.concat(context.extract_content(element))
           Node::RefEntry.new(attrs: attrs, content: content)
         end
 
-        def self.refnamediv(el, context:)
+        def self.refnamediv(element, context:)
           content = []
 
           # Render refnames (e.g. "$v:as-json")
-          names = Array(el.refname).filter_map { |r| r.content.join }
+          names = Array(element.refname).filter_map { |r| r.content.join }
           unless names.empty?
             content << Node::Paragraph.new(
               content: [Node::Text.new(
@@ -107,19 +107,19 @@ module Docbook
           end
 
           # Render refpurpose
-          if el.refpurpose&.content&.any?
+          if element.refpurpose&.content&.any?
             content << Node::Paragraph.new(
               attrs: { class: "refpurpose" },
-              content: [Node::Text.new(text: el.refpurpose.content.join)],
+              content: [Node::Text.new(text: element.refpurpose.content.join)],
             )
           end
 
           # Render refclass as a badge
-          if el.refclass&.content&.any?
+          if element.refclass&.content&.any?
             content << Node::Paragraph.new(
               attrs: { class: "refclass" },
               content: [Node::Text.new(
-                text: el.refclass.content.join,
+                text: element.refclass.content.join,
                 marks: [Mark::Code.new(role: "refclass")],
               )],
             )
@@ -128,12 +128,12 @@ module Docbook
           content
         end
 
-        def self.refsection(el, context:)
-          title = el.title&.content&.join
-          id = el.xml_id || "elem-#{el.object_id}"
+        def self.refsection(element, context:)
+          title = element.title&.content&.join
+          id = element.xml_id || "elem-#{element.object_id}"
           attrs = { xml_id: id, title: title }.compact
 
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           Node::RefSection.new(attrs: attrs, content: content)
         end
       end

@@ -5,16 +5,16 @@ module Docbook
     module Handlers
       class Media
         # Figure and InformalFigure
-        def self.figure(el, context:)
-          title_text = el.title&.content&.join if el.respond_to?(:title)
-          xml_id = el.xml_id
+        def self.figure(element, context:)
+          title_text = element.title&.content&.join if element.respond_to?(:title)
+          xml_id = element.xml_id
 
           # Check for programlisting/screen content first (code figures)
           code_el = nil
-          if el.respond_to?(:programlisting) && el.programlisting
-            code_el = el.programlisting
-          elsif el.respond_to?(:screen) && el.screen
-            code_el = el.screen
+          if element.respond_to?(:programlisting) && element.programlisting
+            code_el = element.programlisting
+          elsif element.respond_to?(:screen) && element.screen
+            code_el = element.screen
           end
 
           if code_el
@@ -30,10 +30,10 @@ module Docbook
           # Figure has mediaobject (collection), InformalFigure also has mediaobject
           # Both contain imageobject with imagedata.fileref
           media = nil
-          if el.respond_to?(:mediaobject) && el.mediaobject && !el.mediaobject.empty?
-            media = el.mediaobject.first
-          elsif el.respond_to?(:imageobject) && el.imageobject && !el.imageobject.empty?
-            media = el
+          if element.respond_to?(:mediaobject) && element.mediaobject && !element.mediaobject.empty?
+            media = element.mediaobject.first
+          elsif element.respond_to?(:imageobject) && element.imageobject && !element.imageobject.empty?
+            media = element
           end
 
           image_obj = media&.imageobject&.first if media.respond_to?(:imageobject)
@@ -54,8 +54,8 @@ module Docbook
         end
 
         # Inline image from Inlinemediaobject
-        def self.inline_image(el, context:)
-          href = el.imageobject&.first&.imagedata&.fileref if el.respond_to?(:imageobject)
+        def self.inline_image(element, context:)
+          href = element.imageobject&.first&.then { |io| io&.imagedata&.fileref } if element.respond_to?(:imageobject)
           Node::Image.new(attrs: { src: href }.compact)
         end
       end
