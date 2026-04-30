@@ -52,7 +52,7 @@ module Docbook
           image_strategy: image_strategy,
           sort_glossary: sort_glossary,
           title: title,
-          parsed: nil
+          parsed: nil,
         )
       end
 

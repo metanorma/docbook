@@ -4,8 +4,8 @@ module Docbook
   module Mirror
     module Handlers
       class Paragraph
-        def self.call(el, context:)
-          content = context.process_inline_content(el)
+        def self.call(element, context:)
+          content = context.process_inline_content(element)
           return nil if content.empty?
 
           Node::Paragraph.new(content: content)

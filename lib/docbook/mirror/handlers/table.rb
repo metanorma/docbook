@@ -4,19 +4,19 @@ module Docbook
   module Mirror
     module Handlers
       class Table
-        def self.call(el, context:)
+        def self.call(element, context:)
           attrs = {}
-          attrs[:xml_id] = el.xml_id if el.respond_to?(:xml_id) && el.xml_id
-          if el.respond_to?(:title) && el.title
-            attrs[:title] = el.title.content.join
+          attrs[:xml_id] = element.xml_id if element.respond_to?(:xml_id) && element.xml_id
+          if element.respond_to?(:title) && element.title
+            attrs[:title] = element.title.content.join
           end
-          attrs[:frame] = el.frame if el.respond_to?(:frame) && el.frame
-          attrs[:colsep] = el.colsep if el.respond_to?(:colsep) && el.colsep
-          attrs[:rowsep] = el.rowsep if el.respond_to?(:rowsep) && el.rowsep
+          attrs[:frame] = element.frame if element.respond_to?(:frame) && element.frame
+          attrs[:colsep] = element.colsep if element.respond_to?(:colsep) && element.colsep
+          attrs[:rowsep] = element.rowsep if element.respond_to?(:rowsep) && element.rowsep
 
           table_content = []
 
-          tgroups = el.respond_to?(:tgroup) ? el.tgroup : []
+          tgroups = element.respond_to?(:tgroup) ? element.tgroup : []
           tgroups.each do |tg|
             attrs[:cols] = tg.cols if tg.respond_to?(:cols) && tg.cols
 

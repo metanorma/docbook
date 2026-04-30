@@ -4,19 +4,19 @@ module Docbook
   module Mirror
     module Handlers
       class Index
-        def self.call(el, context:)
+        def self.call(element, context:)
           attrs = {
-            xml_id: el.xml_id,
-            title: el.title&.content&.join,
+            xml_id: element.xml_id,
+            title: element.title&.content&.join,
           }.compact
           content = []
 
-          if el.respond_to?(:indexdiv) && el.indexdiv&.any?
-            el.indexdiv.each { |div| content << indexdiv_node(div) }
+          if element.respond_to?(:indexdiv) && element.indexdiv&.any?
+            element.indexdiv.each { |div| content << indexdiv_node(div) }
           end
 
-          if el.respond_to?(:indexentry) && el.indexentry&.any?
-            el.indexentry.each { |ie| content << indexentry_node(ie) }
+          if element.respond_to?(:indexentry) && element.indexentry&.any?
+            element.indexentry.each { |entry| content << indexentry_node(entry) }
           end
 
           Node::IndexBlock.new(attrs: attrs, content: content)
@@ -30,18 +30,18 @@ module Docbook
               xml_id: div.xml_id,
               title: div.title&.content&.join,
             }.compact
-            entries = (div.indexentry if div.respond_to?(:indexentry)).to_a.filter_map { |ie| indexentry_node(ie) }
+            entries = (div.indexentry if div.respond_to?(:indexentry)).to_a.filter_map { |entry| indexentry_node(entry) }
             Node::IndexDiv.new(attrs: attrs, content: entries)
           end
 
-          def indexentry_node(ie)
-            attrs = { xml_id: ie.xml_id }.compact
+          def indexentry_node(entry)
+            attrs = { xml_id: entry.xml_id }.compact
             content = []
-            if ie.respond_to?(:primaryie) && ie.primaryie
-              content << Node::Text.new(text: ie.primaryie.to_s)
+            if entry.respond_to?(:primaryie) && entry.primaryie
+              content << Node::Text.new(text: entry.primaryie.to_s)
             end
-            if ie.respond_to?(:secondaryie) && ie.secondaryie
-              content << Node::Text.new(text: ie.secondaryie.to_s)
+            if entry.respond_to?(:secondaryie) && entry.secondaryie
+              content << Node::Text.new(text: entry.secondaryie.to_s)
             end
             return nil if content.empty?
 

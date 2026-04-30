@@ -42,6 +42,7 @@ module Docbook
         def copy_service_worker(output_dir)
           sw_path = File.join(@dist_dir, "docbook-sw.js")
           return unless File.exist?(sw_path)
+
           dest = File.join(output_dir, "docbook-sw.js")
           FileUtils.cp(sw_path, dest) unless File.exist?(dest)
         end

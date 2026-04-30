@@ -34,7 +34,7 @@ module Docbook
           handler: handler,
           method_name: method_name,
           concat: concat,
-          extra_kwargs: extra_kwargs
+          extra_kwargs: extra_kwargs,
         )
       end
 

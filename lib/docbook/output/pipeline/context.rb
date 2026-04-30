@@ -18,7 +18,7 @@ module Docbook
       :sort_glossary,
       :title,
       :parsed,
-      keyword_init: true
+      keyword_init: true,
     )
   end
 end

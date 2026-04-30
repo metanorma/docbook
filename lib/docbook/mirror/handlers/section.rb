@@ -4,100 +4,100 @@ module Docbook
   module Mirror
     module Handlers
       class Section
-        def self.resolve_title(el)
-          el.title&.content&.join ||
-            (el.info&.title&.content&.join if el.respond_to?(:info))
+        def self.resolve_title(element)
+          element.title&.content&.join ||
+            (element.info&.title&.then { |t| t&.content&.join } if element.respond_to?(:info))
         end
 
-        def self.section(el, context:)
+        def self.section(element, context:)
           attrs = {
-            number: el.number,
-            title: resolve_title(el),
-            xml_id: el.xml_id || "elem-#{el.object_id}",
+            number: element.number,
+            title: resolve_title(element),
+            xml_id: element.xml_id || "elem-#{element.object_id}",
           }.compact
 
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Section.new(attrs: attrs, content: content)
         end
 
-        def self.chapter(el, context:)
+        def self.chapter(element, context:)
           attrs = {
-            number: el.number,
-            title: resolve_title(el),
-            xml_id: el.xml_id || "elem-#{el.object_id}",
+            number: element.number,
+            title: resolve_title(element),
+            xml_id: element.xml_id || "elem-#{element.object_id}",
           }.compact
 
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Chapter.new(attrs: attrs, content: content)
         end
 
-        def self.appendix(el, context:)
+        def self.appendix(element, context:)
           attrs = {
-            number: el.number,
-            title: resolve_title(el),
-            xml_id: el.xml_id || "elem-#{el.object_id}",
+            number: element.number,
+            title: resolve_title(element),
+            xml_id: element.xml_id || "elem-#{element.object_id}",
           }.compact
 
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Appendix.new(attrs: attrs, content: content)
         end
 
-        def self.part(el, context:)
-          id = el.xml_id || "elem-#{el.object_id}"
+        def self.part(element, context:)
+          id = element.xml_id || "elem-#{element.object_id}"
           attrs = {
-            number: el.number,
-            title: resolve_title(el),
+            number: element.number,
+            title: resolve_title(element),
             xml_id: id,
           }.compact
 
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Part.new(attrs: attrs, content: content)
         end
 
-        def self.simplesect(el, context:)
-          content = context.extract_content(el)
-          title = resolve_title(el) if el.respond_to?(:title)
+        def self.simplesect(element, context:)
+          content = context.extract_content(element)
+          title = resolve_title(element) if element.respond_to?(:title)
 
           attrs = { title: title }.compact
           Node::Section.new(attrs: attrs, content: content)
         end
 
-        def self.sect(el, context:)
+        def self.sect(element, context:)
           attrs = {
-            xml_id: el.xml_id,
-            title: resolve_title(el),
+            xml_id: element.xml_id,
+            title: resolve_title(element),
           }.compact
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Section.new(attrs: attrs, content: content)
         end
 
-        def self.preface(el, context:)
+        def self.preface(element, context:)
           attrs = {
-            xml_id: el.xml_id,
-            title: resolve_title(el),
+            xml_id: element.xml_id,
+            title: resolve_title(element),
           }.compact
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           fn = context.flush_footnotes
           content << fn if fn
           Node::Preface.new(attrs: attrs, content: content)
         end
 
-        def self.titled_section(el, context:, node_class:)
+        def self.titled_section(element, context:, node_class:)
           attrs = {
-            xml_id: el.xml_id,
-            title: resolve_title(el),
+            xml_id: element.xml_id,
+            title: resolve_title(element),
           }.compact
-          content = context.extract_content(el)
+          content = context.extract_content(element)
           node_class.new(attrs: attrs, content: content)
         end
       end

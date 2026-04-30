@@ -9,7 +9,7 @@ module Docbook
         FORMAL_TYPES = [
           Elements::Table, Elements::InformalTable,
           Elements::Figure, Elements::InformalFigure,
-          Elements::Example, Elements::InformalExample,
+          Elements::Example, Elements::InformalExample
         ].freeze
 
         def call(guide, context)
@@ -23,11 +23,9 @@ module Docbook
         def assign_recursive(node)
           return unless node.is_a?(Lutaml::Model::Serializable)
 
-          if FORMAL_TYPES.any? { |t| node.is_a?(t) } && has_title?(node)
-            if node.respond_to?(:xml_id) && node.xml_id.nil?
-              @counter += 1
-              node.xml_id = "lo-#{@counter}"
-            end
+          if FORMAL_TYPES.any? { |t| node.is_a?(t) } && has_title?(node) && node.respond_to?(:xml_id) && node.xml_id.nil?
+            @counter += 1
+            node.xml_id = "lo-#{@counter}"
           end
 
           return unless node.class.respond_to?(:attributes)

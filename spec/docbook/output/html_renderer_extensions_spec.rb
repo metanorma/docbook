@@ -9,7 +9,7 @@ RSpec.describe Docbook::Output::HtmlRenderer, "extension hooks" do
   describe ".register_node_renderer" do
     it "overrides built-in rendering for a node type" do
       described_class.register_node_renderer("paragraph",
-        ->(node, renderer) { "<p class=\"custom\">#{renderer.send(:render_inline, node["content"])}</p>" })
+                                             ->(node, renderer) { "<p class=\"custom\">#{renderer.send(:render_inline, node["content"])}</p>" })
 
       guide = { "content" => [{ "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Hello" }] }] }
       html = described_class.new(guide).render
@@ -27,10 +27,10 @@ RSpec.describe Docbook::Output::HtmlRenderer, "extension hooks" do
   describe ".register_mark_renderer" do
     it "overrides built-in mark rendering" do
       described_class.register_mark_renderer("emphasis",
-        ->(text, _mark) { "<b>#{text}</b>" })
+                                             ->(text, _mark) { "<b>#{text}</b>" })
 
       guide = { "content" => [{ "type" => "paragraph", "content" => [
-        { "type" => "text", "text" => "bold", "marks" => [{ "type" => "emphasis" }] }
+        { "type" => "text", "text" => "bold", "marks" => [{ "type" => "emphasis" }] },
       ] }] }
       html = described_class.new(guide).render
       expect(html).to include("<b>bold</b>")
