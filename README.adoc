@@ -74,6 +74,197 @@ Build a multi-book library:
 $ docbook library my-library/ --format dist -o /var/www/library/
 ----
 
+== Building an interactive reader SPA
+
+=== Single book
+
+Build any DocBook XML into a self-contained interactive HTML reader:
+
+[source,bash]
+----
+# Single-file (images inlined as data URLs, works offline from file://)
+$ docbook build book.xml
+
+# Distribution directory (separate data/JSON, for HTTP hosting)
+$ docbook build book.xml --format dist -o /var/www/book/
+
+# Split pages (one HTML per chapter/section)
+$ docbook build book.xml --format paged -o /var/www/book/
+
+# On-demand section loading (lazy-loaded chunks, best for large books)
+$ docbook build book.xml --format chunked -o /var/www/book/
+----
+
+Try it with the bundled fixtures:
+
+[source,bash]
+----
+# Build the article fixture as a self-contained reader
+$ docbook build spec/fixtures/article/article.xml -o article-reader.html
+
+# Build the xslTNG sample book as a distribution directory
+$ docbook build spec/fixtures/xslTNG/test/resources/xml/book.014.xml --format dist -o /tmp/book-dist/
+----
+
+=== Multi-book library
+
+Build a collection of DocBooks into a single library SPA with a bookshelf UI:
+
+[source,bash]
+----
+# Inline single-file library
+$ docbook library my-library/ --format inline -o library.html
+
+# Distribution directory (separate data/JSON per book)
+$ docbook library my-library/ --format dist -o /var/www/library/
+----
+
+Try it with the bundled library fixture:
+
+[source,bash]
+----
+# Build the sample library as a self-contained HTML
+$ docbook library spec/fixtures/library_sample/ --format inline -o /tmp/library.html
+
+# Build as a distribution directory for HTTP hosting
+$ docbook library spec/fixtures/library_sample/ --format dist -o /tmp/library-dist/
+----
+
+=== Standard source directory layout
+
+A typical DocBook project with images and resources:
+
+[source]
+----
+my-book/
+├── book.xml              # Main DocBook XML (or article.xml)
+├── images/               # Image assets
+│   ├── fig-arch.png
+│   └── logo.svg
+├── resources/            # Additional media
+│   └── data.csv
+└── chapters/             # XInclude'd chapters (optional)
+    ├── intro.xml
+    └── advanced.xml
+----
+
+For a multi-book library:
+
+[source]
+----
+my-library/
+├── library.yml           # Library manifest (or library.json)
+├── book-one/
+│   ├── book-one.xml      # Book XML
+│   ├── cover.png         # Cover image (optional)
+│   └── images/           # Book-specific images
+│       └── fig1.png
+└── book-two/
+    ├── book-two.xml
+    └── images/
+        └── diagram.png
+----
+
+=== Library manifest
+
+The manifest (`library.yml` or `library.json`) defines the books in the collection:
+
+[source,yaml]
+----
+# library.yml
+name: "My Documentation Library"
+description: "Technical documentation collection"
+books:
+  - id: "user-guide"
+    source: "user-guide/book.xml"
+    title: "User Guide"
+    cover: "user-guide/cover.png"
+  - id: "api-reference"
+    source: "api-reference/api.xml"
+----
+
+[source,json]
+----
+{
+  "name": "My Documentation Library",
+  "description": "Technical documentation collection",
+  "books": [
+    {
+      "id": "user-guide",
+      "source": "user-guide/book.xml",
+      "title": "User Guide",
+      "cover": "user-guide/cover.png"
+    },
+    {
+      "id": "api-reference",
+      "source": "api-reference/api.xml"
+    }
+  ]
+}
+----
+
+Each book entry requires:
+
+* `id` -- Unique slug (used for filenames)
+* `source` -- Path to DocBook XML (relative to manifest)
+
+Optional fields:
+
+* `title` -- Override title (default: extracted from XML `<title>`)
+* `cover` -- Path to cover image
+* `author` -- Override author
+* `description` -- Book description
+
+=== Output formats
+
+[cols="1,2,3"]
+|===
+
+| Format | Description | Use case
+
+| `inline`
+| Single self-contained `.html`
+| Sharing via email, USB, local viewing. All assets inlined.
+
+| `dom`
+| Single `.html` with pre-rendered content
+| SEO — content visible without JavaScript.
+
+| `dist`
+| Directory with `index.html` + `data/*.json`
+| HTTP hosting (Nginx, S3). Images as separate files.
+
+| `paged`
+| Directory with split HTML pages
+| Large books, section-per-page navigation.
+
+| `chunked`
+| Directory with lazy-loaded section chunks
+| Very large books, on-demand section loading.
+
+|===
+
+=== Image handling strategies
+
+[cols="1,2,3"]
+|===
+
+| Strategy | Description | Use case
+
+| `data_url`
+| Embed images as base64 data URLs
+| Default. Self-contained HTML, works offline.
+
+| `file_url`
+| Resolve to `file://` absolute paths
+| Local filesystem viewing.
+
+| `relative`
+| Keep relative paths as-is
+| HTTP hosting with external image files.
+
+|===
+
 === Ruby API
 
 [source,ruby]
