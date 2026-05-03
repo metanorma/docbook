@@ -25,7 +25,8 @@ module Docbook
 
       ResolvedBook = Struct.new(:id, :source, :title, :author, :description,
                                 :cover, keyword_init: true)
-      CollectionResult = Struct.new(:name, :description, :books, keyword_init: true)
+      CollectionResult = Struct.new(:name, :description, :books,
+                                    keyword_init: true)
 
       # @param path [String] path to a directory, JSON file, or YAML file
       # @return [CollectionResult] resolved collection with :name, :description, :books
@@ -45,7 +46,8 @@ module Docbook
         elsif yaml_file?
           resolve_yaml_file
         else
-          raise ArgumentError, "Unsupported path: #{@path} (must be a directory, .json, .yml, or .yaml file)"
+          raise ArgumentError,
+                "Unsupported path: #{@path} (must be a directory, .json, .yml, or .yaml file)"
         end
       end
 
@@ -54,7 +56,8 @@ module Docbook
       def resolve_directory
         books = discover_books(@path)
 
-        CollectionResult.new(name: File.basename(@path), description: nil, books: books)
+        CollectionResult.new(name: File.basename(@path), description: nil,
+                             books: books)
       end
 
       def resolve_json_file
@@ -77,7 +80,8 @@ module Docbook
           resolve_book(book, base_dir)
         end
 
-        CollectionResult.new(name: manifest.name, description: manifest.description, books: books)
+        CollectionResult.new(name: manifest.name,
+                             description: manifest.description, books: books)
       end
 
       def resolve_book(book, base_dir)

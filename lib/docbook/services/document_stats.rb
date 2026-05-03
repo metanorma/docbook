@@ -2,14 +2,11 @@
 
 module Docbook
   module Services
-    # Collects statistics and metadata from a parsed DocBook document.
     class DocumentStats
-      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
       def initialize(document)
         @document = document
       end
 
-      # @return [Hash] statistics including title, author, section/image/table/code counts
       def generate
         counts = {
           "sections" => 0,
@@ -24,7 +21,7 @@ module Docbook
         walk(@document, counts)
 
         {
-          "title" => extract_title,
+          "title" => @document.resolve_title,
           "subtitle" => extract_subtitle,
           "author" => extract_author,
           "pubdate" => extract_pubdate,
@@ -38,78 +35,29 @@ module Docbook
 
       private
 
-      # Map element classes to the counter keys they increment
-      COUNTERS = {
-        Elements::Section => "sections",
-        Elements::Sect1 => "sections",
-        Elements::Sect2 => "sections",
-        Elements::Sect3 => "sections",
-        Elements::Sect4 => "sections",
-        Elements::Sect5 => "sections",
-        Elements::Chapter => "sections",
-        Elements::Part => "sections",
-        Elements::Appendix => "sections",
-        Elements::Preface => "sections",
-        Elements::Reference => "sections",
-        Elements::RefEntry => "sections",
-        Elements::RefSection => "sections",
-        Elements::RefSect1 => "sections",
-        Elements::RefSect2 => "sections",
-        Elements::RefSect3 => "sections",
-        Elements::Simplesect => "sections",
-        Elements::Figure => "images",
-        Elements::InformalFigure => "images",
-        Elements::MediaObject => "images",
-        Elements::ProgramListing => "code_blocks",
-        Elements::Screen => "code_blocks",
-        Elements::LiteralLayout => "code_blocks",
-        Elements::Table => "tables",
-        Elements::InformalTable => "tables",
-        Elements::IndexTerm => "index_terms",
-        Elements::Bibliomixed => "bibliography_entries",
+      SECTION_KEY = "sections"
+
+      CATEGORY_MAP = {
+        image: "images",
+        code_block: "code_blocks",
+        table: "tables",
+        index_term: "index_terms",
+        bibliography_entry: "bibliography_entries",
       }.freeze
 
       def walk(node, counts)
-        COUNTERS.each do |klass, key|
-          if node.is_a?(klass)
-            counts[key] += 1
-            break
-          end
+        if node.section_like?
+          counts[SECTION_KEY] += 1
+        else
+          key = CATEGORY_MAP[node.stats_category]
+          counts[key] += 1 if key
         end
 
-        # Walk all model-defined attributes for child elements
-        return unless node.class.respond_to?(:attributes)
-
-        node.class.attributes.each_value do |attr_def|
-          value = node.send(attr_def.name)
-          next if value.nil?
-
-          case value
-          when Array
-            value.each { |v| walk(v, counts) if walkable?(v) }
-          else
-            walk(value, counts) if walkable?(value)
-          end
-        end
-      end
-
-      def walkable?(value)
-        value.is_a?(Lutaml::Model::Serializable)
-      end
-
-      def extract_title
-        info = @document.info if @document.respond_to?(:info)
-        if info&.title
-          text = text_content(info.title.content)
-          return text if text
-        end
-
-        title_obj = @document.title if @document.respond_to?(:title)
-        text_content(title_obj&.content)
+        node.walk_children { |child| walk(child, counts) }
       end
 
       def extract_author
-        info = @document.info if @document.respond_to?(:info)
+        info = @document.info
         authors = info&.author
         return unless authors && !authors.empty?
 
@@ -130,28 +78,28 @@ module Docbook
       end
 
       def extract_subtitle
-        info = @document.info if @document.respond_to?(:info)
-        text_content(info&.subtitle&.content)
+        text_content(@document.info&.subtitle&.content)
       end
 
       def extract_pubdate
-        info = @document.info if @document.respond_to?(:info)
-        text_content(info&.pubdate&.content)
+        text_content(@document.info&.pubdate&.content)
       end
 
       def extract_releaseinfo
-        info = @document.info if @document.respond_to?(:info)
-        text_content(info&.releaseinfo&.content)
+        text_content(@document.info&.releaseinfo&.content)
       end
 
       def extract_copyright
-        info = @document.info if @document.respond_to?(:info)
-        copyrights = info&.copyright
+        copyrights = @document.info&.copyright
         return unless copyrights && !copyrights.empty?
 
         copyrights.filter_map do |cr|
-          years = Array(cr.year).filter_map { |y| text_content(y.content) }.join(", ")
-          holders = Array(cr.holder).filter_map { |h| text_content(h.content) }.join(", ")
+          years = Array(cr.year).filter_map do |y|
+            text_content(y.content)
+          end.join(", ")
+          holders = Array(cr.holder).filter_map do |h|
+            text_content(h.content)
+          end.join(", ")
           parts = []
           parts << years if years && !years.empty?
           parts << holders if holders && !holders.empty?
@@ -160,7 +108,7 @@ module Docbook
       end
 
       def extract_cover
-        info = @document.info if @document.respond_to?(:info)
+        info = @document.info
         return unless info&.cover && !info.cover.empty?
 
         first_cover = info.cover.first
@@ -181,8 +129,8 @@ module Docbook
       end
 
       def root_element_name
-        # Derive from the class name — Book, Article, Chapter, etc.
-        @document.class.name.split("::").last.gsub(/(?<!^)([A-Z])/, '_\1').downcase
+        @document.class.name.split("::").last.gsub(/(?<!^)([A-Z])/,
+                                                   '_\1').downcase
       end
     end
   end
