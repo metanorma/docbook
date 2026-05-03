@@ -18,8 +18,10 @@ RSpec.describe Docbook::Output::Formats::LibrarySupport do
         name: "Test Library",
         description: "A test library",
         books: [
-          Docbook::Models::BookEntry.new(id: "book1", source: "/path/book1.xml", title: "Book One"),
-          Docbook::Models::BookEntry.new(id: "book2", source: "/path/book2.xml", author: "Jane Doe"),
+          Docbook::Models::BookEntry.new(id: "book1",
+                                         source: "/path/book1.xml", title: "Book One"),
+          Docbook::Models::BookEntry.new(id: "book2",
+                                         source: "/path/book2.xml", author: "Jane Doe"),
         ],
       )
     end
@@ -64,7 +66,8 @@ RSpec.describe Docbook::Output::Formats::LibrarySupport do
 
   describe "#resolve_cover" do
     it "returns nil when no cover is configured" do
-      book_entry = Docbook::Models::BookEntry.new(id: "book1", source: "/path/book1.xml")
+      book_entry = Docbook::Models::BookEntry.new(id: "book1",
+                                                  source: "/path/book1.xml")
       guide = {}
       result = instance.send(:resolve_cover, book_entry, guide)
       expect(result).to be_nil
@@ -92,7 +95,8 @@ RSpec.describe Docbook::Output::Formats::LibrarySupport do
         cover_path = File.join(dir, "mycover.png")
         File.binwrite(cover_path, "\x89PNG\r\n\x1a\n#{"\x00" * 100}")
 
-        book_entry = Docbook::Models::BookEntry.new(id: "book1", source: xml_path)
+        book_entry = Docbook::Models::BookEntry.new(id: "book1",
+                                                    source: xml_path)
         guide = { "meta" => { "cover" => "mycover.png" } }
         result = instance.send(:resolve_cover, book_entry, guide)
         expect(result).to start_with("data:image/png;base64,")
@@ -100,7 +104,8 @@ RSpec.describe Docbook::Output::Formats::LibrarySupport do
     end
 
     it "returns nil when meta cover file does not exist" do
-      book_entry = Docbook::Models::BookEntry.new(id: "book1", source: "/nonexistent/book1.xml")
+      book_entry = Docbook::Models::BookEntry.new(id: "book1",
+                                                  source: "/nonexistent/book1.xml")
       guide = { "meta" => { "cover" => "missing.png" } }
       result = instance.send(:resolve_cover, book_entry, guide)
       expect(result).to be_nil

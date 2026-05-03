@@ -87,3 +87,41 @@ RSpec.describe Docbook::Mirror::Node::Document do
     end
   end
 end
+
+RSpec.describe Docbook::Mirror::Node, "NODES registry" do
+  it "auto-registers all subclasses via constants.each" do
+    expected = %w[paragraph doc chapter section appendix part code_block image
+                  table]
+    expected.each do |type|
+      expect(Docbook::Mirror::Node::NODES).to have_key(type),
+                                              "Expected NODES to contain '#{type}'"
+    end
+  end
+
+  it "maps types to correct classes" do
+    expect(Docbook::Mirror::Node::NODES["paragraph"]).to eq(Docbook::Mirror::Node::Paragraph)
+    expect(Docbook::Mirror::Node::NODES["chapter"]).to eq(Docbook::Mirror::Node::Chapter)
+  end
+
+  describe ".from_h round-trip" do
+    it "round-trips a text node" do
+      original = Docbook::Mirror::Node::Text.new(text: "hello")
+      round_tripped = described_class.from_h(JSON.parse(original.to_json))
+
+      expect(round_tripped).to be_a(Docbook::Mirror::Node::Text)
+      expect(round_tripped.text).to eq("hello")
+    end
+
+    it "round-trips a chapter using base from_h" do
+      original = Docbook::Mirror::Node::Chapter.new(
+        attrs: { title: "Test", xml_id: "ch1" },
+        content: [Docbook::Mirror::Node::Text.new(text: "Content")],
+      )
+      round_tripped = described_class.from_h(JSON.parse(original.to_json))
+
+      expect(round_tripped).to be_a(Docbook::Mirror::Node::Chapter)
+      expect(round_tripped.attrs[:title]).to eq("Test")
+      expect(round_tripped.content.first.text).to eq("Content")
+    end
+  end
+end

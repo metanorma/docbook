@@ -5,7 +5,8 @@ require "spec_helper"
 RSpec.describe Docbook::Output::PipelineSteps::AttachMetadata do
   let(:xml_path) { "spec/fixtures/kitchen-sink/kitchen-sink.xml" }
   let(:context) do
-    ctx = Docbook::Output::PipelineContext.new(xml_path: xml_path, title: "Test Title")
+    ctx = Docbook::Output::PipelineContext.new(xml_path: xml_path,
+                                               title: "Test Title")
     Docbook::Output::PipelineSteps::ParseXml.new.call({}, ctx)
     Docbook::Output::PipelineSteps::GenerateToc.new.call({}, ctx)
     Docbook::Output::PipelineSteps::GenerateNumbering.new.call({}, ctx)

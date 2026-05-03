@@ -3,7 +3,9 @@
 require "spec_helper"
 
 RSpec.describe "Kitchen Sink Fixture — Full Pipeline", :mirror do
-  let(:fixture_path) { File.expand_path("../fixtures/kitchen-sink/kitchen-sink.xml", __dir__) }
+  let(:fixture_path) do
+    File.expand_path("../fixtures/kitchen-sink/kitchen-sink.xml", __dir__)
+  end
   let(:doc) { Docbook::Document.from_xml(File.read(fixture_path)) }
   let(:transformer) { Docbook::Mirror::Transformer.new }
   let(:result) { transformer.send(:from_docbook, doc).to_h }
@@ -22,7 +24,9 @@ RSpec.describe "Kitchen Sink Fixture — Full Pipeline", :mirror do
     chapters = collect_nodes(result, "chapter")
     expect(chapters.length).to be >= 3
     # Verify chapters contain paragraphs
-    paras_in_chapters = chapters.sum { |ch| collect_nodes(ch, "paragraph").length }
+    paras_in_chapters = chapters.sum do |ch|
+      collect_nodes(ch, "paragraph").length
+    end
     expect(paras_in_chapters).to be >= 5
   end
 

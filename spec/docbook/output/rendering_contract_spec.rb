@@ -60,7 +60,9 @@ RSpec.describe "Ruby/JS rendering contract" do
     end
 
     it "does not have render methods for types not in the contract" do
-      methods = renderer.private_methods(false).select { |m| m.to_s.start_with?("render_") }
+      methods = renderer.private_methods(false).select do |m|
+        m.to_s.start_with?("render_")
+      end
         .map { |m| m.to_s.sub("render_", "") }
 
       # These are structural/helper renderers, not block types
@@ -79,12 +81,14 @@ RSpec.describe "Ruby/JS rendering contract" do
     let(:renderer) { Docbook::Output::HtmlRenderer.new("content" => []) }
 
     it "has a render method for every section type" do
+      registry = Docbook::Output::HtmlRenderer::NODE_RENDERERS
+
       missing = CONTRACT_SECTION_TYPES.reject do |type|
-        renderer.respond_to?(:"render_#{type}", true)
+        registry.key?(type)
       end
 
       expect(missing).to be_empty,
-                         "HtmlRenderer missing render methods for section types: #{missing.join(", ")}"
+                         "HtmlRenderer NODE_RENDERERS missing entries for section types: #{missing.join(", ")}"
     end
   end
 
@@ -116,7 +120,8 @@ RSpec.describe "Ruby/JS rendering contract" do
     let(:renderer) { Docbook::Output::HtmlRenderer.new(guide) }
 
     it "uses db-paragraph class for paragraphs" do
-      node = { "type" => "paragraph", "content" => [{ "type" => "text", "text" => "hi" }] }
+      node = { "type" => "paragraph",
+               "content" => [{ "type" => "text", "text" => "hi" }] }
       html = renderer.send(:render_paragraph, node)
       expect(html).to include('class="db-paragraph"')
     end
@@ -129,7 +134,8 @@ RSpec.describe "Ruby/JS rendering contract" do
 
     it "uses db-admonition with type modifier" do
       CONTRACT_ADMONITION_TYPES.each do |atype|
-        node = { "type" => "admonition", "attrs" => { "admonition_type" => atype }, "content" => [] }
+        node = { "type" => "admonition",
+                 "attrs" => { "admonition_type" => atype }, "content" => [] }
         html = renderer.send(:render_admonition, node)
         expect(html).to include("db-admonition db-admonition--#{atype}")
       end

@@ -34,7 +34,10 @@ RSpec.describe Docbook::Output::Formats::BaseFormat do
   describe "#dist_assets" do
     it "raises ArgumentError when dist directory does not exist" do
       instance = described_class.new(dist_dir: "/nonexistent/path")
-      expect { instance.send(:dist_assets) }.to raise_error(ArgumentError, /Frontend dist directory not found/)
+      expect do
+        instance.send(:dist_assets)
+      end.to raise_error(ArgumentError,
+                         /Frontend dist directory not found/)
     end
 
     it "loads CSS and JS from the dist directory" do
@@ -57,7 +60,8 @@ RSpec.describe Docbook::Output::Formats::BaseFormat do
         File.write(File.join(dir, "app.iife.js"), "console.log(1);")
 
         instance = described_class.new(dist_dir: dir)
-        html = instance.send(:html_boilerplate, title: "Test", body_content: "<div>Hi</div>")
+        html = instance.send(:html_boilerplate, title: "Test",
+                                                body_content: "<div>Hi</div>")
         expect(html).to include("<!DOCTYPE html>")
         expect(html).to include("<title>Test</title>")
         expect(html).to include("<style>body{}</style>")

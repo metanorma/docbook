@@ -11,7 +11,15 @@ RSpec.describe Docbook::Output::LibraryBuilder do
   shared_examples "a valid library format output" do |format, file_check|
     it "builds #{format} format library successfully" do
       Dir.mktmpdir do |dir|
-        output = %i[inline dom].include?(format) ? File.join(dir, "library.html") : File.join(dir, "library")
+        output = if %i[inline
+                       dom].include?(format)
+                   File.join(dir,
+                             "library.html")
+                 else
+                   File.join(
+                     dir, "library"
+                   )
+                 end
         result = described_class.new(
           input_path: manifest_yml,
           output_path: output,
@@ -73,7 +81,8 @@ RSpec.describe Docbook::Output::LibraryBuilder do
 
     it "raises on unknown format" do
       expect do
-        described_class.new(input_path: manifest_yml, output_path: "/tmp/out.html", format: :unknown).build
+        described_class.new(input_path: manifest_yml,
+                            output_path: "/tmp/out.html", format: :unknown).build
       end.to raise_error(ArgumentError, /Unknown format/)
     end
   end

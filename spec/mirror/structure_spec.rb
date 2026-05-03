@@ -116,7 +116,9 @@ RSpec.describe "Mirror Transformer — Document Structure", :mirror do
       result = mirror_hash_with(xml, sort_glossary: true)
       gl = find_node(result, "glossary")
       entries = gl["content"].select { |n| n["type"] == "gloss_entry" }
-      terms = entries.map { |e| find_node(e, "gloss_term")["content"].first["text"] }
+      terms = entries.map do |e|
+        find_node(e, "gloss_term")["content"].first["text"]
+      end
       expect(terms).to eq(%w[Apple Mango Zebra])
     end
 
@@ -140,7 +142,9 @@ RSpec.describe "Mirror Transformer — Document Structure", :mirror do
       result = mirror_hash(xml)
       gl = find_node(result, "glossary")
       entries = gl["content"].select { |n| n["type"] == "gloss_entry" }
-      terms = entries.map { |e| find_node(e, "gloss_term")["content"].first["text"] }
+      terms = entries.map do |e|
+        find_node(e, "gloss_term")["content"].first["text"]
+      end
       expect(terms).to eq(%w[Zebra Apple])
     end
 
