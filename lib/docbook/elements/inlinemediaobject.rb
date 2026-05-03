@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Inlinemediaobject < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :imageobject, ImageObject
       attribute :textobject, TextObject

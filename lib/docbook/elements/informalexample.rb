@@ -3,6 +3,21 @@
 module Docbook
   module Elements
     class InformalExample < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+      include Numberable
+
+      NUMBERING_ROLE = :example
+      LIST_OF_CATEGORY = :examples
+
+      def formal?
+        true
+      end
+
+      def list_of_category
+        LIST_OF_CATEGORY
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :para, Para, collection: true

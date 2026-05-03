@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Author < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :personname, PersonName
 

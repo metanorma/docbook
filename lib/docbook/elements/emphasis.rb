@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Emphasis < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :role, :string
 

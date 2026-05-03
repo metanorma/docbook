@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Cover < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :mediaobject, MediaObject, collection: true
 

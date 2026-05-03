@@ -3,6 +3,20 @@
 module Docbook
   module Elements
     class Bibliomixed < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+
+      STATS_CATEGORY = :bibliography_entry
+
+      def stats_category
+        STATS_CATEGORY
+      end
+
+      def resolve_title
+        abbrev&.content&.join ||
+          citetitle&.first&.then { |ct| ct&.content&.join }
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :role, :string

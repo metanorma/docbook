@@ -3,6 +3,18 @@
 module Docbook
   module Elements
     class Sect2 < Lutaml::Model::Serializable
+      include DocbookElement
+      include SectionLike
+      include TocContainer
+      include Titled
+      include Identifiable
+      include Numberable
+
+      NUMBERING_ROLE = :section
+      def toc_children
+        Array(sect3)
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title

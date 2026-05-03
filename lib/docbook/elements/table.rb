@@ -3,6 +3,29 @@
 module Docbook
   module Elements
     class Table < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
+      STATS_CATEGORY = :table
+
+      def stats_category
+        STATS_CATEGORY
+      end
+
+      include Numberable
+
+      NUMBERING_ROLE = :table
+      LIST_OF_CATEGORY = :tables
+
+      def formal?
+        true
+      end
+
+      def list_of_category
+        LIST_OF_CATEGORY
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :tabstyle, :string

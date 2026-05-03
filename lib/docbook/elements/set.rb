@@ -3,6 +3,16 @@
 module Docbook
   module Elements
     class Set < Lutaml::Model::Serializable
+      include DocbookElement
+      include SectionLike
+      include TocContainer
+      include Titled
+      include Identifiable
+
+      def toc_children
+        Array(book)
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :version, :string

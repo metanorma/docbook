@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class Info < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+
       attribute :content, :string, collection: true
       attribute :title, Title
       attribute :subtitle, Subtitle

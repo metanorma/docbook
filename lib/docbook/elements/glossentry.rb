@@ -3,6 +3,14 @@
 module Docbook
   module Elements
     class GlossEntry < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
+      def resolve_title
+        glossterm&.content&.join
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :glossterm, Glossterm

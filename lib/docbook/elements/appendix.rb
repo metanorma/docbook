@@ -3,7 +3,18 @@
 module Docbook
   module Elements
     class Appendix < Lutaml::Model::Serializable
+      include DocbookElement
+      include SectionLike
+      include TocContainer
+      include Titled
+      include Identifiable
       include HasNumber
+      include Numberable
+
+      NUMBERING_ROLE = :appendix
+      def toc_children
+        Array(section)
+      end
 
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType

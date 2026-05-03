@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Row < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :entry, Entry, collection: true
 
       xml do

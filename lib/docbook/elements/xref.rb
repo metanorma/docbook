@@ -3,8 +3,14 @@
 module Docbook
   module Elements
     class Xref < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :linkend, :string
+
+      def xref?
+        true
+      end
 
       xml do
         element "xref"

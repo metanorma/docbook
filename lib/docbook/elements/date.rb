@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Date < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
 
       xml do

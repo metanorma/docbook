@@ -3,7 +3,18 @@
 module Docbook
   module Elements
     class Para < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
+
+      def try_add_inline(element)
+        attr_name = element.class.name.split("::").last.downcase
+        return false unless self.class.attributes.key?(attr_name.to_sym)
+
+        collection = send(attr_name) || send(:"#{attr_name}=", [])
+        collection << element
+        true
+      end
       attribute :role, :string
       attribute :productname, ProductName, collection: true
       attribute :link, Link, collection: true

@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class Phrase < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :role, :string
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType

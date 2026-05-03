@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class OrderedList < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :spacing, :string
       attribute :numeration, :string

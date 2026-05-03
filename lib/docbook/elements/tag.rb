@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Tag < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :class_name, :string
       attribute :namespace, :string

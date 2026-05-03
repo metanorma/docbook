@@ -3,6 +3,13 @@
 module Docbook
   module Elements
     class MediaObject < Lutaml::Model::Serializable
+      include DocbookElement
+
+      STATS_CATEGORY = :image
+
+      def stats_category
+        STATS_CATEGORY
+      end
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :imageobject, ImageObject, collection: true

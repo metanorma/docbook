@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class SimPara < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :role, :string
 

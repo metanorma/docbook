@@ -3,6 +3,17 @@
 module Docbook
   module Elements
     class IndexTerm < Lutaml::Model::Serializable
+      include DocbookElement
+
+      STATS_CATEGORY = :index_term
+
+      def stats_category
+        STATS_CATEGORY
+      end
+
+      def index_term?
+        true
+      end
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :zone, :string

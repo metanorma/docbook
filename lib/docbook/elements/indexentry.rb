@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class IndexEntry < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :primaryie, :string

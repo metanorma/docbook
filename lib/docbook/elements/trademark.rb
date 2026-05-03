@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Trademark < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :class_name, :string
 

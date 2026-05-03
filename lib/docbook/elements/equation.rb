@@ -3,6 +3,10 @@
 module Docbook
   module Elements
     class Equation < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :role, :string

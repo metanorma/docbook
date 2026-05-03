@@ -3,6 +3,29 @@
 module Docbook
   module Elements
     class Figure < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
+      STATS_CATEGORY = :image
+
+      def stats_category
+        STATS_CATEGORY
+      end
+
+      include Numberable
+
+      NUMBERING_ROLE = :figure
+      LIST_OF_CATEGORY = :figures
+
+      def formal?
+        true
+      end
+
+      def list_of_category
+        LIST_OF_CATEGORY
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :role, :string

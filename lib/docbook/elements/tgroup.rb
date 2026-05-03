@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class TGroup < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :cols, :string
       attribute :thead, THead
       attribute :tbody, TBody

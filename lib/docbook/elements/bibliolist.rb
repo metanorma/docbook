@@ -3,6 +3,10 @@
 module Docbook
   module Elements
     class Bibliolist < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title
       attribute :bibliomixed, Bibliomixed, collection: true
