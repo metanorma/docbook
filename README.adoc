@@ -95,6 +95,17 @@ $ docbook build book.xml --format paged -o /var/www/book/
 $ docbook build book.xml --format chunked -o /var/www/book/
 ----
 
+Try it with the bundled fixtures:
+
+[source,bash]
+----
+# Build the article fixture as a self-contained reader
+$ docbook build spec/fixtures/article/article.xml -o article-reader.html
+
+# Build the xslTNG sample book as a distribution directory
+$ docbook build spec/fixtures/xslTNG/test/resources/xml/book.014.xml --format dist -o /tmp/book-dist/
+----
+
 === Multi-book library
 
 Build a collection of DocBooks into a single library SPA with a bookshelf UI:
@@ -106,6 +117,17 @@ $ docbook library my-library/ --format inline -o library.html
 
 # Distribution directory (separate data/JSON per book)
 $ docbook library my-library/ --format dist -o /var/www/library/
+----
+
+Try it with the bundled library fixture:
+
+[source,bash]
+----
+# Build the sample library as a self-contained HTML
+$ docbook library spec/fixtures/library_sample/ --format inline -o /tmp/library.html
+
+# Build as a distribution directory for HTTP hosting
+$ docbook library spec/fixtures/library_sample/ --format dist -o /tmp/library-dist/
 ----
 
 === Standard source directory layout
