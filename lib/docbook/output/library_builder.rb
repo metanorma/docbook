@@ -34,7 +34,8 @@ module Docbook
         raise ArgumentError, "Unknown format: #{@format}" unless format_class
 
         formatter = format_class.new(dist_dir: @options[:dist_dir])
-        formatter.write_library(@output_path, guides, manifest: manifest, title: @options[:title])
+        formatter.write_library(@output_path, guides, manifest: manifest,
+                                                      title: @options[:title])
 
         @output_path
       end

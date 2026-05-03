@@ -6,8 +6,6 @@ module Docbook
   module Output
     module Formats
       class ChunkedFormat < BaseFormat
-        SECTION_BOUNDARY_TYPES = %w[chapter part section appendix preface reference].freeze
-
         def write(output_path, guide, title: "DocBook", _manifest: nil)
           dir = ensure_directory(output_path)
           FileUtils.mkdir_p(File.join(dir, "sections"))
@@ -26,7 +24,8 @@ module Docbook
               "next" => section_ids[i + 1],
               "prev" => i.positive? ? section_ids[i - 1] : nil,
             }
-            File.write(File.join(dir, "sections", "#{section_id}.json"), JSON.generate(section_data))
+            File.write(File.join(dir, "sections", "#{section_id}.json"),
+                       JSON.generate(section_data))
           end
 
           manifest = {
@@ -47,32 +46,8 @@ module Docbook
 
         private
 
-        def ensure_directory(output_path)
-          dir = output_path.end_with?(".html") ? File.dirname(output_path) : output_path
-          FileUtils.mkdir_p(dir)
-          dir
-        end
-
         def split_into_chunks(content)
-          chunks = []
-          current_id = nil
-          current_nodes = []
-
-          content.each do |node|
-            if section_boundary?(node)
-              chunks << [current_id, current_nodes] unless current_nodes.empty?
-              current_id = node.dig("attrs", "xml_id") || "section-#{chunks.size + 1}"
-              current_nodes = [node]
-            else
-              current_nodes << node
-            end
-          end
-          chunks << [current_id, current_nodes] unless current_nodes.empty?
-          chunks
-        end
-
-        def section_boundary?(node)
-          SECTION_BOUNDARY_TYPES.include?(node["type"])
+          split_into_sections(content)
         end
       end
     end

@@ -45,7 +45,8 @@ module Docbook
             }.compact
           end
 
-          collection = { "name" => title, "description" => manifest.description, "books" => books_meta }
+          collection = { "name" => title,
+                         "description" => manifest.description, "books" => books_meta }
           data_script = "window.DOCBOOK_COLLECTION = #{safe_json(collection)}; window.DOCBOOK_FORMAT = 'dist';"
           html = html_boilerplate(title: title, body_content: '<div id="docbook-app"></div>',
                                   script_data: data_script)
@@ -55,12 +56,6 @@ module Docbook
         end
 
         private
-
-        def ensure_directory(output_path)
-          dir = output_path.end_with?(".html") ? File.dirname(output_path) : output_path
-          FileUtils.mkdir_p(dir)
-          dir
-        end
 
         def resolve_cover_dist(book_entry, guide, dir)
           cover_path = nil

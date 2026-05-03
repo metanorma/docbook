@@ -19,7 +19,8 @@ module Docbook
           HTML
 
           data_script = "window.DOCBOOK_DATA = #{safe_json(guide)}; window.DOCBOOK_FORMAT = 'dom';"
-          html = html_boilerplate(title: title, body_content: body, script_data: data_script)
+          html = html_boilerplate(title: title, body_content: body,
+                                  script_data: data_script)
           File.write(output_path, html)
           output_path
         end
