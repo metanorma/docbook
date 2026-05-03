@@ -19,9 +19,7 @@ module Docbook
     #   mirror_doc = DocbookToMirror.new.call(doc)
     #
     class DocbookToMirror
-      include Docbook::Services::ElementIdHelper
-
-      attr_reader :registry
+      attr_reader :registry, :xml_id_map, :sort_glossary
 
       def initialize(sort_glossary: false, registry: Docbook::Mirror.default_registry)
         @sort_glossary = sort_glossary
@@ -44,11 +42,7 @@ module Docbook
       # =========================================
 
       def document_node(docbook_doc)
-        title = if docbook_doc.respond_to?(:info) && docbook_doc.info.respond_to?(:title)
-                  docbook_doc.info.title&.content&.join
-                elsif docbook_doc.respond_to?(:title)
-                  docbook_doc.title&.content&.join
-                end
+        title = docbook_doc.resolve_title
 
         attrs = { title: title }.compact
         content = extract_content(docbook_doc)
@@ -61,7 +55,6 @@ module Docbook
       # registered handler. Unknown elements are silently skipped.
       def extract_content(element)
         content = []
-        return content unless element.respond_to?(:each_mixed_content)
 
         element.each_mixed_content do |node|
           case node
@@ -96,13 +89,11 @@ module Docbook
       end
 
       def extract_text(element)
-        return element.content.join unless element.respond_to?(:each_mixed_content)
-
         texts = []
         element.each_mixed_content do |node|
           if node.is_a?(String)
             texts << node
-          elsif node.respond_to?(:content)
+          elsif node.content
             texts << node.content.join
           end
         end
@@ -112,33 +103,30 @@ module Docbook
       def extract_co_markers(element)
         markers = []
         counter = 0
-        return markers unless element.respond_to?(:each_mixed_content)
 
         element.each_mixed_content do |node|
           next if node.is_a?(String)
-          next unless node.is_a?(Docbook::Elements::Co)
+          next unless node.callout_marker?
 
           counter += 1
-          id = node.xml_id if node.respond_to?(:xml_id)
-          label = node.respond_to?(:label) && node.label ? node.label : counter.to_s
+          id = node.xml_id
+          label = node.label || counter.to_s
           markers << { number: counter, id: id, label: label }.compact
         end
         markers
       end
 
       def extract_text_with_callouts(element, co_markers)
-        return element.content.join unless element.respond_to?(:each_mixed_content)
-
         marker_idx = 0
         texts = []
         element.each_mixed_content do |node|
           if node.is_a?(String)
             texts << node
-          elsif node.is_a?(Docbook::Elements::Co)
+          elsif node.callout_marker?
             marker = co_markers[marker_idx]
             texts << "(#{marker[:label]})"
             marker_idx += 1
-          elsif node.respond_to?(:content)
+          elsif node.content
             texts << node.content.join
           end
         end
@@ -153,6 +141,10 @@ module Docbook
         Handlers::Inline.citetitle(element, context: self)
       end
 
+      def resolve_title(element)
+        element.resolve_title
+      end
+
       # =========================================
       # Footnote Management
       # =========================================
@@ -163,9 +155,9 @@ module Docbook
         fn_id = "fn-#{num}"
         ref_id = "fn-ref-#{num}"
 
-        fn_content = if element.respond_to?(:para) && element.para.any?
+        fn_content = if element.para&.any?
                        element.para.filter_map { |p| paragraph_handler(p) }
-                     elsif element.respond_to?(:each_mixed_content)
+                     elsif element.content
                        process_inline_content(element)
                      else
                        [text_node(extract_text(element))]
@@ -186,13 +178,14 @@ module Docbook
       end
 
       def resolve_footnoteref(element)
-        linkend = element.linkend if element.respond_to?(:linkend)
+        linkend = element.linkend
         ref_fn = @footnotes.find { |fn| fn[:xml_id] == linkend } if linkend
 
         if ref_fn
           Node.new(
             type: "footnote_marker",
-            attrs: { id: ref_fn[:id], ref_id: "fn-ref-#{ref_fn[:number]}-dup-#{@footnote_counter}", number: ref_fn[:number] },
+            attrs: { id: ref_fn[:id],
+                     ref_id: "fn-ref-#{ref_fn[:number]}-dup-#{@footnote_counter}", number: ref_fn[:number] },
           )
         else
           text_node("[footnote]")
@@ -220,38 +213,18 @@ module Docbook
 
       def build_xml_id_map(doc)
         map = {}
-        return map unless doc.respond_to?(:each_mixed_content)
 
         doc.each_mixed_content do |node|
           next if node.is_a?(String)
 
-          id = element_id(node)
-          map[id] = resolve_title(node) if id && !id.empty?
+          id = node.element_id
+          title = node.resolve_title
+          title = Array(title).join if title
+          map[id] = title if id && !id.empty? && title
 
           build_xml_id_map(node).each { |k, v| map[k] = v }
         end
         map
-      end
-
-      def resolve_title(node)
-        title = case node
-                when Docbook::Elements::RefEntry
-                  resolve_refentry_title(node)
-                when Docbook::Elements::Bibliomixed
-                  node.abbrev&.content&.join || node.citetitle&.first&.then { |ct| ct&.content&.join }
-                else
-                  t = node.title&.content&.join if node.respond_to?(:title)
-                  t || (node.info&.title&.then { |ti| ti&.content&.join } if node.respond_to?(:info))
-                end
-        flatten_title(title)
-      end
-
-      def flatten_title(title)
-        case title
-        when Array then title.map { |t| t.is_a?(String) ? t : t.to_s }.join
-        when String then title
-        else title.to_s
-        end
       end
 
       private

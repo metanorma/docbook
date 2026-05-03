@@ -5,7 +5,7 @@ module Docbook
     module Handlers
       class CodeBlock
         def self.call(element, context:, language: nil)
-          language ||= element.language if element.respond_to?(:language)
+          language ||= element.language
 
           # Check for <co> callout markers in the code block
           co_markers = context.extract_co_markers(element)

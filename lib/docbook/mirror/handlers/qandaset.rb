@@ -7,9 +7,11 @@ module Docbook
         def self.call(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
-          entries = Array(element.qandaentry).filter_map { |e| qandaentry(e, context) }
+          entries = Array(element.qandaentry).filter_map do |e|
+            qandaentry(e, context)
+          end
           return nil if entries.empty?
 
           Node.new(type: "qandaset", attrs: attrs, content: entries)
@@ -23,11 +25,17 @@ module Docbook
             content = []
             if element.question
               q_content = context.extract_content(element.question)
-              content << Node.new(type: "question", attrs: {}, content: q_content) unless q_content.empty?
+              unless q_content.empty?
+                content << Node.new(type: "question", attrs: {},
+                                    content: q_content)
+              end
             end
             Array(element.answer).each do |a|
               a_content = context.extract_content(a)
-              content << Node.new(type: "answer", attrs: {}, content: a_content) unless a_content.empty?
+              unless a_content.empty?
+                content << Node.new(type: "answer", attrs: {},
+                                    content: a_content)
+              end
             end
             return nil if content.empty?
 

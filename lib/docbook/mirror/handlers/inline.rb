@@ -6,81 +6,89 @@ module Docbook
   module Mirror
     module Handlers
       class Inline
-        # Process inline content from an element that supports each_mixed_content
+        # Registry mapping element classes to [method_symbol, concat_flag].
+        # Third-party code can add entries to extend inline handling (OCP).
+        HANDLER_MAP = {}.tap do |h|
+          h[Docbook::Elements::Emphasis] = [:emphasis, false]
+          h[Docbook::Elements::Link] = [:link, false]
+          h[Docbook::Elements::Xref] = [:xref, false]
+          h[Docbook::Elements::Quote] = [:quote, true]
+          h[Docbook::Elements::Tag] = [:tag, false]
+          h[Docbook::Elements::Biblioref] = [:biblioref, false]
+          h[Docbook::Elements::FirstTerm] = [:firstterm, false]
+          h[Docbook::Elements::Glossterm] = [:firstterm, false]
+          h[Docbook::Elements::Citetitle] = [:citetitle, false]
+          h[Docbook::Elements::Inlinemediaobject] = [:inline_image, false]
+          h[Docbook::Elements::ProductName] = [:productname, false]
+          h[Docbook::Elements::Trademark] = [:trademark, false]
+          h[Docbook::Elements::Email] = [:email, false]
+          h[Docbook::Elements::Uri] = [:uri, false]
+          h[Docbook::Elements::Subscript] = [:subscript, false]
+          h[Docbook::Elements::Superscript] = [:superscript, false]
+          h[Docbook::Elements::KeyCap] = [:keycap, false]
+          h[Docbook::Elements::CiterefEntry] = [:citerefentry, false]
+          h[Docbook::Elements::Footnote] = [:footnote, false]
+          h[Docbook::Elements::FootnoteRef] = [:footnoteref, false]
+
+          # Code-style elements → all use the :code handler
+          [
+            Docbook::Elements::Literal, Docbook::Elements::Code,
+            Docbook::Elements::UserInput, Docbook::Elements::ComputerOutput,
+            Docbook::Elements::Filename, Docbook::Elements::ClassName,
+            Docbook::Elements::Function, Docbook::Elements::Parameter,
+            Docbook::Elements::Replaceable,
+            Docbook::Elements::Command, Docbook::Elements::Option,
+            Docbook::Elements::Envar, Docbook::Elements::Property,
+            Docbook::Elements::Varname, Docbook::Elements::Type,
+            Docbook::Elements::Errortype, Docbook::Elements::Errorcode,
+            Docbook::Elements::Exceptionname, Docbook::Elements::Constant,
+            Docbook::Elements::Prompt, Docbook::Elements::BuildTarget,
+            Docbook::Elements::Enumvalue
+          ].each { |k| h[k] = [:code, false] }
+
+          # Plain text elements → all use the :plain_text handler
+          [
+            Docbook::Elements::Abbrev, Docbook::Elements::Phrase,
+            Docbook::Elements::Application, Docbook::Elements::WordAsWord,
+            Docbook::Elements::Date, Docbook::Elements::ReleaseInfo
+          ].each { |k| h[k] = [:plain_text, false] }
+        end.freeze
+
         def self.process(element, context:)
-          return [] unless element.respond_to?(:each_mixed_content)
+          return [] unless element.is_a?(Lutaml::Model::Serializable)
 
           children = []
           element.each_mixed_content do |node|
-            case node
-            when String
-              text = node
-              children << Node::Text.new(text: text) unless text.empty?
-            when Docbook::Elements::Emphasis
-              children << emphasis(node, context: context)
-            when Docbook::Elements::Literal, Docbook::Elements::Code,
-                 Docbook::Elements::UserInput, Docbook::Elements::ComputerOutput,
-                 Docbook::Elements::Filename, Docbook::Elements::ClassName,
-                 Docbook::Elements::Function, Docbook::Elements::Parameter,
-                 Docbook::Elements::Replaceable,
-                 Docbook::Elements::Command, Docbook::Elements::Option,
-                 Docbook::Elements::Envar, Docbook::Elements::Property,
-                 Docbook::Elements::Varname, Docbook::Elements::Type,
-                 Docbook::Elements::Errortype, Docbook::Elements::Errorcode,
-                 Docbook::Elements::Exceptionname, Docbook::Elements::Constant,
-                 Docbook::Elements::Prompt, Docbook::Elements::BuildTarget,
-                 Docbook::Elements::Enumvalue
-              children << code(node, context: context)
-            when Docbook::Elements::Link
-              children << link(node, context: context)
-            when Docbook::Elements::Xref
-              children << xref(node, context: context)
-            when Docbook::Elements::Quote
-              children.concat(quote(node, context: context))
-            when Docbook::Elements::Tag
-              children << tag(node, context: context)
-            when Docbook::Elements::Biblioref
-              children << biblioref(node, context: context)
-            when Docbook::Elements::FirstTerm, Docbook::Elements::Glossterm
-              children << firstterm(node, context: context)
-            when Docbook::Elements::Citetitle
-              children << citetitle(node, context: context)
-            when Docbook::Elements::Inlinemediaobject
-              children << Handlers::Media.inline_image(node, context: context)
-            when Docbook::Elements::ProductName
-              children << productname(node, context: context)
-            when Docbook::Elements::Trademark
-              children << trademark(node, context: context)
-            when Docbook::Elements::Email
-              children << email(node, context: context)
-            when Docbook::Elements::Uri
-              children << uri(node, context: context)
-            when Docbook::Elements::Subscript
-              children << subscript(node, context: context)
-            when Docbook::Elements::Superscript
-              children << superscript(node, context: context)
-            when Docbook::Elements::KeyCap
-              children << keycap(node, context: context)
-            when Docbook::Elements::Abbrev, Docbook::Elements::Phrase,
-                 Docbook::Elements::Application, Docbook::Elements::WordAsWord,
-                 Docbook::Elements::Date, Docbook::Elements::ReleaseInfo
-              children << plain_text(node, context: context)
-            when Docbook::Elements::CiterefEntry
-              children << citerefentry(node, context: context)
-            when Docbook::Elements::Footnote
-              children << Handlers::Footnote.call(node, context: context)
-            when Docbook::Elements::FootnoteRef
-              children << Handlers::Footnote.ref(node, context: context)
+            if node.is_a?(String)
+              children << Node::Text.new(text: node) unless node.empty?
             else
-              # Catch-all: try to extract text content from any unhandled inline element
-              if node.respond_to?(:content) && node.content.any?
-                children << Node::Text.new(text: node.content.join)
-              elsif node.respond_to?(:text) && node.text
-                children << Node::Text.new(text: node.text.to_s)
-              end
+              dispatch_inline(node, children, context)
             end
           end
           children
+        end
+
+        class << self
+          private
+
+          def dispatch_inline(node, children, context)
+            entry = HANDLER_MAP[node.class]
+            if entry
+              method_name, concat = entry
+              result = send(method_name, node, context: context)
+              concat ? children.concat(Array(result)) : (children << result if result)
+            else
+              fallback_text(node, children)
+            end
+          end
+
+          def fallback_text(node, children)
+            if node.content&.any?
+              children << Node::Text.new(text: node.content.join)
+            elsif node.text
+              children << Node::Text.new(text: node.text.to_s)
+            end
+          end
         end
 
         # -- Individual inline element handlers --
@@ -105,7 +113,7 @@ module Docbook
         end
 
         def self.link(element, context:)
-          xml_id_map = context.instance_variable_get(:@xml_id_map)
+          xml_id_map = context.xml_id_map
           href = element.xlink_href&.to_s || (element.linkend ? "##{element.linkend}" : "#")
 
           # Handle self-closing links with no content
@@ -141,7 +149,7 @@ module Docbook
         end
 
         def self.xref(element, context:)
-          xml_id_map = context.instance_variable_get(:@xml_id_map)
+          xml_id_map = context.xml_id_map
           linkend = element.linkend.to_s
           resolved_title = xml_id_map[linkend] || linkend
           context.text_node(
@@ -152,35 +160,7 @@ module Docbook
         end
 
         def self.quote(element, context:)
-          children = []
-          return children unless element.respond_to?(:each_mixed_content)
-
-          element.each_mixed_content do |node|
-            case node
-            when String
-              text = node
-              children << Node::Text.new(text: text) unless text.empty?
-            when Docbook::Elements::Emphasis
-              children << emphasis(node, context: context)
-            when Docbook::Elements::Literal, Docbook::Elements::Code,
-                 Docbook::Elements::UserInput, Docbook::Elements::ComputerOutput,
-                 Docbook::Elements::Filename, Docbook::Elements::ClassName,
-                 Docbook::Elements::Function, Docbook::Elements::Parameter,
-                 Docbook::Elements::Replaceable
-              children << code(node, context: context)
-            when Docbook::Elements::Link
-              children << link(node, context: context)
-            when Docbook::Elements::Xref
-              children << xref(node, context: context)
-            when Docbook::Elements::Tag
-              children << tag(node, context: context)
-            when Docbook::Elements::Biblioref
-              children << biblioref(node, context: context)
-            when Docbook::Elements::FirstTerm, Docbook::Elements::Glossterm
-              children << firstterm(node, context: context)
-            end
-          end
-          children
+          process(element, context: context)
         end
 
         def self.tag(element, context:)
@@ -275,12 +255,23 @@ module Docbook
           context.text_node(text)
         end
 
+        # Cross-handler delegation wrappers (for registry uniformity)
+        def self.inline_image(element, context:)
+          Handlers::Media.inline_image(element, context: context)
+        end
+
+        def self.footnote(element, context:)
+          Handlers::Footnote.call(element, context: context)
+        end
+
+        def self.footnoteref(element, context:)
+          Handlers::Footnote.ref(element, context: context)
+        end
+
         class << self
           private
 
           def has_inline_children?(element)
-            return false unless element.respond_to?(:each_mixed_content)
-
             element.each_mixed_content do |node|
               return true if node.is_a?(Lutaml::Model::Serializable)
             end
@@ -288,31 +279,7 @@ module Docbook
           end
 
           def code_role(element)
-            case element
-            when Docbook::Elements::Literal then "literal"
-            when Docbook::Elements::Code then "code"
-            when Docbook::Elements::UserInput then "userinput"
-            when Docbook::Elements::ComputerOutput then "computeroutput"
-            when Docbook::Elements::Filename then "filename"
-            when Docbook::Elements::ClassName then "classname"
-            when Docbook::Elements::Function then "function"
-            when Docbook::Elements::Parameter then "parameter"
-            when Docbook::Elements::Replaceable then "replaceable"
-            when Docbook::Elements::Command then "command"
-            when Docbook::Elements::Option then "option"
-            when Docbook::Elements::Envar then "envar"
-            when Docbook::Elements::Property then "property"
-            when Docbook::Elements::Varname then "varname"
-            when Docbook::Elements::Type then "type"
-            when Docbook::Elements::Errortype then "errortype"
-            when Docbook::Elements::Errorcode then "errorcode"
-            when Docbook::Elements::Exceptionname then "exceptionname"
-            when Docbook::Elements::Constant then "constant"
-            when Docbook::Elements::Prompt then "prompt"
-            when Docbook::Elements::BuildTarget then "buildtarget"
-            when Docbook::Elements::Enumvalue then "enumvalue"
-            else element.class.name.split("::").last.downcase
-            end
+            element.class.name.split("::").last.downcase
           end
         end
       end

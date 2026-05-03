@@ -6,26 +6,26 @@ module Docbook
       class Table
         def self.call(element, context:)
           attrs = {}
-          attrs[:xml_id] = element.xml_id if element.respond_to?(:xml_id) && element.xml_id
-          if element.respond_to?(:title) && element.title
+          attrs[:xml_id] = element.xml_id if element.xml_id
+          if element.title
             attrs[:title] = element.title.content.join
           end
-          attrs[:frame] = element.frame if element.respond_to?(:frame) && element.frame
-          attrs[:colsep] = element.colsep if element.respond_to?(:colsep) && element.colsep
-          attrs[:rowsep] = element.rowsep if element.respond_to?(:rowsep) && element.rowsep
+          attrs[:frame] = element.frame if element.frame
+          attrs[:colsep] = element.colsep if element.colsep
+          attrs[:rowsep] = element.rowsep if element.rowsep
 
           table_content = []
 
-          tgroups = element.respond_to?(:tgroup) ? element.tgroup : []
+          tgroups = element.tgroup
           tgroups.each do |tg|
-            attrs[:cols] = tg.cols if tg.respond_to?(:cols) && tg.cols
+            attrs[:cols] = tg.cols if tg.cols
 
-            if tg.respond_to?(:thead) && tg.thead
+            if tg.thead
               head_rows = build_table_rows(tg.thead.row)
               table_content << Node::TableHead.new(content: head_rows) unless head_rows.empty?
             end
 
-            next unless tg.respond_to?(:tbody) && tg.tbody
+            next unless tg.tbody
 
             body_rows = build_table_rows(tg.tbody.row)
             table_content << Node::TableBody.new(content: body_rows) unless body_rows.empty?

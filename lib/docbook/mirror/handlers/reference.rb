@@ -7,17 +7,15 @@ module Docbook
         def self.reference(element, context:)
           attrs = {
             xml_id: element.xml_id || "elem-#{element.object_id}",
-            title: element.title&.content&.join || element.info&.title&.then { |t| t&.content&.join },
+            title: context.resolve_title(element),
           }.compact
 
           content = []
 
           # refentry is a mapped attribute, not mixed content
-          if element.respond_to?(:refentry)
-            element.refentry.each do |re|
-              entry = refentry(re, context: context)
-              content << entry if entry
-            end
+          element.refentry.each do |re|
+            entry = refentry(re, context: context)
+            content << entry if entry
           end
 
           content.concat(context.extract_content(element))
@@ -84,7 +82,7 @@ module Docbook
           end
 
           # refnamediv is a mapped attribute, not mixed content — process explicitly
-          if element.respond_to?(:refnamediv) && element.refnamediv
+          if element.refnamediv
             content.concat(refnamediv(element.refnamediv, context: context))
           end
 
@@ -129,7 +127,7 @@ module Docbook
         end
 
         def self.refsection(element, context:)
-          title = element.title&.content&.join
+          title = context.resolve_title(element)
           id = element.xml_id || "elem-#{element.object_id}"
           attrs = { xml_id: id, title: title }.compact
 

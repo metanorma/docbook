@@ -7,7 +7,7 @@ module Docbook
         def self.call(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
           content = context.extract_content(element)
           return nil if content.empty?

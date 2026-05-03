@@ -7,9 +7,9 @@ module Docbook
         def self.call(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
-          steps = (element.step if element.respond_to?(:step)).to_a.filter_map { |s| step_node(s, context) }
+          steps = element.step.to_a.filter_map { |s| step_node(s, context) }
           Node::Procedure.new(attrs: attrs, content: steps)
         end
 
@@ -20,9 +20,11 @@ module Docbook
             attrs = { xml_id: step.xml_id }.compact
             content = context.extract_content(step)
 
-            if step.respond_to?(:substeps) && step.substeps&.any?
+            if step.substeps&.any?
               step.substeps.each do |ss|
-                sub_steps = (ss.step if ss.respond_to?(:step)).to_a.filter_map { |st| step_node(st, context) }
+                sub_steps = ss.step.to_a.filter_map do |st|
+                  step_node(st, context)
+                end
                 content << Node::SubSteps.new(content: sub_steps) unless sub_steps.empty?
               end
             end
