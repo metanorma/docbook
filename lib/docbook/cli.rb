@@ -29,7 +29,8 @@ module Docbook
     option :output, aliases: "-o",
                     desc: "Output file or directory path (default: <input>.html or <input>/ with --format dist/paged)"
     option :demo, desc: "Build a bundled demo: xslTNG or model-flow"
-    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged, chunked"
+    option :format, default: :inline,
+                    desc: "Output format: inline, dom, dist, paged, chunked"
     option :xinclude, type: :boolean, default: true,
                       desc: "Resolve XIncludes before processing"
     option :image_search_dir, type: :array,
@@ -43,10 +44,15 @@ module Docbook
     def build(input = nil)
       xml_path, output_path, search_dirs, title = if options[:demo]
                                                     demo_name = options[:demo]
-                                                    demo_name = "xslTNG" if [true, "demo"].include?(demo_name)
+                                                    demo_name = "xslTNG" if [
+                                                      true, "demo"
+                                                    ].include?(demo_name)
                                                     build_demo_params(demo_name)
                                                   else
-                                                    raise CliError, "Please provide an XML file. Usage: docbook build INPUT" unless input
+                                                    unless input
+                                                      raise CliError,
+                                                            "Please provide an XML file. Usage: docbook build INPUT"
+                                                    end
 
                                                     build_file_params(input)
                                                   end
@@ -88,7 +94,8 @@ module Docbook
       require_relative "output/docbook_mirror"
       xml_string = read_input(input, options[:xinclude])
       parsed = parse_input(xml_string)
-      mirror_output = Docbook::Output::DocbookMirror.new(parsed, sort_glossary: options[:sort_glossary])
+      mirror_output = Docbook::Output::DocbookMirror.new(parsed,
+                                                         sort_glossary: options[:sort_glossary])
       output = if options[:pretty]
                  mirror_output.to_pretty_json
                else
@@ -133,29 +140,26 @@ module Docbook
     option :wellformed, type: :boolean, default: false,
                         desc: "Check well-formedness only (no schema)"
     def validate(input)
-      xml_string = File.read(input)
-      doc = Nokogiri::XML(xml_string)
+      validator = Docbook::Services::Validator.new(input_path: File.expand_path(input))
 
-      # Well-formedness check
-      if doc.errors.any?
-        messages = doc.errors.map { |e| "#{input}: #{e}" }.join("\n")
-        raise ValidationError, messages
+      wf = validator.check_wellformedness
+      unless wf.valid?
+        raise ValidationError, wf.errors.join("\n")
       end
+
       verbose_step("  Well-formedness: OK")
 
-      # Schema validation
       if options[:schema] && !options[:wellformed]
-        errors = validate_schema(doc, input)
-        if errors.any?
-          messages = errors.map { |e| "#{input}: #{e}" }.join("\n")
-          raise ValidationError, messages
+        schema = validator.check_schema
+        unless schema.valid?
+          raise ValidationError, schema.errors.join("\n")
         end
+
         verbose_step("  Schema (RELAX NG): OK")
       end
 
-      # Additional checks in verbose mode
       if verbose?
-        parsed = parse_input(xml_string)
+        parsed = parse_input(File.read(input))
         stats = Docbook::Services::DocumentStats.new(parsed).generate
         verbose_step("  Sections: #{stats["sections"]}")
         verbose_step("  Images: #{stats["images"]}")
@@ -170,16 +174,19 @@ module Docbook
     option :xinclude, type: :boolean, default: false,
                       desc: "Resolve XIncludes before processing"
     def format(input)
-      xml_string = File.read(input)
-      raw_doc = Nokogiri::XML(xml_string)
-
-      if !options[:xinclude] && input_xinclude?(raw_doc)
-        warn "Warning: Document contains XIncludes. Use --xinclude to resolve them."
+      unless options[:xinclude]
+        raw_doc = Nokogiri::XML(File.read(input))
+        if input_xinclude?(raw_doc)
+          warn "Warning: Document contains XIncludes. Use --xinclude to resolve them."
+        end
       end
 
-      xml_string = read_input(input, options[:xinclude])
-      parsed = parse_input(xml_string)
-      output = parsed.to_xml(pretty: true, declaration: true, encoding: "utf-8")
+      formatter = Docbook::Services::Formatter.new(
+        input_path: File.expand_path(input),
+        resolve_xinclude: options[:xinclude],
+      )
+      output = formatter.format
+
       if options[:output]
         File.write(options[:output], output)
         say "Written to #{options[:output]}"
@@ -193,7 +200,10 @@ module Docbook
                     desc: "Also check cross-references and images"
     def lint(input)
       xml_path = File.expand_path(input)
-      raise FileNotFoundError, "File not found: #{xml_path}. Check the path and try again." unless File.exist?(xml_path)
+      unless File.exist?(xml_path)
+        raise FileNotFoundError,
+              "File not found: #{xml_path}. Check the path and try again."
+      end
 
       xml_string = File.read(xml_path)
       raw_doc = Nokogiri::XML(xml_string)
@@ -206,9 +216,10 @@ module Docbook
       verbose_step("  Well-formedness: OK")
 
       parsed = begin
-                 parse_input(xml_string)
+        parse_input(xml_string)
       rescue StandardError => e
-                 raise ParseError, "Parse error: #{e.message}. Check for duplicate xml:id values or invalid markup."
+        raise ParseError,
+              "Parse error: #{e.message}. Check for duplicate xml:id values or invalid markup."
       end
 
       linter = Docbook::Services::Linter.new(parsed, input_path: xml_path)
@@ -230,20 +241,26 @@ module Docbook
         say "#{input}: #{linter.warnings.any? ? "ok (with #{linter.warnings.size} warning#{"s" unless linter.warnings.size == 1})" : "ok"}"
         verbose_step("  #{summary}")
       else
-        messages = linter.errors.map { |e| "#{e[:message]} (#{e[:location]})" }.join("\n")
-        raise LintError, "#{linter.errors.size} issue#{"s" unless linter.errors.size == 1} found:\n#{messages}"
+        messages = linter.errors.map do |e|
+          "#{e[:message]} (#{e[:location]})"
+        end.join("\n")
+        raise LintError,
+              "#{linter.errors.size} issue#{"s" unless linter.errors.size == 1} found:\n#{messages}"
       end
     end
 
-    desc "library INPUT", "Build a multi-book library from a directory or manifest"
+    desc "library INPUT",
+         "Build a multi-book library from a directory or manifest"
     option :output, aliases: "-o",
                     desc: "Output file or directory path (default: library.html or library/ with --format dist/paged)"
-    option :format, default: :inline, desc: "Output format: inline, dom, dist, paged, chunked"
+    option :format, default: :inline,
+                    desc: "Output format: inline, dom, dist, paged, chunked"
     option :image_strategy, default: "data_url",
                             desc: "Image resolution: data_url, file_url, or relative"
     option :sort_glossary, type: :boolean, default: false,
                            desc: "Sort glossary entries alphabetically"
-    option :title, desc: "Library title (default: derived from manifest or directory name)"
+    option :title,
+           desc: "Library title (default: derived from manifest or directory name)"
     option :dist_dir, desc: "Path to frontend dist directory"
     def library(input)
       input_path = File.expand_path(input)
@@ -296,7 +313,10 @@ module Docbook
         end
       end
       warn "#{inputs.size} files, #{failures} failures"
-      raise ValidationError, "#{failures} roundtrip failure#{"s" unless failures == 1}" if failures.positive?
+      if failures.positive?
+        raise ValidationError,
+              "#{failures} roundtrip failure#{"s" unless failures == 1}"
+      end
     end
 
     def self.exit_on_failure?
@@ -320,19 +340,6 @@ module Docbook
       Docbook::Document.from_xml(xml_string)
     end
 
-    SCHEMAS_DIR = File.expand_path("schemas", __dir__)
-
-    def validate_schema(doc, _input)
-      schema_file = if input_xinclude?(doc)
-                      File.join(SCHEMAS_DIR, "docbookxi.rng")
-                    else
-                      File.join(SCHEMAS_DIR, "docbook.rng")
-                    end
-      rng = File.read(schema_file)
-      schema = Nokogiri::XML::RelaxNG(rng)
-      schema.validate(doc)
-    end
-
     def input_xinclude?(doc)
       doc.root.namespace_definitions.any? { |ns| ns.href == "http://www.w3.org/2001/XInclude" }
     end
@@ -351,9 +358,13 @@ module Docbook
     }.freeze
 
     def build_demo_params(demo_name)
-      fixture = DEMO_FIXTURES[demo_name] || raise(CliError, "Unknown demo '#{demo_name}'. Available: #{DEMO_FIXTURES.keys.join(", ")}")
+      fixture = DEMO_FIXTURES[demo_name] || raise(CliError,
+                                                  "Unknown demo '#{demo_name}'. Available: #{DEMO_FIXTURES.keys.join(", ")}")
       fixture_xml = File.expand_path(fixture[:xml], __dir__)
-      raise FileNotFoundError, "Demo fixture not found: #{fixture_xml}" unless File.exist?(fixture_xml)
+      unless File.exist?(fixture_xml)
+        raise FileNotFoundError,
+              "Demo fixture not found: #{fixture_xml}"
+      end
 
       resources_dir = File.expand_path(fixture[:resources], __dir__)
 
@@ -365,7 +376,10 @@ module Docbook
 
     def build_file_params(input)
       xml_path = File.expand_path(input)
-      raise FileNotFoundError, "File not found: #{xml_path}. Check the path and try again." unless File.exist?(xml_path)
+      unless File.exist?(xml_path)
+        raise FileNotFoundError,
+              "File not found: #{xml_path}. Check the path and try again."
+      end
 
       output_path = File.expand_path(options[:output] || derive_output_path(input))
       search_dirs = (options[:image_search_dir] || []).map do |d|

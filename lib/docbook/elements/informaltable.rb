@@ -3,6 +3,23 @@
 module Docbook
   module Elements
     class InformalTable < Lutaml::Model::Serializable
+      include DocbookElement
+
+      STATS_CATEGORY = :table
+      LIST_OF_CATEGORY = :tables
+
+      def stats_category
+        STATS_CATEGORY
+      end
+
+      def formal?
+        true
+      end
+
+      def list_of_category
+        LIST_OF_CATEGORY
+      end
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :frame, :string

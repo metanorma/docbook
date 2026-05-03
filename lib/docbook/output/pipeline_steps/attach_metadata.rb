@@ -18,7 +18,10 @@ module Docbook
           }
 
           # Attach index
-          guide["index"] = guide.delete("index_data") if guide.key?("index_data")
+          if guide.key?("index_data")
+            guide["index"] =
+              guide.delete("index_data")
+          end
 
           # Generate and attach metadata
           stats = Services::DocumentStats.new(context.parsed).generate

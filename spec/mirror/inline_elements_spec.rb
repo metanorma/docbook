@@ -16,7 +16,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
       text_nodes = para["content"]
-      em_node = text_nodes.find { |n| n["marks"]&.any? { |m| m["type"] == "emphasis" } }
+      em_node = text_nodes.find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "emphasis"
+        end
+      end
       expect(em_node).not_to be_nil
       expect(em_node["text"]).to eq("emphasized")
     end
@@ -26,7 +30,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
       text_nodes = para["content"]
-      bold_node = text_nodes.find { |n| n["marks"]&.any? { |m| m["type"] == "strong" } }
+      bold_node = text_nodes.find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "strong"
+        end
+      end
       expect(bold_node).not_to be_nil
       expect(bold_node["text"]).to eq("bold")
     end
@@ -38,7 +46,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
       text_nodes = para["content"]
-      code_node = text_nodes.find { |n| n["marks"]&.any? { |m| m["type"] == "code" } }
+      code_node = text_nodes.find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "code"
+        end
+      end
       expect(code_node).not_to be_nil
       expect(code_node["text"]).to eq("puts")
     end
@@ -50,7 +62,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
       text_nodes = para["content"]
-      link_node = text_nodes.find { |n| n["marks"]&.any? { |m| m["type"] == "link" } }
+      link_node = text_nodes.find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "link"
+        end
+      end
       expect(link_node).not_to be_nil
       expect(link_node["text"]).to eq("here")
       link_mark = link_node["marks"].find { |m| m["type"] == "link" }
@@ -63,7 +79,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       xml = chapter_xml('See <xref linkend="ch01"/> for details')
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
-      xref_node = para["content"].find { |n| n["marks"]&.any? { |m| m["type"] == "xref" } }
+      xref_node = para["content"].find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "xref"
+        end
+      end
       expect(xref_node).not_to be_nil
     end
   end
@@ -73,7 +93,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       xml = chapter_xml("H<subscript>2</subscript>O")
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
-      sub_node = para["content"].find { |n| n["marks"]&.any? { |m| m["type"] == "subscript" } }
+      sub_node = para["content"].find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "subscript"
+        end
+      end
       expect(sub_node).not_to be_nil
       expect(sub_node["text"]).to eq("2")
     end
@@ -82,7 +106,11 @@ RSpec.describe "Mirror Transformer — Inline Elements", :mirror do
       xml = chapter_xml("E=mc<superscript>2</superscript>")
       result = mirror_hash(xml)
       para = find_node(result, "paragraph")
-      sup_node = para["content"].find { |n| n["marks"]&.any? { |m| m["type"] == "superscript" } }
+      sup_node = para["content"].find do |n|
+        n["marks"]&.any? do |m|
+          m["type"] == "superscript"
+        end
+      end
       expect(sup_node).not_to be_nil
       expect(sup_node["text"]).to eq("2")
     end

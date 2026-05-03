@@ -18,12 +18,10 @@ module Docbook
         result = { "type" => type }
         result["attrs"] = attrs.transform_keys(&:to_s) if attrs && !attrs.empty?
         if marks && !marks.empty?
-          result["marks"] = marks.map { |m| m.respond_to?(:to_h) ? m.to_h : m }
+          result["marks"] = marks.map(&:to_h)
         end
         if content && !content.empty?
-          result["content"] = content.map do |i|
-            i.respond_to?(:to_h) ? i.to_h : i
-          end
+          result["content"] = content.map(&:to_h)
         end
         result
       end
@@ -43,8 +41,9 @@ module Docbook
         marks = hash["marks"] || []
         klass = NODES[type] || Node
 
-        # Use class-specific from_h if available
-        if klass.respond_to?(:from_h) && klass != Node
+        # Use class-specific from_h only if the subclass defines its own
+        if klass != Node && klass.singleton_class.method_defined?(:from_h,
+                                                                  false)
           klass.from_h(hash)
         else
           klass.new(
@@ -334,64 +333,13 @@ module Docbook
         PM_TYPE = "table_cell"
       end
 
-      # Register node types
-      NODES["text"] = Text
-      NODES["paragraph"] = Paragraph
-      NODES["doc"] = Document
-      NODES["heading"] = Heading
-      NODES["code_block"] = CodeBlock
-      NODES["blockquote"] = Blockquote
-      NODES["bullet_list"] = BulletList
-      NODES["ordered_list"] = OrderedList
-      NODES["list_item"] = ListItem
-      NODES["dl"] = DefinitionList
-      NODES["definition_term"] = DefinitionTerm
-      NODES["definition_description"] = DefinitionDescription
-      NODES["image"] = Image
-      NODES["admonition"] = Admonition
-      NODES["chapter"] = Chapter
-      NODES["appendix"] = Appendix
-      NODES["part"] = Part
-      NODES["reference"] = Reference
-      NODES["refentry"] = RefEntry
-      NODES["refsection"] = RefSection
-      NODES["section"] = Section
-      NODES["preface"] = Preface
-      NODES["dedication"] = Dedication
-      NODES["acknowledgements"] = Acknowledgements
-      NODES["colophon"] = Colophon
-      NODES["glossary"] = Glossary
-      NODES["gloss_entry"] = GlossEntry
-      NODES["gloss_term"] = GlossTerm
-      NODES["gloss_def"] = GlossDef
-      NODES["gloss_see"] = GlossSee
-      NODES["gloss_see_also"] = GlossSeeAlso
-      NODES["bibliography"] = Bibliography
-      NODES["biblio_entry"] = BiblioEntry
-      NODES["index_block"] = IndexBlock
-      NODES["index_div"] = IndexDiv
-      NODES["index_entry"] = IndexEntry
-      NODES["procedure"] = Procedure
-      NODES["step"] = Step
-      NODES["substeps"] = SubSteps
-      NODES["equation"] = Equation
-      NODES["calloutlist"] = CalloutList
-      NODES["callout"] = Callout
-      NODES["sidebar"] = Sidebar
-      NODES["simpara"] = SimPara
-      NODES["set"] = Set
-      NODES["article"] = Article
-      NODES["topic"] = Topic
-      NODES["footnotes"] = Footnotes
-      NODES["footnote_marker"] = FootnoteMarker
-      NODES["footnote_entry"] = FootnoteEntry
-      NODES["caption"] = Caption
-      NODES["figure"] = Figure
-      NODES["table"] = Table
-      NODES["table_head"] = TableHead
-      NODES["table_body"] = TableBody
-      NODES["table_row"] = TableRow
-      NODES["table_cell"] = TableCell
+      # Auto-register all nested subclasses by PM_TYPE
+      constants.each do |name|
+        klass = const_get(name)
+        next unless klass.is_a?(Class) && klass < Node && klass::PM_TYPE != "node"
+
+        NODES[klass::PM_TYPE] = klass
+      end
     end
   end
 end

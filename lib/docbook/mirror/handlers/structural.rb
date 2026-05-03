@@ -5,7 +5,7 @@ module Docbook
     module Handlers
       class Structural
         def self.set(element, context:)
-          title = element.title&.content&.join || (element.info&.title&.then { |t| t&.content&.join } if element.respond_to?(:info))
+          title = context.resolve_title(element)
           attrs = {
             xml_id: element.xml_id,
             title: title,
@@ -17,7 +17,7 @@ module Docbook
         def self.topic(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
           content = context.extract_content(element)
           Node::Topic.new(attrs: attrs, content: content)

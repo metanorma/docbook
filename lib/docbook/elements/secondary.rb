@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Secondary < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
 
       xml do

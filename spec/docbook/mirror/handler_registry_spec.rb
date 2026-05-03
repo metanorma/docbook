@@ -33,7 +33,8 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
   describe "#handle" do
     it "invokes a Proc handler" do
       registry.register(Docbook::Elements::Para, ->(_el, _ctx) { "result" })
-      result, concat = registry.handle(Docbook::Elements::Para.new, context: double("ctx"))
+      result, concat = registry.handle(Docbook::Elements::Para.new,
+                                       context: double("ctx"))
       expect(result).to eq("result")
       expect(concat).to be(false)
     end
@@ -52,13 +53,15 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
     it "supports concat flag" do
       registry.register(Docbook::Elements::RefNamediv,
                         ->(_el, _ctx) { ["a", "b"] }, concat: true)
-      result, concat = registry.handle(Docbook::Elements::RefNamediv.new, context: double("ctx"))
+      result, concat = registry.handle(Docbook::Elements::RefNamediv.new,
+                                       context: double("ctx"))
       expect(result).to eq(["a", "b"])
       expect(concat).to be(true)
     end
 
     it "returns nil for unregistered elements" do
-      result = registry.handle(Docbook::Elements::Para.new, context: double("ctx"))
+      result = registry.handle(Docbook::Elements::Para.new,
+                               context: double("ctx"))
       expect(result).to be_nil
     end
   end
@@ -73,7 +76,8 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
     it "registers all admonition types" do
       %w[Note Warning Tip Caution Important Danger].each do |type|
         klass = Docbook::Elements.const_get(type)
-        expect(default.registered?(klass)).to be(true), "Expected #{type} to be registered"
+        expect(default.registered?(klass)).to be(true),
+                                              "Expected #{type} to be registered"
       end
     end
 
@@ -82,21 +86,24 @@ RSpec.describe Docbook::Mirror::HandlerRegistry do
        Docbook::Elements::Appendix, Docbook::Elements::Part,
        Docbook::Elements::Preface, Docbook::Elements::Dedication,
        Docbook::Elements::Acknowledgements, Docbook::Elements::Colophon].each do |klass|
-        expect(default.registered?(klass)).to be(true), "Expected #{klass.name} to be registered"
+        expect(default.registered?(klass)).to be(true),
+                                              "Expected #{klass.name} to be registered"
       end
     end
 
     it "registers all code types" do
       [Docbook::Elements::Code, Docbook::Elements::ProgramListing,
        Docbook::Elements::Screen, Docbook::Elements::LiteralLayout].each do |klass|
-        expect(default.registered?(klass)).to be(true), "Expected #{klass.name} to be registered"
+        expect(default.registered?(klass)).to be(true),
+                                              "Expected #{klass.name} to be registered"
       end
     end
 
     it "registers all list types" do
       [Docbook::Elements::OrderedList, Docbook::Elements::ItemizedList,
        Docbook::Elements::VariableList].each do |klass|
-        expect(default.registered?(klass)).to be(true), "Expected #{klass.name} to be registered"
+        expect(default.registered?(klass)).to be(true),
+                                              "Expected #{klass.name} to be registered"
       end
     end
 

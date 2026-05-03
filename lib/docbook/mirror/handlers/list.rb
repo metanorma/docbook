@@ -6,7 +6,9 @@ module Docbook
       class List
         # Ordered list
         def self.ordered(element, context:)
-          items = element.listitem.to_a.filter_map { |li| list_item(li, context) }
+          items = element.listitem.to_a.filter_map do |li|
+            list_item(li, context)
+          end
           return nil if items.empty?
 
           Node::OrderedList.new(content: items)
@@ -14,7 +16,9 @@ module Docbook
 
         # Bullet (itemized) list
         def self.bullet(element, context:)
-          items = element.listitem.to_a.filter_map { |li| list_item(li, context) }
+          items = element.listitem.to_a.filter_map do |li|
+            list_item(li, context)
+          end
           return nil if items.empty?
 
           Node::BulletList.new(content: items)
@@ -49,7 +53,7 @@ module Docbook
           end
 
           def build_term(entry, context)
-            return nil unless entry.respond_to?(:term)
+            return nil unless entry.term
 
             term_content = context.process_inline_content(entry.term) if entry.term
             return nil if term_content.empty?
@@ -58,7 +62,7 @@ module Docbook
           end
 
           def build_desc(entry, context)
-            item = entry.listitem if entry.respond_to?(:listitem)
+            item = entry.listitem
             return nil unless item
 
             desc_content = context.extract_content(item)

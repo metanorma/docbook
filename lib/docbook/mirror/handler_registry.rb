@@ -14,7 +14,8 @@ module Docbook
     #   registry.register(MyCustomElement, ->(el, ctx) { ... })
     #
     class HandlerRegistry
-      Entry = Struct.new(:handler, :method_name, :concat, :extra_kwargs, keyword_init: true)
+      Entry = Struct.new(:handler, :method_name, :concat, :extra_kwargs,
+                         keyword_init: true)
 
       def initialize
         @handlers = {}
@@ -29,7 +30,8 @@ module Docbook
       # @param concat [Boolean] if true, handler result is an array to concat
       #   into the content array rather than a single item to append
       # @param extra_kwargs [Hash] additional keyword arguments to pass to the handler
-      def register(element_class, handler, method_name: :call, concat: false, extra_kwargs: {})
+      def register(element_class, handler, method_name: :call, concat: false,
+extra_kwargs: {})
         @handlers[element_class] = Entry.new(
           handler: handler,
           method_name: method_name,

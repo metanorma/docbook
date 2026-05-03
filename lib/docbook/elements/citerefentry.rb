@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class CiterefEntry < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :linkend, :string
       attribute :startvol, :string

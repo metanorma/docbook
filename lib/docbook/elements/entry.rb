@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Entry < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :valign, :string
       attribute :align, :string

@@ -63,7 +63,7 @@ module Docbook
           when :file_url
             node["attrs"]["src"] = "file://#{abs_path}"
           when :data_url
-            node["attrs"]["src"] = embed_data_url(abs_path)
+            node["attrs"]["src"] = ImageUtils.embed_as_data_url(abs_path)
           when :relative
             # Keep relative if base_url is set, adjust path
             # For now just keep as-is
@@ -79,27 +79,6 @@ module Docbook
           return abs_path if File.exist?(abs_path)
         end
         nil
-      end
-
-      def embed_data_url(path)
-        mime = mime_type(path)
-        return path unless mime
-
-        data = File.binread(path)
-        encoded = Base64.strict_encode64(data)
-        "data:#{mime};base64,#{encoded}"
-      rescue StandardError
-        path
-      end
-
-      def mime_type(path)
-        case File.extname(path).downcase
-        when ".png"  then "image/png"
-        when ".jpg", ".jpeg" then "image/jpeg"
-        when ".gif"  then "image/gif"
-        when ".svg"  then "image/svg+xml"
-        when ".webp" then "image/webp"
-        end
       end
     end
   end

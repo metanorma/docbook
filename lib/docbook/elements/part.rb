@@ -3,7 +3,22 @@
 module Docbook
   module Elements
     class Part < Lutaml::Model::Serializable
+      include DocbookElement
+      include SectionLike
+      include TocContainer
+      include Titled
+      include Identifiable
       include HasNumber
+      include Numberable
+
+      NUMBERING_ROLE = :part
+      def toc_children
+        [
+          *Array(chapter),
+          *Array(reference),
+          *Array(appendix),
+        ]
+      end
 
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType

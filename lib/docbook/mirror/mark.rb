@@ -113,14 +113,15 @@ module Docbook
         end
       end
 
-      # Register mark types for deserialization
-      MARKS["emphasis"] = Emphasis
-      MARKS["strong"] = Strong
-      MARKS["italic"] = Italic
-      MARKS["code"] = Code
-      MARKS["link"] = Link
-      MARKS["xref"] = Xref
-      MARKS["citation"] = Citation
+      # Auto-register all mark subclasses by PM_TYPE
+      constants.each do |name|
+        klass = const_get(name)
+        next unless klass.is_a?(Class) && klass < Mark && klass::PM_TYPE != "mark"
+
+        MARKS[klass::PM_TYPE] = klass
+      end
+
+      # subscript and superscript have no dedicated subclass — use base Mark
       MARKS["subscript"] = Mark
       MARKS["superscript"] = Mark
     end

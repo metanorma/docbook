@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Varlistentry < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :term, Term, collection: true
       attribute :listitem, ListItem
 

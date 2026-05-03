@@ -19,7 +19,8 @@ end
 
 if frontend_built?
   Capybara.register_driver :cuprite do |app|
-    Capybara::Cuprite::Driver.new(app, headless: true, browser_options: { "no-sandbox": nil })
+    Capybara::Cuprite::Driver.new(app, headless: true,
+                                       browser_options: { "no-sandbox": nil })
   end
 
   Capybara.default_driver = :cuprite

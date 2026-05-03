@@ -19,7 +19,8 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
         "numbering" => { "intro" => "", "ch1" => "1", "app-a" => "A" },
       },
       "content" => [
-        { "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Preface text." }] },
+        { "type" => "paragraph",
+          "content" => [{ "type" => "text", "text" => "Preface text." }] },
         { "type" => "chapter", "attrs" => { "xml_id" => "intro", "title" => "Introduction" },
           "content" => [{ "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Intro." }] }] },
         { "type" => "section", "attrs" => { "xml_id" => "ch1", "title" => "Chapter 1" },
@@ -46,7 +47,8 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
       Dir.mktmpdir do |dir|
         format.write(File.join(dir, "output"), guide, title: "Test Book")
 
-        manifest = JSON.parse(File.read(File.join(dir, "output", "manifest.json")))
+        manifest = JSON.parse(File.read(File.join(dir, "output",
+                                                  "manifest.json")))
         expect(manifest["meta"]["title"]).to eq("Test Book")
         # Leading paragraph creates a "chunk-1" entry before the sections
         expect(manifest["total_sections"]).to eq(4)
@@ -60,7 +62,8 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
       Dir.mktmpdir do |dir|
         format.write(File.join(dir, "output"), guide, title: "Test Book")
 
-        section = JSON.parse(File.read(File.join(dir, "output", "sections", "ch1.json")))
+        section = JSON.parse(File.read(File.join(dir, "output", "sections",
+                                                 "ch1.json")))
         expect(section["id"]).to eq("ch1")
         expect(section["content"]).to be_an(Array)
         expect(section["content"].first["type"]).to eq("section")
@@ -73,7 +76,8 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
       Dir.mktmpdir do |dir|
         format.write(File.join(dir, "output"), guide, title: "Test Book")
 
-        section = JSON.parse(File.read(File.join(dir, "output", "sections", "app-a.json")))
+        section = JSON.parse(File.read(File.join(dir, "output", "sections",
+                                                 "app-a.json")))
         expect(section["next"]).to be_nil
         expect(section["prev"]).to eq("ch1")
       end
@@ -84,7 +88,8 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
         format.write(File.join(dir, "output"), guide, title: "Test Book")
 
         # First chunk is the leading paragraph (chunk-1)
-        section = JSON.parse(File.read(File.join(dir, "output", "sections", "chunk-1.json")))
+        section = JSON.parse(File.read(File.join(dir, "output", "sections",
+                                                 "chunk-1.json")))
         expect(section["prev"]).to be_nil
         expect(section["next"]).to eq("intro")
       end
@@ -95,13 +100,16 @@ RSpec.describe Docbook::Output::Formats::ChunkedFormat do
         "meta" => {},
         "toc" => { "sections" => [] },
         "content" => [
-          { "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Just a paragraph." }] },
+          { "type" => "paragraph",
+            "content" => [{ "type" => "text",
+                            "text" => "Just a paragraph." }] },
         ],
       }
       Dir.mktmpdir do |dir|
         format.write(File.join(dir, "output"), minimal_guide, title: "Minimal")
 
-        manifest = JSON.parse(File.read(File.join(dir, "output", "manifest.json")))
+        manifest = JSON.parse(File.read(File.join(dir, "output",
+                                                  "manifest.json")))
         expect(manifest["total_sections"]).to eq(1)
         expect(manifest["section_ids"].first).to start_with("chunk-")
       end

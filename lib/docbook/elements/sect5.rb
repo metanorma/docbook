@@ -3,6 +3,14 @@
 module Docbook
   module Elements
     class Sect5 < Lutaml::Model::Serializable
+      include DocbookElement
+      include SectionLike
+      include TocContainer
+      include Titled
+      include Identifiable
+      include Numberable
+
+      NUMBERING_ROLE = :section
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title

@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Citetitle < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :role, :string
       attribute :href, :xlink_href

@@ -3,7 +3,13 @@
 module Docbook
   module Elements
     # Concerns (must load before elements that use them)
+    autoload :DocbookElement, "#{__dir__}/elements/concerns/docbook_element"
+    autoload :Identifiable, "#{__dir__}/elements/concerns/identifiable"
+    autoload :Titled, "#{__dir__}/elements/concerns/titled"
+    autoload :SectionLike, "#{__dir__}/elements/concerns/section_like"
     autoload :HasNumber, "#{__dir__}/elements/concerns/has_number"
+    autoload :TocContainer, "#{__dir__}/elements/concerns/toc_container"
+    autoload :Numberable, "#{__dir__}/elements/concerns/numberable"
 
     # Structural elements
     autoload :Article, "#{__dir__}/elements/article"

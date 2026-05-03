@@ -8,7 +8,8 @@ module Docbook
   module Output
     module Formats
       class BaseFormat
-        DEFAULT_DIST_DIR = File.expand_path("../../../../frontend/dist", __dir__)
+        DEFAULT_DIST_DIR = File.expand_path("../../../../frontend/dist",
+                                            __dir__)
 
         # Class-level configurable default dist directory.
         # Override for the entire class:
@@ -32,7 +33,8 @@ module Docbook
         end
 
         def write_library(output_path, guides, manifest:, title: nil)
-          raise NotImplementedError, "#{self.class}#write_library not implemented"
+          raise NotImplementedError,
+                "#{self.class}#write_library not implemented"
         end
 
         protected
@@ -64,7 +66,8 @@ module Docbook
           JSON.generate(data).gsub("</script", '<\\/script')
         end
 
-        def html_boilerplate(title:, body_content:, head_extra: "", script_data: nil)
+        def html_boilerplate(title:, body_content:, head_extra: "",
+script_data: nil)
           assets = dist_assets
           data_script = script_data ? %(<script>\n#{script_data}\n</script>) : ""
 
@@ -88,25 +91,44 @@ module Docbook
         end
 
         def embed_as_data_url(path)
-          return nil unless path && File.exist?(path)
-
-          mime = mime_type(path)
-          return path unless mime
-
-          data = File.binread(path)
-          "data:#{mime};base64,#{Base64.strict_encode64(data)}"
-        rescue StandardError
-          path
+          Services::ImageUtils.embed_as_data_url(path)
         end
 
-        def mime_type(path)
-          case File.extname(path).downcase
-          when ".png"  then "image/png"
-          when ".jpg", ".jpeg" then "image/jpeg"
-          when ".gif"  then "image/gif"
-          when ".svg"  then "image/svg+xml"
-          when ".webp" then "image/webp"
+        # Shared helpers for section-based splitting (used by ChunkedFormat and PagedFormat).
+
+        SECTION_BOUNDARY_TYPES = %w[chapter part section appendix preface
+                                    reference].freeze
+
+        def ensure_directory(output_path)
+          dir = output_path.end_with?(".html") ? File.dirname(output_path) : output_path
+          FileUtils.mkdir_p(dir)
+          dir
+        end
+
+        def split_into_sections(content)
+          sections = []
+          current_id = nil
+          current_nodes = []
+
+          content.each do |node|
+            if section_boundary?(node)
+              unless current_nodes.empty?
+                sections << [current_id,
+                             current_nodes]
+              end
+              current_id = node.dig("attrs",
+                                    "xml_id") || "section-#{sections.size + 1}"
+              current_nodes = [node]
+            else
+              current_nodes << node
+            end
           end
+          sections << [current_id, current_nodes] unless current_nodes.empty?
+          sections
+        end
+
+        def section_boundary?(node)
+          SECTION_BOUNDARY_TYPES.include?(node["type"])
         end
       end
     end

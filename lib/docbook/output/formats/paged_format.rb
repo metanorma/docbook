@@ -6,8 +6,6 @@ module Docbook
   module Output
     module Formats
       class PagedFormat < BaseFormat
-        SECTION_BOUNDARY_TYPES = %w[chapter part section appendix preface reference].freeze
-
         def write(output_path, guide, title: "DocBook", _manifest: nil)
           dir = ensure_directory(output_path)
           FileUtils.mkdir_p(File.join(dir, "pages"))
@@ -49,7 +47,8 @@ module Docbook
 
             {
               "id" => book.id,
-              "title" => book.title || guides[i].dig("meta", "title") || book.id,
+              "title" => book.title || guides[i].dig("meta",
+                                                     "title") || book.id,
               "source" => "#{book.id}/",
             }
           end
@@ -64,32 +63,8 @@ module Docbook
 
         private
 
-        def ensure_directory(output_path)
-          dir = output_path.end_with?(".html") ? File.dirname(output_path) : output_path
-          FileUtils.mkdir_p(dir)
-          dir
-        end
-
         def split_into_pages(content)
-          pages = []
-          current_id = nil
-          current_nodes = []
-
-          content.each do |node|
-            if section_boundary?(node)
-              pages << [current_id, current_nodes] unless current_nodes.empty?
-              current_id = node.dig("attrs", "xml_id") || "section-#{pages.size + 1}"
-              current_nodes = [node]
-            else
-              current_nodes << node
-            end
-          end
-          pages << [current_id, current_nodes] unless current_nodes.empty?
-          pages
-        end
-
-        def section_boundary?(node)
-          SECTION_BOUNDARY_TYPES.include?(node["type"])
+          split_into_sections(content)
         end
       end
     end

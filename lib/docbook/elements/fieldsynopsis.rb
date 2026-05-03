@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class FieldSynopsis < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :type, Type
       attribute :varname, Varname

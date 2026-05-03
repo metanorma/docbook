@@ -2,22 +2,9 @@
 
 module Docbook
   module Services
-    # Lightweight lint checks for DocBook documents.
-    #
-    # Checks for common issues without requiring full RELAX NG validation:
-    # duplicate IDs, broken cross-references, missing images, empty sections.
-    #
-    # Usage:
-    #   linter = Docbook::Services::Linter.new(parsed_doc)
-    #   result = linter.check(strict: true)
-    #   result.errors   # => [{ message: "...", location: "..." }]
-    #   result.warnings # => [{ message: "...", location: "..." }]
-    #
     class Linter
       attr_reader :errors, :warnings
 
-      # @param document [Docbook::Elements::Book, Docbook::Elements::Article, etc.] parsed document
-      # @param input_path [String, nil] file path for image existence checks
       def initialize(document, input_path: nil)
         @document = document
         @input_path = input_path
@@ -25,9 +12,6 @@ module Docbook
         @warnings = []
       end
 
-      # Run lint checks on the document.
-      # @param strict [Boolean] enable strict mode (broken xrefs, missing images)
-      # @return [self]
       def check(strict: false)
         check_duplicate_ids
         check_empty_elements
@@ -38,7 +22,6 @@ module Docbook
         self
       end
 
-      # @return [Boolean] true if no errors were found
       def ok?
         @errors.empty?
       end
@@ -59,16 +42,13 @@ module Docbook
       end
 
       def walk_ids(el, ids)
-        return unless el.is_a?(Lutaml::Model::Serializable)
-
-        if el.respond_to?(:xml_id) && el.xml_id
-          id = el.xml_id.to_s
+        if el.xml_id
           loc = element_location(el)
-          ids[id] ||= []
-          ids[id] << loc
+          ids[el.xml_id.to_s] ||= []
+          ids[el.xml_id.to_s] << loc
         end
 
-        walk_children(el) { |child| walk_ids(child, ids) }
+        el.walk_children { |child| walk_ids(child, ids) }
       end
 
       def check_empty_elements
@@ -76,9 +56,7 @@ module Docbook
       end
 
       def check_empty_titled(el)
-        return unless el.is_a?(Lutaml::Model::Serializable)
-
-        if el.respond_to?(:title) && el.title
+        if el.titled? && el.has_title?
           has_content = has_block_content?(el)
           unless has_content
             name = el.class.name.split("::").last
@@ -90,19 +68,17 @@ module Docbook
           end
         end
 
-        walk_children(el) { |child| check_empty_titled(child) }
+        el.walk_children { |child| check_empty_titled(child) }
       end
 
       def has_block_content?(el)
-        return false unless el.class.respond_to?(:attributes)
-
         el.class.attributes.each_value do |attr_def|
-          next if ["title", "info", "xml_id"].include?(attr_def.name)
+          next if %i[title info xml_id content].include?(attr_def.name)
 
           value = el.send(attr_def.name)
           case value
           when Array
-            return true if value.any? { |v| walkable?(v) || (v.is_a?(String) && v.strip != "") }
+            return true if value.any? { |v| v.is_a?(Lutaml::Model::Serializable) || (v.is_a?(String) && v.strip != "") }
           when Lutaml::Model::Serializable
             return true
           when String
@@ -118,24 +94,20 @@ module Docbook
       end
 
       def build_id_map(el, map = Set.new)
-        return map unless el.is_a?(Lutaml::Model::Serializable)
-
-        map << el.xml_id.to_s if el.respond_to?(:xml_id) && el.xml_id
-        walk_children(el) { |child| build_id_map(child, map) }
+        map << el.xml_id.to_s if el.xml_id
+        el.walk_children { |child| build_id_map(child, map) }
         map
       end
 
       def collect_xrefs(el, id_map)
-        return unless el.is_a?(Lutaml::Model::Serializable)
-
-        if el.is_a?(Elements::Xref) && el.respond_to?(:linkend) && el.linkend && !id_map.include?(el.linkend.to_s)
+        if el.xref? && el.linkend && !id_map.include?(el.linkend.to_s)
           @errors << {
             message: "Broken xref: '#{el.linkend}' does not match any xml:id",
             location: element_location(el),
           }
         end
 
-        walk_children(el) { |child| collect_xrefs(child, id_map) }
+        el.walk_children { |child| collect_xrefs(child, id_map) }
       end
 
       def check_missing_images
@@ -146,35 +118,11 @@ module Docbook
       end
 
       def collect_image_refs(el, xml_dir)
-        return unless el.is_a?(Lutaml::Model::Serializable)
+        el.media_children.each do |child|
+          src = child.fileref
+          next if src.nil?
 
-        # Check mediaobject/videodata/imagedata filerefs
-        if el.respond_to?(:videoobject) && el.videoobject
-          check_media_data(el.videoobject, xml_dir)
-        end
-        if el.respond_to?(:imageobject) && el.imageobject
-          check_media_data(el.imageobject, xml_dir)
-        end
-
-        walk_children(el) { |child| collect_image_refs(child, xml_dir) }
-      end
-
-      def check_media_data(media_obj, xml_dir)
-        return unless media_obj
-
-        children = if media_obj.respond_to?(:content)
-                     Array(media_obj.content)
-                   elsif media_obj.respond_to?(:imagedata)
-                     Array(media_obj.imagedata)
-                   else
-                     []
-                   end
-
-        children.each do |child|
-          next unless child.respond_to?(:fileref)
-          next if child.fileref.nil?
-
-          src = child.fileref.to_s
+          src = src.to_s
           next if src.start_with?("http://", "https://", "data:")
 
           abs_path = File.expand_path(src, xml_dir)
@@ -185,30 +133,12 @@ module Docbook
             }
           end
         end
-      end
 
-      def walk_children(el)
-        return unless el.class.respond_to?(:attributes)
-
-        el.class.attributes.each_value do |attr_def|
-          value = el.send(attr_def.name)
-          next if value.nil?
-
-          case value
-          when Array
-            value.each { |v| yield v if walkable?(v) }
-          else
-            yield value if walkable?(value)
-          end
-        end
-      end
-
-      def walkable?(value)
-        value.is_a?(Lutaml::Model::Serializable)
+        el.walk_children { |child| collect_image_refs(child, xml_dir) }
       end
 
       def element_location(el)
-        if el.respond_to?(:xml_id) && el.xml_id
+        if el.xml_id
           "xml:id='#{el.xml_id}'"
         else
           "<#{el.class.name.split("::").last}>"

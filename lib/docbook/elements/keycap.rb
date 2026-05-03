@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class KeyCap < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
 
       xml do

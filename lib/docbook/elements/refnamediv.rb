@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class RefNamediv < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :refname, RefName, collection: true
       attribute :refpurpose, RefPurpose

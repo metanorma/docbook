@@ -111,7 +111,9 @@ RSpec.describe "DocBook Reader", type: :feature do
         input = find(".search-input")
         # Use native value setting to avoid global keyboard handler intercepting
         # keystrokes (p, r, etc.) before the input is focused
-        page.execute_script("arguments[0].value = 'paragraph'; arguments[0].dispatchEvent(new Event('input', { bubbles: true }))", input.native)
+        page.execute_script(
+          "arguments[0].value = 'paragraph'; arguments[0].dispatchEvent(new Event('input', { bubbles: true }))", input.native
+        )
       end
       expect(page).to have_css(".search-result", wait: 15)
     end
@@ -122,7 +124,8 @@ RSpec.describe "DocBook Reader", type: :feature do
       expect(page).to have_css("[role='dialog'][aria-label='Search']")
       find("body").send_keys(:escape)
       sleep 0.5
-      expect(page).not_to have_css("[role='dialog'][aria-label='Search']", wait: 5)
+      expect(page).not_to have_css("[role='dialog'][aria-label='Search']",
+                                   wait: 5)
     end
   end
 
@@ -145,7 +148,9 @@ RSpec.describe "DocBook Reader", type: :feature do
       end
       # Vue Transition may keep the element briefly — check it disappears
       sleep 0.5
-      expect(page).not_to have_css("[role='dialog'][aria-label='Keyboard shortcuts']", wait: 5)
+      expect(page).not_to have_css(
+        "[role='dialog'][aria-label='Keyboard shortcuts']", wait: 5
+      )
     end
   end
 

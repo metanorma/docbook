@@ -9,7 +9,8 @@ RSpec.describe Docbook::Output::HtmlRenderer do
     context "with paragraphs" do
       let(:guide) do
         { "content" => [{ "type" => "paragraph",
-                          "content" => [{ "type" => "text", "text" => "Hello world" }] }] }
+                          "content" => [{ "type" => "text",
+                                          "text" => "Hello world" }] }] }
       end
 
       it "renders a <p> with db-paragraph class" do
@@ -20,7 +21,8 @@ RSpec.describe Docbook::Output::HtmlRenderer do
     context "with code blocks" do
       let(:guide) do
         { "content" => [{ "type" => "code_block",
-                          "attrs" => { "text" => "puts 'hi'", "language" => "ruby" } }] }
+                          "attrs" => { "text" => "puts 'hi'",
+                                       "language" => "ruby" } }] }
       end
 
       it "renders with language class" do
@@ -109,8 +111,10 @@ RSpec.describe Docbook::Output::HtmlRenderer do
 
     it "renders a subset of nodes" do
       nodes = [
-        { "type" => "paragraph", "content" => [{ "type" => "text", "text" => "A" }] },
-        { "type" => "paragraph", "content" => [{ "type" => "text", "text" => "B" }] },
+        { "type" => "paragraph",
+          "content" => [{ "type" => "text", "text" => "A" }] },
+        { "type" => "paragraph",
+          "content" => [{ "type" => "text", "text" => "B" }] },
       ]
       html = described_class.new(guide).render_nodes(nodes)
       expect(html).to include("db-paragraph\">A<")

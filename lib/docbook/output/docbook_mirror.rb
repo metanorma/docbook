@@ -18,8 +18,8 @@ module Docbook
         @sort_glossary = sort_glossary
       end
 
-      # Returns the DocbookMirror document as a Ruby Hash.
-      # @return [Hash]
+      # Returns the DocbookMirror document as a Mirror::Node.
+      # @return [Mirror::Node::Document]
       def to_document
         transformer = Docbook::Mirror::Transformer.new(sort_glossary: @sort_glossary)
         transformer.from_docbook(@document)

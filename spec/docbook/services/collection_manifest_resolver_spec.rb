@@ -8,20 +8,23 @@ RSpec.describe Docbook::Services::CollectionManifestResolver do
   describe "#resolve" do
     context "with YAML manifest" do
       it "parses the manifest" do
-        manifest = described_class.new(File.join(fixtures_dir, "library.yml")).resolve
+        manifest = described_class.new(File.join(fixtures_dir,
+                                                 "library.yml")).resolve
         expect(manifest.name).to eq("Test Library")
         expect(manifest.books.size).to eq(2)
       end
 
       it "resolves absolute paths for book sources" do
-        manifest = described_class.new(File.join(fixtures_dir, "library.yml")).resolve
+        manifest = described_class.new(File.join(fixtures_dir,
+                                                 "library.yml")).resolve
         book = manifest.books.first
         expect(book.source).to end_with("book-one/book-one.xml")
         expect(File.exist?(book.source)).to be true
       end
 
       it "resolves cover paths" do
-        manifest = described_class.new(File.join(fixtures_dir, "library.yml")).resolve
+        manifest = described_class.new(File.join(fixtures_dir,
+                                                 "library.yml")).resolve
         book = manifest.books.find { |b| b.id == "book-one" }
         expect(book.cover).to end_with("book-one/cover.png")
       end
@@ -29,7 +32,8 @@ RSpec.describe Docbook::Services::CollectionManifestResolver do
 
     context "with JSON manifest" do
       it "parses the manifest" do
-        manifest = described_class.new(File.join(fixtures_dir, "library.json")).resolve
+        manifest = described_class.new(File.join(fixtures_dir,
+                                                 "library.json")).resolve
         expect(manifest.name).to eq("Test Library")
         expect(manifest.books.size).to eq(2)
       end

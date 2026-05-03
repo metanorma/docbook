@@ -33,7 +33,8 @@ RSpec.describe Docbook::CLI do
       end
     end
 
-    it "derives output path from input when -o is omitted", if: frontend_built? do
+    it "derives output path from input when -o is omitted",
+       if: frontend_built? do
       input = File.expand_path(guide_xml)
       expected_output = input.sub(/\.xml$/, ".html")
 
@@ -162,7 +163,8 @@ RSpec.describe Docbook::CLI do
     it "shows detailed output with --verbose", if: frontend_built? do
       Tempfile.create(["test", ".html"]) do |out|
         expect do
-          described_class.start(["build", guide_xml, "-o", out.path, "--verbose"])
+          described_class.start(["build", guide_xml, "-o", out.path,
+                                 "--verbose"])
         end.to output(/Parsing guide\.xml/).to_stdout
         expect(File.read(out.path)).to include("<!DOCTYPE html>")
       end
@@ -219,7 +221,8 @@ RSpec.describe Docbook::CLI do
 
     it "reports ok for the guide fixture" do
       expect do
-        described_class.start(["lint", "spec/fixtures/xslTNG/guide/xml/guide.xml"])
+        described_class.start(["lint",
+                               "spec/fixtures/xslTNG/guide/xml/guide.xml"])
       end.to output(/: ok/).to_stdout
     end
 
@@ -306,7 +309,8 @@ RSpec.describe Docbook::CLI do
     it "builds dom format", if: frontend_built? do
       Tempfile.create(["test", ".html"]) do |out|
         expect do
-          described_class.start(["build", guide_xml, "-o", out.path, "--format", "dom"])
+          described_class.start(["build", guide_xml, "-o", out.path,
+                                 "--format", "dom"])
         end.to output(/Built/).to_stdout
         content = File.read(out.path)
         expect(content).to include('id="docbook-content"')
@@ -318,7 +322,8 @@ RSpec.describe Docbook::CLI do
       dir = Dir.mktmpdir
       begin
         expect do
-          described_class.start(["build", guide_xml, "-o", File.join(dir, "index.html"), "--format", "dist"])
+          described_class.start(["build", guide_xml, "-o",
+                                 File.join(dir, "index.html"), "--format", "dist"])
         end.to output(/Built/).to_stdout
         expect(File.exist?(File.join(dir, "index.html"))).to be true
         expect(File.exist?(File.join(dir, "data", "book.json"))).to be true
@@ -331,7 +336,8 @@ RSpec.describe Docbook::CLI do
       dir = Dir.mktmpdir
       begin
         expect do
-          described_class.start(["build", guide_xml, "-o", File.join(dir, "index.html"), "--format", "paged"])
+          described_class.start(["build", guide_xml, "-o",
+                                 File.join(dir, "index.html"), "--format", "paged"])
         end.to output(/Built/).to_stdout
         expect(File.exist?(File.join(dir, "index.html"))).to be true
         pages = Dir.glob(File.join(dir, "pages", "*.html"))
@@ -370,7 +376,8 @@ RSpec.describe Docbook::CLI do
       dir = Dir.mktmpdir
       begin
         expect do
-          described_class.start(["library", manifest_yml, "-o", File.join(dir, "index.html"), "--format", "dist"])
+          described_class.start(["library", manifest_yml, "-o",
+                                 File.join(dir, "index.html"), "--format", "dist"])
         end.to output(/Built library/).to_stdout
         expect(File.exist?(File.join(dir, "index.html"))).to be true
         expect(File.exist?(File.join(dir, "data", "book-one.json"))).to be true

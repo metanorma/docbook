@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Attribution < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :personname, PersonName
       attribute :author, Author

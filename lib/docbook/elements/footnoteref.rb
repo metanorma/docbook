@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class FootnoteRef < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :content, :string
       attribute :endterm, :string
       attribute :linkend, :string

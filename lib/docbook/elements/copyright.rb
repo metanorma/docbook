@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Copyright < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :year, Year, collection: true
       attribute :holder, Holder, collection: true
 

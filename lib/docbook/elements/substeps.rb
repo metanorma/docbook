@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class SubSteps < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :step, Step, collection: true
 

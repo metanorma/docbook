@@ -7,22 +7,17 @@ module Docbook
         def self.call(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
-          entries = (element.bibliomixed if element.respond_to?(:bibliomixed)).to_a.filter_map { |entry| biblio_entry(entry, context) }
-          Node::Bibliography.new(attrs: attrs, content: entries)
-        end
-
-        def self.bibliolist(element, context:)
-          attrs = {
-            xml_id: element.xml_id,
-            title: element.title&.content&.join,
-          }.compact
-          entries = (element.bibliomixed if element.respond_to?(:bibliomixed)).to_a.filter_map { |entry| biblio_entry(entry, context) }
+          entries = element.bibliomixed.to_a.filter_map do |entry|
+            biblio_entry(entry, context)
+          end
           Node::Bibliography.new(attrs: attrs, content: entries)
         end
 
         class << self
+          alias bibliolist call
+
           private
 
           def biblio_entry(entry, context)
@@ -32,35 +27,37 @@ module Docbook
             }.compact
 
             parts = []
-            if entry.respond_to?(:abbrev) && entry.abbrev
+            if entry.abbrev
               parts << context.text_node(entry.abbrev.content.join, marks: [Mark::Strong.new])
               parts << context.text_node(". ")
             end
-            if entry.respond_to?(:citetitle) && entry.citetitle&.any?
+            if entry.citetitle&.any?
               entry.citetitle.each do |ct|
                 parts << context.citetitle_node(ct)
                 parts << context.text_node(". ")
               end
             end
-            if entry.respond_to?(:author) && entry.author&.any?
-              authors = entry.author.filter_map { |a| a.personname&.content&.join }.join(", ")
+            if entry.author&.any?
+              authors = entry.author.filter_map do |a|
+                a.personname&.content&.join
+              end.join(", ")
               unless authors.empty?
                 parts << context.text_node(authors)
                 parts << context.text_node(". ")
               end
             end
-            if entry.respond_to?(:publishername) && entry.publishername&.any?
+            if entry.publishername&.any?
               publishers = entry.publishername.filter_map(&:content).join(", ")
               unless publishers.empty?
                 parts << context.text_node(publishers)
                 parts << context.text_node(". ")
               end
             end
-            if entry.respond_to?(:pubdate) && entry.pubdate
+            if entry.pubdate
               parts << context.text_node(entry.pubdate.to_s)
               parts << context.text_node(". ")
             end
-            if entry.respond_to?(:link) && entry.link&.any?
+            if entry.link&.any?
               entry.link.each do |l|
                 parts << context.link_node(l)
                 parts << context.text_node(". ")

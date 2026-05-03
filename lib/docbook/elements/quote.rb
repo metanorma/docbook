@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Quote < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
       attribute :replaceable, Replaceable, collection: true
       attribute :literal, Literal, collection: true

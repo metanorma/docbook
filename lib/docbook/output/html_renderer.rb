@@ -81,9 +81,9 @@ module Docbook
         custom = self.class.custom_node_renderers[type]
         return custom.call(node, self) if custom
 
-        # Built-in dispatch
-        method = :"render_#{type}"
-        return send(method, node) if respond_to?(method, true)
+        # Built-in registry dispatch
+        handler = NODE_RENDERERS[type]
+        return send(handler, node) if handler
 
         render_generic(node)
       end
@@ -102,20 +102,7 @@ module Docbook
       end
 
       # --- Section types ---
-
-      def render_chapter(node) = render_section_like(node)
-      def render_section(node) = render_section_like(node)
-      def render_appendix(node) = render_section_like(node)
-      def render_part(node) = render_section_like(node)
-      def render_preface(node) = render_section_like(node)
-      def render_dedication(node) = render_section_like(node)
-      def render_acknowledgements(node) = render_section_like(node)
-      def render_colophon(node) = render_section_like(node)
-      def render_reference(node) = render_section_like(node)
-      def render_refentry(node) = render_section_like(node)
-      def render_article(node) = render_section_like(node)
-      def render_topic(node) = render_section_like(node)
-      def render_set(node) = render_section_like(node)
+      # (handled via NODE_RENDERERS → :render_section_like)
 
       def render_section_like(node)
         type = node["type"]
@@ -260,8 +247,12 @@ module Docbook
         end
 
         content = node["content"] || []
-        thead = render_table_section(content.select { |s| s["type"] == "table_head" }, "th")
-        tbody = render_table_section(content.select { |s| s["type"] == "table_body" }, "td")
+        thead = render_table_section(content.select do |s|
+          s["type"] == "table_head"
+        end, "th")
+        tbody = render_table_section(content.select do |s|
+          s["type"] == "table_body"
+        end, "td")
 
         %(<div#{id_attr} class="db-table">#{header}\n  <table>\n#{thead}#{tbody}\n  </table>\n</div>)
       end
@@ -528,34 +519,74 @@ module Docbook
         custom = self.class.custom_mark_renderers[mark_type]
         return custom.call(text, mark) if custom
 
-        case mark_type
-        when "emphasis"  then "<em>#{text}</em>"
-        when "strong"    then "<strong>#{text}</strong>"
-        when "italic"    then "<i>#{text}</i>"
-        when "code"
-          role = mark.dig("attrs", "role")
-          cls = role ? %( class="db-inline-code role-#{e(role)}") : %( class="db-inline-code")
-          "<code#{cls}>#{text}</code>"
-        when "link"
-          href = mark.dig("attrs", "href") || "#"
-          %(<a href="#{e(href)}">#{text}</a>)
-        when "xref"
-          linkend = mark.dig("attrs", "linkend") || ""
-          resolved = mark.dig("attrs", "resolved") || ""
-          display = if resolved.empty?
-                      text
-                    else
-                      (text.empty? ? e(resolved) : text)
-                    end
-          %(<a href="##{e(linkend)}">#{display}</a>)
-        when "citation"
-          bibref = mark.dig("attrs", "bibref") || ""
-          %(<a href="##{e(bibref)}">#{text}</a>)
-        when "subscript"    then "<sub>#{text}</sub>"
-        when "superscript"  then "<sup>#{text}</sup>"
-        when "tag"          then %(<span class="tag">#{text}</span>)
-        else text
-        end
+        handler = MARK_RENDERERS[mark_type]
+        return send(handler, text, mark) if handler
+
+        text
+      end
+
+      MARK_RENDERERS = {
+        "emphasis" => :mark_emphasis,
+        "strong" => :mark_strong,
+        "italic" => :mark_italic,
+        "code" => :mark_code,
+        "link" => :mark_link,
+        "xref" => :mark_xref,
+        "citation" => :mark_citation,
+        "subscript" => :mark_subscript,
+        "superscript" => :mark_superscript,
+        "tag" => :mark_tag,
+      }.freeze
+
+      def mark_emphasis(text, _mark)
+        "<em>#{text}</em>"
+      end
+
+      def mark_strong(text, _mark)
+        "<strong>#{text}</strong>"
+      end
+
+      def mark_italic(text, _mark)
+        "<i>#{text}</i>"
+      end
+
+      def mark_code(text, mark)
+        role = mark.dig("attrs", "role")
+        cls = role ? %( class="db-inline-code role-#{e(role)}") : %( class="db-inline-code")
+        "<code#{cls}>#{text}</code>"
+      end
+
+      def mark_link(text, mark)
+        href = mark.dig("attrs", "href") || "#"
+        %(<a href="#{e(href)}">#{text}</a>)
+      end
+
+      def mark_xref(text, mark)
+        linkend = mark.dig("attrs", "linkend") || ""
+        resolved = mark.dig("attrs", "resolved") || ""
+        display = if resolved.empty?
+                    text
+                  else
+                    (text.empty? ? e(resolved) : text)
+                  end
+        %(<a href="##{e(linkend)}">#{display}</a>)
+      end
+
+      def mark_citation(text, mark)
+        bibref = mark.dig("attrs", "bibref") || ""
+        %(<a href="##{e(bibref)}">#{text}</a>)
+      end
+
+      def mark_subscript(text, _mark)
+        "<sub>#{text}</sub>"
+      end
+
+      def mark_superscript(text, _mark)
+        "<sup>#{text}</sup>"
+      end
+
+      def mark_tag(text, _mark)
+        %(<span class="tag">#{text}</span>)
       end
 
       # --- Helpers ---
@@ -574,8 +605,71 @@ module Docbook
       def e(text)
         return "" unless text
 
-        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub(
+          '"', "&quot;"
+        )
       end
+
+      NODE_RENDERERS = {
+        # Document
+        "doc" => :render_doc,
+        # Section types → shared handler
+        "chapter" => :render_section_like,
+        "section" => :render_section_like,
+        "appendix" => :render_section_like,
+        "part" => :render_section_like,
+        "preface" => :render_section_like,
+        "dedication" => :render_section_like,
+        "acknowledgements" => :render_section_like,
+        "colophon" => :render_section_like,
+        "reference" => :render_section_like,
+        "refentry" => :render_section_like,
+        "article" => :render_section_like,
+        "topic" => :render_section_like,
+        "set" => :render_section_like,
+        "refsection" => :render_refsection,
+        # Block elements
+        "paragraph" => :render_paragraph,
+        "code_block" => :render_code_block,
+        "blockquote" => :render_blockquote,
+        "ordered_list" => :render_ordered_list,
+        "bullet_list" => :render_bullet_list,
+        "dl" => :render_dl,
+        "image" => :render_image,
+        "admonition" => :render_admonition,
+        "table" => :render_table,
+        "equation" => :render_equation,
+        "sidebar" => :render_sidebar,
+        "procedure" => :render_procedure,
+        "step" => :render_step,
+        "substeps" => :render_substeps,
+        "calloutlist" => :render_calloutlist,
+        "callout" => :render_callout,
+        "qandaset" => :render_qandaset,
+        "qandaentry" => :render_qandaentry,
+        "question" => :render_question,
+        "answer" => :render_answer,
+        # Glossary
+        "glossary" => :render_glossary,
+        "gloss_entry" => :render_gloss_entry,
+        "gloss_term" => :render_gloss_term,
+        "gloss_def" => :render_gloss_def,
+        "gloss_see" => :render_gloss_see,
+        "gloss_see_also" => :render_gloss_see_also,
+        # Bibliography
+        "bibliography" => :render_bibliography,
+        "biblio_entry" => :render_biblio_entry,
+        # Index
+        "index_block" => :render_index_block,
+        "index_div" => :render_index_div,
+        "index_entry" => :render_index_entry,
+        # Footnotes
+        "footnotes" => :render_footnotes,
+        # Misc
+        "soft_break" => :render_soft_break,
+        "annotation" => :render_annotation,
+        "synopsis" => :render_synopsis,
+      }.freeze
     end
   end
 end

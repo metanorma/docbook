@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class Errorcode < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :content, :string, collection: true
 
       xml do

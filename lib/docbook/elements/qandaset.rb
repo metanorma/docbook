@@ -3,6 +3,10 @@
 module Docbook
   module Elements
     class QandASet < Lutaml::Model::Serializable
+      include DocbookElement
+      include Titled
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :title, Title

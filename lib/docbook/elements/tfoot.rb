@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class TFoot < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :row, Row, collection: true
 
       xml do

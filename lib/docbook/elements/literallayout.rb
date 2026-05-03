@@ -3,6 +3,13 @@
 module Docbook
   module Elements
     class LiteralLayout < Lutaml::Model::Serializable
+      include DocbookElement
+
+      STATS_CATEGORY = :code_block
+
+      def stats_category
+        STATS_CATEGORY
+      end
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :role, :string

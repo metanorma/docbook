@@ -20,7 +20,9 @@ RSpec.describe Docbook::Mirror::DocbookToMirror do
       result = transformer.call(doc)
 
       para = result.content.first
-      emphasis_node = para.content.find { |n| n.marks&.first&.type == "emphasis" }
+      emphasis_node = para.content.find do |n|
+        n.marks&.first&.type == "emphasis"
+      end
       expect(emphasis_node.text).to eq("must")
     end
 

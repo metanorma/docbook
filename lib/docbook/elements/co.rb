@@ -3,9 +3,16 @@
 module Docbook
   module Elements
     class Co < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :label, :string
+
+      def callout_marker?
+        true
+      end
 
       xml do
         element "co"

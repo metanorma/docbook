@@ -3,6 +3,8 @@
 module Docbook
   module Elements
     class ImageData < Lutaml::Model::Serializable
+      include DocbookElement
+
       attribute :fileref, :string
       attribute :format, :string
       attribute :width, :string

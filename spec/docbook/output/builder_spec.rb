@@ -9,7 +9,15 @@ RSpec.describe Docbook::Output::Builder do
   shared_examples "a valid format output" do |format, file_check|
     it "builds #{format} format successfully" do
       Dir.mktmpdir do |dir|
-        output = %i[inline dom].include?(format) ? File.join(dir, "output.html") : File.join(dir, "output")
+        output = if %i[inline
+                       dom].include?(format)
+                   File.join(dir,
+                             "output.html")
+                 else
+                   File.join(
+                     dir, "output"
+                   )
+                 end
         result = described_class.new(
           xml_path: xml_path,
           output_path: output,
@@ -50,7 +58,8 @@ RSpec.describe Docbook::Output::Builder do
 
     it "raises on unknown format" do
       expect do
-        described_class.new(xml_path: xml_path, output_path: "/tmp/out.html", format: :unknown).build
+        described_class.new(xml_path: xml_path, output_path: "/tmp/out.html",
+                            format: :unknown).build
       end.to raise_error(ArgumentError, /Unknown format/)
     end
   end

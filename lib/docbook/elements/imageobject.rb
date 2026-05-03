@@ -3,10 +3,17 @@
 module Docbook
   module Elements
     class ImageObject < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :content, :string, collection: true
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :imagedata, ImageData
       attribute :alt, Alt
+
+      def media_children
+        imagedata ? [imagedata] : []
+      end
 
       xml do
         element "imageobject"

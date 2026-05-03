@@ -38,7 +38,8 @@ module Docbook
             }.compact
           end
 
-          { "name" => manifest.name, "description" => manifest.description, "books" => books }
+          { "name" => manifest.name, "description" => manifest.description,
+            "books" => books }
         end
 
         # Resolve a cover image to a data URL.

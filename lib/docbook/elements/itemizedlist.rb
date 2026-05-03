@@ -3,6 +3,9 @@
 module Docbook
   module Elements
     class ItemizedList < Lutaml::Model::Serializable
+      include DocbookElement
+      include Identifiable
+
       attribute :xml_id, Lutaml::Xml::W3c::XmlIdType
       attribute :role, :string
       attribute :mark, :string

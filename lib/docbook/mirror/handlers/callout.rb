@@ -7,9 +7,11 @@ module Docbook
         def self.list(element, context:)
           attrs = {
             xml_id: element.xml_id,
-            title: element.title&.content&.join,
+            title: context.resolve_title(element),
           }.compact
-          callouts = (element.callout if element.respond_to?(:callout)).to_a.filter_map { |c| callout(c, context) }
+          callouts = element.callout.to_a.filter_map do |c|
+            callout(c, context)
+          end
           Node::CalloutList.new(attrs: attrs, content: callouts)
         end
 

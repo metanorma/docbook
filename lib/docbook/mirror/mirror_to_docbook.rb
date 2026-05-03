@@ -13,6 +13,27 @@ module Docbook
     #   docbook_el = MirrorToDocbook.new.call(mirror_doc)
     #
     class MirrorToDocbook
+      TYPE_BUILDERS = {
+        "doc" => :docbook_document,
+        "paragraph" => :docbook_paragraph,
+        "text" => :docbook_text,
+        "code_block" => :docbook_code_block,
+        "blockquote" => :docbook_blockquote,
+        "bullet_list" => :docbook_itemized_list,
+        "ordered_list" => :docbook_ordered_list,
+        "list_item" => :docbook_list_item,
+        "dl" => :docbook_variable_list,
+        "definition_term" => :docbook_definition_term,
+        "definition_description" => :docbook_definition_description,
+        "admonition" => :docbook_admonition,
+        "chapter" => :docbook_chapter,
+        "section" => :docbook_section,
+        "part" => :docbook_part,
+        "appendix" => :docbook_appendix,
+        "reference" => :docbook_reference,
+        "image" => :docbook_image,
+      }.freeze
+
       ADMONITION_TYPES = {
         "note" => Docbook::Elements::Note,
         "warning" => Docbook::Elements::Warning,
@@ -32,46 +53,10 @@ module Docbook
       # =========================================
 
       def to_docbook(mirror_node)
-        case mirror_node.type
-        when "doc"
-          docbook_document(mirror_node)
-        when "paragraph"
-          docbook_paragraph(mirror_node)
-        when "text"
-          docbook_text(mirror_node)
-        when "code_block"
-          docbook_code_block(mirror_node)
-        when "blockquote"
-          docbook_blockquote(mirror_node)
-        when "bullet_list"
-          docbook_itemized_list(mirror_node)
-        when "ordered_list"
-          docbook_ordered_list(mirror_node)
-        when "list_item"
-          docbook_list_item(mirror_node)
-        when "dl"
-          docbook_variable_list(mirror_node)
-        when "definition_term"
-          docbook_definition_term(mirror_node)
-        when "definition_description"
-          docbook_definition_description(mirror_node)
-        when "admonition"
-          docbook_admonition(mirror_node)
-        when "chapter"
-          docbook_chapter(mirror_node)
-        when "section"
-          docbook_section(mirror_node)
-        when "part"
-          docbook_part(mirror_node)
-        when "appendix"
-          docbook_appendix(mirror_node)
-        when "reference"
-          docbook_reference(mirror_node)
-        when "image"
-          docbook_image(mirror_node)
-        else
-          raise Error, "Unknown node type: #{mirror_node.type}"
-        end
+        handler = TYPE_BUILDERS[mirror_node.type]
+        raise Error, "Unknown node type: #{mirror_node.type}" unless handler
+
+        send(handler, mirror_node)
       end
 
       # =========================================
@@ -148,50 +133,7 @@ module Docbook
       end
 
       def add_inline_to_para(para, element)
-        case element
-        when Docbook::Elements::Emphasis
-          para.emphasis ||= []
-          para.emphasis << element
-        when Docbook::Elements::Literal
-          para.literal ||= []
-          para.literal << element
-        when Docbook::Elements::Code
-          para.code ||= []
-          para.code << element
-        when Docbook::Elements::UserInput
-          para.userinput ||= []
-          para.userinput << element
-        when Docbook::Elements::ComputerOutput
-          para.computeroutput ||= []
-          para.computeroutput << element
-        when Docbook::Elements::Filename
-          para.filename ||= []
-          para.filename << element
-        when Docbook::Elements::ClassName
-          para.classname ||= []
-          para.classname << element
-        when Docbook::Elements::Function
-          para.function ||= []
-          para.function << element
-        when Docbook::Elements::Parameter
-          para.parameter ||= []
-          para.parameter << element
-        when Docbook::Elements::Replaceable
-          para.replaceable ||= []
-          para.replaceable << element
-        when Docbook::Elements::Link
-          para.link ||= []
-          para.link << element
-        when Docbook::Elements::Xref
-          para.xref ||= []
-          para.xref << element
-        when Docbook::Elements::Biblioref
-          para.biblioref ||= []
-          para.biblioref << element
-        when Docbook::Elements::Tag
-          para.tag ||= []
-          para.tag << element
-        end
+        para.try_add_inline(element)
       end
 
       def apply_mark_to_element(text, mark)
@@ -360,74 +302,36 @@ module Docbook
       end
 
       def docbook_chapter(mirror_node)
-        attrs = mirror_node.attrs || {}
-        chapter = Docbook::Elements::Chapter.new
-        chapter.xml_id = attrs[:xml_id] || attrs["xml_id"]
-        chapter.number = attrs[:number] || attrs["number"]
-        if attrs[:title] || attrs["title"]
-          title = Docbook::Elements::Title.new
-          title.content = [attrs[:title] || attrs["title"]]
-          chapter.title = title
-        end
-        if mirror_node.content
-          chapter.para = mirror_node.content.to_a.compact.map do |n|
-            to_docbook(n)
-          end
-        end
-        chapter
+        build_section_like(Docbook::Elements::Chapter, mirror_node)
       end
 
       def docbook_section(mirror_node)
-        attrs = mirror_node.attrs || {}
-        section = Docbook::Elements::Section.new
-        section.xml_id = attrs[:xml_id] || attrs["xml_id"]
-        section.number = attrs[:number] || attrs["number"]
-        if attrs[:title] || attrs["title"]
-          title = Docbook::Elements::Title.new
-          title.content = [attrs[:title] || attrs["title"]]
-          section.title = title
-        end
-        if mirror_node.content
-          section.para = mirror_node.content.to_a.compact.map do |n|
-            to_docbook(n)
-          end
-        end
-        section
+        build_section_like(Docbook::Elements::Section, mirror_node)
       end
 
       def docbook_part(mirror_node)
-        attrs = mirror_node.attrs || {}
-        part = Docbook::Elements::Part.new
-        part.number = attrs[:number] || attrs["number"]
-        if attrs[:title] || attrs["title"]
-          title = Docbook::Elements::Title.new
-          title.content = [attrs[:title] || attrs["title"]]
-          part.title = title
-        end
-        if mirror_node.content
-          part.para = mirror_node.content.to_a.compact.map do |n|
-            to_docbook(n)
-          end
-        end
-        part
+        build_section_like(Docbook::Elements::Part, mirror_node)
       end
 
       def docbook_appendix(mirror_node)
+        build_section_like(Docbook::Elements::Appendix, mirror_node)
+      end
+
+      def build_section_like(klass, mirror_node)
         attrs = mirror_node.attrs || {}
-        appendix = Docbook::Elements::Appendix.new
-        appendix.xml_id = attrs[:xml_id] || attrs["xml_id"]
-        appendix.number = attrs[:number] || attrs["number"]
-        if attrs[:title] || attrs["title"]
+        el = klass.new
+        el.xml_id = attrs[:xml_id] || attrs["xml_id"]
+        el.number = attrs[:number] || attrs["number"] if el.numberable?
+        title_val = attrs[:title] || attrs["title"]
+        if title_val
           title = Docbook::Elements::Title.new
-          title.content = [attrs[:title] || attrs["title"]]
-          appendix.title = title
+          title.content = [title_val]
+          el.title = title
         end
         if mirror_node.content
-          appendix.para = mirror_node.content.to_a.compact.map do |n|
-            to_docbook(n)
-          end
+          el.para = mirror_node.content.to_a.compact.map { |n| to_docbook(n) }
         end
-        appendix
+        el
       end
 
       def docbook_reference(mirror_node)
@@ -533,24 +437,19 @@ module Docbook
         el
       end
 
+      ROLE_CLASS_MAP = {
+        "userinput" => Docbook::Elements::UserInput,
+        "computeroutput" => Docbook::Elements::ComputerOutput,
+        "classname" => Docbook::Elements::ClassName,
+      }.freeze
+
       def role_to_class(role)
-        case role.to_s
-        when "literal" then Docbook::Elements::Literal
-        when "code" then Docbook::Elements::Code
-        when "userinput" then Docbook::Elements::UserInput
-        when "computeroutput" then Docbook::Elements::ComputerOutput
-        when "filename" then Docbook::Elements::Filename
-        when "classname" then Docbook::Elements::ClassName
-        when "function" then Docbook::Elements::Function
-        when "parameter" then Docbook::Elements::Parameter
-        when "replaceable" then Docbook::Elements::Replaceable
-        else
+        ROLE_CLASS_MAP[role.to_s] ||
           begin
             Docbook::Elements.const_get(role.to_s.split("_").map(&:capitalize).join)
           rescue StandardError
             Docbook::Elements::Literal
           end
-        end
       end
 
       def wrap_in_link(text, href)
@@ -582,11 +481,7 @@ module Docbook
         return "" unless content
 
         content.map do |node|
-          if node.respond_to?(:text) && node.text
-            node.text
-          elsif node.respond_to?(:content)
-            extract_text_from_content(node.content)
-          end
+          node.text || extract_text_from_content(node.content)
         end.join
       end
     end
