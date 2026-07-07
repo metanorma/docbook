@@ -17,7 +17,7 @@ module Docbook
       attribute :copyright, Copyright, collection: true
       attribute :legalnotice, LegalNotice, collection: true
       attribute :mediaobject, MediaObject, collection: true
-      attribute :releaseinfo, ReleaseInfo
+      attribute :releaseinfo, ReleaseInfo, collection: true
       attribute :abstract, Para, collection: true
       attribute :cover, Cover, collection: true
 

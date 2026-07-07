@@ -86,7 +86,8 @@ module Docbook
       end
 
       def extract_releaseinfo
-        text_content(@document.info&.releaseinfo&.content)
+        releaseinfo = Array(@document.info&.releaseinfo).first
+        text_content(releaseinfo&.content)
       end
 
       def extract_copyright
