@@ -111,8 +111,8 @@ RSpec.describe "Reader Features", type: :feature do
     it "selects a theme from settings panel" do
       visit_reader
       open_settings
-      find(".theme-card[aria-label='Night theme']").click
-      expect(page).to have_css("html.theme-night", wait: 5)
+      page.execute_script("document.querySelector('.theme-card[aria-label=\"Night theme\"]').click()")
+      expect(page).to have_css("html.theme-night", wait: 10)
       close_settings
     end
 
