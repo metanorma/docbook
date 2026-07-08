@@ -112,7 +112,7 @@ RSpec.describe "Reader Features", type: :feature do
       visit_reader
       open_settings
       find(".theme-card[aria-label='Night theme']").click
-      expect(page.evaluate_script("document.documentElement.classList.contains('theme-night')")).to be true
+      expect(page).to have_css("html.theme-night", wait: 5)
       close_settings
     end
 
