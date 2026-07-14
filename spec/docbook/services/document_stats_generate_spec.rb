@@ -25,6 +25,24 @@ RSpec.describe Docbook::Services::DocumentStats, "#generate" do
       expect(article_stats["pubdate"]).to eq("2026-03-01")
     end
 
+    it "extracts releaseinfo from the first collection item" do
+      xml = <<~XML
+        <article xmlns="http://docbook.org/ns/docbook" version="5.0">
+          <info>
+            <title>Release Test</title>
+            <releaseinfo>First release</releaseinfo>
+            <releaseinfo>Second release</releaseinfo>
+          </info>
+          <para>Body</para>
+        </article>
+      XML
+
+      parsed = Docbook::Document.from_xml(xml)
+      stats = described_class.new(parsed).generate
+
+      expect(stats["releaseinfo"]).to eq("First release")
+    end
+
     it "identifies root element type" do
       expect(article_stats["root_element"]).to eq("article")
     end

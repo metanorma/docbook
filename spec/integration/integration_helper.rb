@@ -20,12 +20,29 @@ end
 if frontend_built?
   Capybara.register_driver :cuprite do |app|
     Capybara::Cuprite::Driver.new(app, headless: true,
+                                       process_timeout: 60,
+                                       timeout: 15,
                                        browser_options: { "no-sandbox": nil })
   end
 
   Capybara.default_driver = :cuprite
   Capybara.app_host = "file://"
   Capybara.default_max_wait_time = 10
+end
+
+# Chrome's one-time launch is the flakiest step on CI runners: under load the
+# DevTools websocket URL can take longer than Ferrum's timeout, and a crashed
+# launch never produces it at all. Booting here, with retries, keeps that
+# failure mode out of the first feature spec.
+def boot_browser_with_retries(attempts: 3)
+  Capybara.current_session.driver.browser
+rescue Ferrum::ProcessTimeoutError => e
+  attempts -= 1
+  raise if attempts.zero?
+
+  warn "Chrome launch timed out; retrying (attempts left: #{attempts}). " \
+       "Chrome output: #{e.output}"
+  retry
 end
 
 RSpec.configure do |config|
@@ -38,6 +55,8 @@ RSpec.configure do |config|
     unless File.exist?(TEST_HTML_PATH) && File.mtime(TEST_HTML_PATH) > File.mtime(FIXTURE_XML)
       Docbook::CLI.start(["build", FIXTURE_XML, "-o", TEST_HTML_PATH])
     end
+
+    boot_browser_with_retries unless Gem.win_platform?
   end
 
   config.after(:each, type: :feature) do
