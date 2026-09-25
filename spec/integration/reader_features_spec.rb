@@ -3,7 +3,7 @@
 require_relative "integration_helper"
 
 RSpec.describe "Reader Features", type: :feature do
-  # rubocop:disable RSpec/BeforeAfterAll
+  # rubocop:disable-next RSpec/BeforeAfterAll
   before(:all) do
     unless frontend_built?
       skip "Integration tests require frontend build artifacts (run `npm --prefix frontend run build`)"
@@ -13,7 +13,6 @@ RSpec.describe "Reader Features", type: :feature do
     end
     @html_path = TEST_HTML_PATH
   end
-  # rubocop:enable RSpec/BeforeAfterAll
 
   def visit_reader
     visit "file://#{@html_path}" # rubocop:disable RSpec/InstanceVariable, Style/RedundantInterpolation
