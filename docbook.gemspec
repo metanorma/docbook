@@ -39,6 +39,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "yard", "~> 0.9"
   spec.add_dependency "lutaml-model", "~> 0.8.0"
   spec.add_dependency "marcel"
-  spec.add_dependency "nokogiri"
-  spec.add_dependency "thor"
+  spec.add_dependency "nokogiri", "~> 1.19"
+  spec.add_dependency "thor", "~> 1.4"
 end
