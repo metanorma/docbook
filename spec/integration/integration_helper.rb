@@ -26,7 +26,12 @@ if frontend_built?
   end
 
   Capybara.default_driver = :cuprite
-  Capybara.app_host = "file://"
+  # ferrum >= 0.20 validates the base_url as http/https at browser boot
+  # (parse_base_url rejects everything else), and cuprite feeds app_host
+  # in as that base_url. The specs navigate absolute file:// URLs
+  # directly, so the host is never fetched — a loopback placeholder
+  # satisfies the boot-time check only.
+  Capybara.app_host = "http://127.0.0.1"
   Capybara.default_max_wait_time = 10
 end
 
