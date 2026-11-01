@@ -65,11 +65,9 @@ RSpec.describe Docbook::Output::Pipeline do
     end
 
     it "allows injecting a custom step" do
-      custom_data = nil
       custom_step = Class.new do
         define_method(:call) do |guide, _context|
           guide["custom_marker"] = true
-          custom_data = guide
           guide
         end
       end
