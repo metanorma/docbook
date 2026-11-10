@@ -6,7 +6,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "irb"
-gem "lutaml-model", github: "lutaml/lutaml-model", branch: "main"
+gem "lutaml-model", "~> 0.8.164"
 gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
 
